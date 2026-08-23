@@ -84,7 +84,7 @@ export default function TopicSectionView({
           <div
             ref={scrollerRef}
             onScroll={updateArrows}
-            className="hidden-scrollbar -mx-2 -my-2 flex gap-4 overflow-x-auto overflow-y-hidden px-4 py-2 md:px-2"
+            className="hidden-scrollbar -mx-2 -my-2 flex overflow-x-auto overflow-y-hidden px-4 py-2 md:px-2"
           >
             {visibleNotes.map((note) => (
               <TopicCard key={note.id} note={note} featured={featured} />

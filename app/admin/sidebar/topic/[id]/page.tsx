@@ -13,6 +13,7 @@ import {
   Table,
   Tooltip,
 } from "antd";
+import type { TableProps } from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -105,7 +106,7 @@ function TopicCreatePage() {
     console.log("delete topic:", topic);
   };
 
-  const columns = [
+  const columns: TableProps<AdminTopic>["columns"] = [
     {
       title: "ID",
       dataIndex: "id",
@@ -136,7 +137,7 @@ function TopicCreatePage() {
     {
       title: "Thao tác",
       key: "actions",
-      width: 210,
+      width: 130,
       render: (_: unknown, record: AdminTopic) => (
         <div className={styles.actions}>
           <Tooltip title="Tạo bài viết">
@@ -206,7 +207,7 @@ function TopicCreatePage() {
           </div>
         </div>
         <Table
-          scroll={{ y: "calc(100dvh - 330px)" }}
+          scroll={{ x: "max-content", y: "calc(100dvh - 330px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}
