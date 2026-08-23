@@ -2,7 +2,7 @@
 
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
-import type { Block } from "@blocknote/core";
+import { productCardSchema } from "./productCard";
 
 export default function PreviewEditor({
   blocks,
@@ -10,8 +10,9 @@ export default function PreviewEditor({
   blocks: Record<string, unknown>[];
 }) {
   const editor = useCreateBlockNote({
+    schema: productCardSchema,
     initialContent: blocks.length
-      ? (blocks as unknown as Block[])
+      ? (blocks as unknown as (typeof productCardSchema.PartialBlock)[])
       : undefined,
   });
 
