@@ -8,7 +8,7 @@ export default function Home() {
     <AppLayout>
       <h1 className="sr-only">Chủ đề</h1>
       <div className="mx-auto min-h-screen pb-4 sm:px-4 sm:pb-6 lg:px-0">
-        <TopicHeader topic={lifestyleTopic} />
+        <TopicHeader topic={lifestyleTopic} className="px-5 pt-1 lg:px-0" />
         <div className="w-full">
           {lifestyleSections.map((section, index) => (
             <TopicSectionView

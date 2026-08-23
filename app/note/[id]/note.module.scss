@@ -309,14 +309,10 @@
 .recommendedGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 0px;
 
   > a {
     width: 100%;
     flex-shrink: 1;
-  }
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
   }
 }

@@ -1,8 +1,14 @@
 import type { Topic } from "@/data/notes";
 
-export default function TopicHeader({ topic }: { topic: Topic }) {
+export default function TopicHeader({
+  topic,
+  className = "",
+}: {
+  topic: Topic;
+  className?: string;
+}) {
   return (
-    <header className="mb-4 px-5 sm:px-0">
+    <header className={`mb-4 px-0 ${className}`.trim()}>
       <div className="flex items-center gap-3">
         <div className="flex size-12 items-center justify-center rounded-xl bg-surface-quaternary text-2xl font-bold">
           {topic.emoji ?? "Đ"}

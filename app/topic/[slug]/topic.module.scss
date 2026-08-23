@@ -1,6 +1,6 @@
 .page {
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  padding: 24px 15px 48px;
 }
 
 .count {
@@ -71,6 +71,6 @@
   }
 
   @media (max-width: 560px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
