@@ -1,0 +1,61 @@
+.wrap {
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.search {
+  width: 240px;
+}
+
+.roleSelect {
+  width: 160px;
+}
+
+.userId {
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+}
+
+.userName {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.roleTag {
+  text-transform: capitalize;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}

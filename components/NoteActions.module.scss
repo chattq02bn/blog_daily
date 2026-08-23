@@ -1,0 +1,31 @@
+.actionControl {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 24px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-clickable-icon);
+  padding: 0;
+
+  &:hover {
+    color: var(--color-text-secondary);
+  }
+}

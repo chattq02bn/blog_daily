@@ -1,0 +1,184 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import { MoreOutlined, DeleteOutlined, EditOutlined, HeartOutlined, MessageOutlined } from "@ant-design/icons";
+import { Popover, Modal, message } from "antd";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import {
+  Comment as CommentType,
+  deleteComment,
+  updateComment,
+} from "@/lib/commentStorage";
+import styles from "./Comment.module.scss";
+
+interface CommentProps {
+  comment: CommentType;
+  parentAuthor?: string;
+  onReply: (parentId: string, parentAuthor: string) => void;
+  onDelete: (commentId: string) => void;
+  isCurrentUser: boolean;
+  depth: number;
+  isLast?: boolean;
+}
+
+export default function Comment({
+  comment,
+  parentAuthor,
+  onReply,
+  onDelete,
+  isCurrentUser,
+  depth,
+  isLast = false,
+}: CommentProps) {
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [liked, setLiked] = useState(false);
+
+  const handleEdit = () => {
+    setEditing(true);
+    setEditContent(comment.content);
+  };
+
+  const handleSaveEdit = () => {
+    const updated = updateComment(comment.id, editContent.trim());
+    if (updated) {
+      setEditing(false);
+      message.success("Đã cập nhật bình luận");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(false);
+    setEditContent(comment.content);
+  };
+
+  const handleDelete = () => {
+    const success = deleteComment(comment.id);
+    if (success) {
+      onDelete(comment.id);
+      message.success("Đã xóa bình luận");
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateStr), {
+        addSuffix: true,
+        locale: vi,
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  return (
+    <div className={`${styles.comment} ${isLast ? styles.last : ""}`}>
+      <div className={styles.commentMain}>
+        <Image
+          src={comment.authorAvatar}
+          alt={comment.author}
+          width={32}
+          height={32}
+          className={styles.avatar}
+          unoptimized
+        />
+        <div className={styles.commentBody}>
+          <div className={styles.commentHeader}>
+            <span className={styles.authorName}>{comment.author}</span>
+            {parentAuthor && (
+              <span className={styles.replyTo}>
+                <span className={styles.replyArrow}>→</span> {parentAuthor}
+              </span>
+            )}
+            <time className={styles.commentTime} dateTime={comment.createdAt}>
+              {formatDate(comment.createdAt)}
+            </time>
+            {comment.isEdited && (
+              <span className={styles.editedBadge}>Đã chỉnh sửa</span>
+            )}
+            {isCurrentUser && (
+              <Popover
+                content={
+                  <div className={styles.popoverMenu}>
+                    <div
+                      className={styles.popoverItem}
+                      onClick={handleEdit}
+                    >
+                      <EditOutlined /> Chỉnh sửa
+                    </div>
+                    <div
+                      className={styles.popoverItem}
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      <DeleteOutlined /> Xóa
+                    </div>
+                  </div>
+                }
+                trigger="click"
+              >
+                <button className={styles.moreButton} aria-label="Tùy chọn">
+                  <MoreOutlined />
+                </button>
+              </Popover>
+            )}
+          </div>
+
+          {editing ? (
+            <div className={styles.editForm}>
+              <textarea
+                className={styles.editTextarea}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={3}
+                placeholder="Viết bình luận..."
+                autoFocus
+              />
+              <div className={styles.editActions}>
+                <button className={styles.btnCancel} onClick={handleCancelEdit}>
+                  Hủy
+                </button>
+                <button className={styles.btnSave} onClick={handleSaveEdit}>
+                  Lưu
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.commentContent}>{comment.content}</div>
+          )}
+
+          <div className={styles.commentFooter}>
+            <button
+              className={`${styles.actionButton} ${liked ? styles.liked : ""}`}
+              onClick={() => setLiked(!liked)}
+            >
+              <HeartOutlined />
+            </button>
+            <button
+              className={styles.actionButton}
+              onClick={() => onReply(comment.id, comment.author)}
+            >
+              <MessageOutlined />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <Modal
+        open={showDeleteConfirm}
+        onOk={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+        title="Xóa bình luận"
+        okText="Xóa"
+        okButtonProps={{ danger: true }}
+        cancelText="Hủy"
+        width={400}
+      >
+        Bạn có chắc chắn muốn xóa bình luận này? Hành động này không thể hoàn tác.
+      </Modal>
+    </div>
+  );
+}

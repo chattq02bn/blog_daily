@@ -1,0 +1,49 @@
+.wrap {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 16px;
+  background: var(--color-surface-normal);
+}
+
+.heading {
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.hint {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-default);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  a {
+    color: var(--color-text-primary);
+    font-weight: 700;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

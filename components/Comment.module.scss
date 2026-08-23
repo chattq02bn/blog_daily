@@ -1,0 +1,212 @@
+.comment {
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border-default);
+
+  &:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  &.last {
+    padding-bottom: 4px;
+  }
+}
+
+.commentMain {
+  display: flex;
+  gap: 10px;
+}
+
+.avatar {
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.commentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.authorName {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.replyTo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.replyArrow {
+  font-size: 11px;
+}
+
+.commentTime {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.editedBadge {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+
+.moreButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  margin-left: auto;
+  opacity: 0;
+  transition: all 0.2s;
+
+  .comment:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-secondary);
+  }
+}
+
+.popoverMenu {
+  padding: 4px 0;
+}
+
+.popoverItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-bg-hover);
+  }
+}
+
+.commentContent {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.editForm {
+  margin-top: 8px;
+}
+
+.editTextarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  resize: vertical;
+  min-height: 60px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btnCancel,
+.btnSave {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnCancel {
+  background: none;
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+
+  &:hover {
+    background: var(--color-bg-hover);
+  }
+}
+
+.btnSave {
+  background: var(--color-primary);
+  border: none;
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.commentFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-secondary);
+  }
+
+  &.liked {
+    color: #e74c3c;
+  }
+}
+
+@media (max-width: 768px) {
+  .moreButton {
+    opacity: 1;
+  }
+}

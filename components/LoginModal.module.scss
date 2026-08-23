@@ -1,0 +1,46 @@
+.welcome {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.sub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.description {
+  margin-bottom: 16px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.footerLinks {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}

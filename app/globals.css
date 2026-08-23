@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@theme {
+  --breakpoint-md: 769px;
+  --breakpoint-lg: 941px;
+
+  --color-surface-normal: #ffffff;
+  --color-surface-primary: #08131a;
+  --color-surface-primary-reaction: #202a30;
+  --color-surface-quaternary: #f5f8fa;
+  --color-surface-invert: #000000;
+  --color-surface-like: #d13e5c;
+  --color-text-primary: #08131a;
+  --color-text-secondary: #08131aa8;
+  --color-text-tertiary: #08131a66;
+  --color-text-clickable-icon: #08131a80;
+  --color-text-invert: #ffffff;
+  --color-text-placeholder: #888888;
+  --color-text-like: #d13e5c;
+  --color-border-default: #08131a24;
+  --color-border-weak: #f5f8fa;
+  --color-border-strong: #08131a38;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f8fa;
+  --color-social-note: #5ac8b8;
+
+  --easeInOutExpo: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-family: "Be Vietnam Pro", "Segoe UI", system-ui, Arial, sans-serif;
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+}
+
+:root {
+  --color-text-primary: #08131a;
+  --color-text-secondary: #08131aa8;
+  --color-text-tertiary: #08131a66;
+  --color-text-clickable-icon: #08131a80;
+  --color-text-disabled: #08131a80;
+  --color-text-placeholder: #888888;
+  --color-text-like: #d13e5c;
+  --color-text-invert: #ffffff;
+  --color-surface-normal: #ffffff;
+  --color-surface-primary: #08131a;
+  --color-surface-primary-reaction: #202a30;
+  --color-surface-quaternary: #f5f8fa;
+  --color-surface-like: #d13e5c;
+  --color-surface-invert: #000000;
+  --color-border-default: #08131a24;
+  --color-border-weak: #f5f8fa;
+  --color-border-strong: #08131a38;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f8fa;
+  --color-social-note: #5ac8b8;
+  --easeInOutExpo: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-family: "Be Vietnam Pro", "Segoe UI", system-ui, Arial, sans-serif;
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  word-wrap: break-word;
+  background-color: var(--color-background-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: inherit;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+button {
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+input[type="search"]::-ms-clear,
+input[type="search"]::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  display: none;
+}
+
+::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.hidden-scrollbar {
+  scrollbar-width: none;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.bn-editor {
+  font-family: var(--font-family);
+}
+
+/* antd overrides */
+.ant-btn.note-btn-primary {
+  background-color: var(--color-surface-primary);
+  color: var(--color-text-invert);
+  border-radius: 9999px;
+  font-weight: 700;
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+}
+
+.ant-btn.note-btn-primary:hover {
+  background-color: var(--color-surface-primary-reaction) !important;
+  color: var(--color-text-invert) !important;
+}

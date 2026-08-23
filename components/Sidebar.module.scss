@@ -1,0 +1,130 @@
+.navLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
+.navLinkActive {
+  color: var(--color-text-primary);
+}
+
+.smallLink {
+  display: block;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
+.heading {
+  display: block;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
+.trendItem {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: var(--color-background-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
+.trendRank {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.topicHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-text-clickable-icon);
+  padding: 8px 8px 0;
+}
+
+.topicTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.snsBox {
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  padding: 8px;
+
+  p {
+    margin-bottom: 4px;
+    font-weight: 700;
+    font-size: 12px;
+  }
+}
+
+.snsIcons {
+  display: flex;
+  gap: 8px;
+}
+
+.snsIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-primary);
+  font-size: 18px;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+
+  a {
+    color: var(--color-text-secondary);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
