@@ -31,6 +31,7 @@ export default function CommentForm({
   const [isFocused, setIsFocused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -41,6 +42,17 @@ export default function CommentForm({
       textareaRef.current.focus();
     }
   }, [parentId, parentAuthor]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => {
+      setIsDesktop(mq.matches);
+      if (!mq.matches) setShowEmoji(false);
+    };
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -163,31 +175,33 @@ export default function CommentForm({
                 autoFocus
               />
               <div className={styles.actions}>
-                <Popover
-                  trigger="click"
-                  placement="bottomRight"
-                  arrow={false}
-                  open={showEmoji}
-                  onOpenChange={setShowEmoji}
-                  content={
-                    <EmojiPicker
-                      onEmojiClick={handleEmojiClick}
-                      autoFocusSearch={false}
-                      previewConfig={{ showPreview: false }}
-                      lazyLoadEmojis
-                      height={300}
-                      width={300}
-                    />
-                  }
-                >
-                  <button
-                    type="button"
-                    className={styles.emojiButton}
-                    aria-label="Chọn emoji"
+                {isDesktop && (
+                  <Popover
+                    trigger="click"
+                    placement="bottomRight"
+                    arrow={false}
+                    open={showEmoji}
+                    onOpenChange={setShowEmoji}
+                    content={
+                      <EmojiPicker
+                        onEmojiClick={handleEmojiClick}
+                        autoFocusSearch={false}
+                        previewConfig={{ showPreview: false }}
+                        lazyLoadEmojis
+                        height={300}
+                        width={300}
+                      />
+                    }
                   >
-                    <SmileOutlined />
-                  </button>
-                </Popover>
+                    <button
+                      type="button"
+                      className={styles.emojiButton}
+                      aria-label="Chọn emoji"
+                    >
+                      <SmileOutlined />
+                    </button>
+                  </Popover>
+                )}
                 <button
                   type="button"
                   className={styles.cancelButton}

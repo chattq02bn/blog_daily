@@ -114,12 +114,9 @@
 .title {
   font-size: 24px;
   font-weight: 700;
-
-  textarea {
-    font-size: 24px;
-    font-weight: 700;
-    padding: 6px 11px;
-  }
+  line-height: 1.3;
+  padding: 4px 11px;
+  resize: none;
 }
 
 .formWrap {

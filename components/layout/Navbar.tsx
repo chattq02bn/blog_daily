@@ -18,6 +18,7 @@ export default function Navbar() {
   const isAdmin = pathname.startsWith("/admin");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isAuthed, setIsAuthed] = useState(() => hasAuth());
 
@@ -28,36 +29,47 @@ export default function Navbar() {
     router.push("/");
   };
 
+  const searchInput = (
+    <Input
+      prefix={
+        <SearchOutlined style={{ color: "var(--color-text-clickable-icon)" }} />
+      }
+      placeholder="Tìm kiếm theo từ khóa hoặc tên người dùng"
+      variant="filled"
+      allowClear
+      style={{
+        borderRadius: 9999,
+        width: "100%",
+        height: 36,
+        backgroundColor: "var(--color-background-secondary)",
+      }}
+    />
+  );
+
   return (
     <header className={styles.navbar}>
       <div className={styles.inner}>
-        <Button
-          type="text"
-          aria-label="Menu"
-          icon={<MenuOutlined />}
-          onClick={() => setDrawerOpen(true)}
-          className={`lg:hidden inline-flex items-center justify-center ${styles.menuButton}`}
-          style={{ fontSize: 20 }}
-        />
-        <NoteLogo />
-        <div className={styles.search}>
-          <Input
-            prefix={
-              <SearchOutlined style={{ color: "var(--color-text-clickable-icon)" }} />
-            }
-            placeholder="Tìm kiếm theo từ khóa hoặc tên người dùng"
-            variant="filled"
-            allowClear
-            style={{
-              borderRadius: 9999,
-              maxWidth: 420,
-              width: "100%",
-              height: 36,
-              backgroundColor: "var(--color-background-secondary)",
-            }}
+        <div className={styles.left}>
+          <Button
+            type="text"
+            aria-label="Menu"
+            icon={<MenuOutlined />}
+            onClick={() => setDrawerOpen(true)}
+            className={`lg:hidden inline-flex items-center justify-center ${styles.menuButton}`}
+            style={{ fontSize: 20 }}
           />
+          <NoteLogo />
         </div>
+        <div className={styles.search}>{searchInput}</div>
         <div className={styles.actions}>
+          <Button
+            type="text"
+            aria-label="Tìm kiếm"
+            icon={<SearchOutlined />}
+            className={`inline-flex items-center justify-center ${styles.searchButton}`}
+            style={{ fontSize: 18, color: "var(--color-text-primary)" }}
+            onClick={() => setMobileSearchOpen((open) => !open)}
+          />
           <Button
             type="text"
             icon={<EditOutlined />}
@@ -71,7 +83,7 @@ export default function Navbar() {
               }
             }}
           >
-            Tạo bài viết
+            <span className={styles.createText}>Tạo bài viết</span>
           </Button>
           <Popover
             trigger="click"
@@ -117,6 +129,9 @@ export default function Navbar() {
           </Popover>
         </div>
       </div>
+      {mobileSearchOpen && (
+        <div className={styles.mobileSearch}>{searchInput}</div>
+      )}
       {isAdmin ? (
         <AdminSidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       ) : (
