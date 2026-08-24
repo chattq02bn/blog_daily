@@ -446,7 +446,7 @@ export default function AdminSidebarPage() {
           </div>
         </div>
         <Table
-          scroll={{ x: 1090, y: "calc(100dvh - 250px)" }}
+          scroll={{ x: 1290, y: "calc(100dvh - 250px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}
