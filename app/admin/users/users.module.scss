@@ -23,15 +23,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    width: 100%;
+  }
 }
 
 .search {
-  width: 240px;
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 240px;
 }
 
 .roleSelect {
   width: 160px;
+  max-width: 100%;
 }
 
 .userId {

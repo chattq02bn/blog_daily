@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Input, Button, Avatar, Popover } from "antd";
 import { SearchOutlined, MenuOutlined, EditOutlined, UserOutlined } from "@ant-design/icons";
 import NoteLogo from "./NoteLogo";
 import SidebarDrawer from "./SidebarDrawer";
+import AdminSidebarDrawer from "../admin/AdminSidebarDrawer";
 import LoginModal from "./LoginModal";
 import { clearAuth, hasAuth } from "@/lib/auth";
 import styles from "./Navbar.module.scss";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -114,7 +117,11 @@ export default function Navbar() {
           </Popover>
         </div>
       </div>
-      <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      {isAdmin ? (
+        <AdminSidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      ) : (
+        <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      )}
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} onLoginSuccess={() => setIsAuthed(true)} />
     </header>
   );

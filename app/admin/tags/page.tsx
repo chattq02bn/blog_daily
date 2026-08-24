@@ -153,7 +153,7 @@ export default function AdminTagsPage() {
           </div>
         </div>
         <Table
-          scroll={{ y: "calc(100dvh - 330px)" }}
+          scroll={{ x: "max-content", y: "calc(100dvh - 330px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}

@@ -176,6 +176,7 @@ export default function AdminSidebarPage() {
       title: "Tên",
       dataIndex: "name",
       key: "name",
+      width: 260,
       render: (name: string, record: SidebarItem) => {
         const child = isChild(items, record.id);
         return (
@@ -192,6 +193,7 @@ export default function AdminSidebarPage() {
       title: "Mô tả",
       dataIndex: "description",
       key: "description",
+      width: 240,
       ellipsis: true,
       render: (description: string | undefined) =>
         description ? (
@@ -204,6 +206,7 @@ export default function AdminSidebarPage() {
       title: "Đường dẫn",
       dataIndex: "href",
       key: "href",
+      width: 200,
       render: (href: string) => <span className={styles.href}>{href}</span>,
     },
     {
@@ -308,7 +311,7 @@ export default function AdminSidebarPage() {
           </div>
         </div>
         <Table
-          scroll={{ y: "calc(100dvh - 250px)" }}
+          scroll={{ x: 1250, y: "calc(100dvh - 250px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}
