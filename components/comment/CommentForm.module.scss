@@ -1,25 +1,25 @@
 .form {
-  padding: 16px 0;
+  padding: 20px 0 8px;
 }
 
 .compact {
-  padding: 12px 0;
+  padding: 4px 0;
 }
 
 .replyIndicator {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  margin-bottom: 8px;
+  gap: 8px;
+  padding: 4px 12px;
+  margin-bottom: 10px;
   margin-left: 44px;
-  background: var(--color-bg-secondary);
-  border-radius: 8px;
   font-size: 13px;
   color: var(--color-text-secondary);
 
   strong {
-    color: var(--color-text-primary);
+    color: var(--color-primary);
+    font-weight: 600;
   }
 }
 
@@ -42,6 +42,57 @@
   }
 }
 
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px 44px;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.nameLabel {
+  white-space: nowrap;
+}
+
+.nameButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-bg-secondary);
+  border: 1px dashed var(--color-border-default);
+  border-radius: 999px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+.nameInput {
+  width: 180px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: 999px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+}
+
 .inputRow {
   display: flex;
   gap: 12px;
@@ -49,8 +100,10 @@
 }
 
 .avatar {
-  border-radius: 50%;
+  border-radius: 100%;
   flex-shrink: 0;
+  object-fit: cover;
+  overflow: hidden;
 }
 
 .inputContainer {
@@ -63,12 +116,14 @@
   font-size: 14px;
   color: var(--color-text-tertiary);
   background: var(--color-bg-secondary);
-  border-radius: 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   cursor: text;
   transition: all 0.2s;
 
   &:hover {
     background: var(--color-bg-hover);
+    border-color: var(--color-border-default);
   }
 }
 
@@ -84,11 +139,12 @@
   color: var(--color-text-primary);
   resize: none;
   min-height: 44px;
-  transition: all 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 
   &:focus {
     outline: none;
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
   }
 
   &::placeholder {
@@ -100,8 +156,29 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
   justify-content: flex-end;
+}
+
+.emojiButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: auto;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-primary);
+  }
 }
 
 .cancelButton {
@@ -111,7 +188,7 @@
   width: 32px;
   height: 32px;
   background: none;
-  border: none;
+  border: 1px solid var(--color-border-default);
   border-radius: 50%;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -119,7 +196,9 @@
 
   &:hover {
     background: var(--color-bg-hover);
+    border-color: var(--color-text-tertiary);
     color: var(--color-text-primary);
+    transform: scale(1.05);
   }
 }
 
@@ -156,5 +235,9 @@
 
   .replyIndicator {
     margin-left: 0;
+  }
+
+  .nameRow {
+    margin-left: 36px;
   }
 }

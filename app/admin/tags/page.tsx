@@ -16,7 +16,7 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { adminTags } from "@/data/admin";
 import { loadTags, saveTags } from "@/lib/adminStorage";
 import styles from "./tags.module.scss";

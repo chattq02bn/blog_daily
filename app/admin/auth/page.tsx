@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, Form, Input, Tabs } from "antd";
 import { LockOutlined, UserOutlined, MailOutlined } from "@ant-design/icons";
 import Link from "next/link";
-import AppLayout from "@/components/AppLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import styles from "./auth.module.scss";
 
 export default function AuthPage() {

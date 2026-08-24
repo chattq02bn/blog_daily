@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import TopicCard, { SeeAllCard } from "./TopicCard";
 import type { TopicSection } from "@/data/notes";
+import styles from "./TopicSectionView.module.scss";
 
 const MAX_NOTES = 10;
 const ITEM_GAP = 16;
@@ -51,13 +53,19 @@ export default function TopicSectionView({
     <section className="mb-5">
       <div className="px-5 sm:px-0">
         <div className="mb-4">
-          <h3
-            className={`font-bold text-text-primary ${featured ? "text-xl" : "text-lg"}`}
+          <Link
+            href={`${section.href}?s=${encodeURIComponent(section.id)}`}
+            className={`${styles.titleLink} font-bold text-text-primary ${
+              featured ? "text-xl" : "text-lg"
+            }`}
           >
-            {section.title}
-          </h3>
+            <span>{section.title}</span>
+            <span className={styles.titleArrow}>
+              <RightOutlined />
+            </span>
+          </Link>
           {section.description && (
-            <p className="mt-2 text-sm text-text-secondary sm:mt-4">
+            <p className="mt-2 line-clamp-3 text-sm text-text-secondary sm:mt-4">
               {section.description}
             </p>
           )}
@@ -76,7 +84,7 @@ export default function TopicSectionView({
           <div
             ref={scrollerRef}
             onScroll={updateArrows}
-            className="hidden-scrollbar -mx-4 -my-2 flex gap-4 overflow-x-auto overflow-y-hidden px-4 py-2 md:mx-0 md:px-0"
+            className="hidden-scrollbar -mx-2 -my-2 flex gap-4 overflow-x-auto overflow-y-hidden px-4 py-2 md:px-2"
           >
             {visibleNotes.map((note) => (
               <TopicCard key={note.id} note={note} featured={featured} />

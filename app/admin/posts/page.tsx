@@ -9,7 +9,7 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import type { AdminTopic, AdminTag } from "@/data/admin";
 import { loadPosts, loadTags, loadTopics, type AdminPost } from "@/lib/adminStorage";
 import styles from "./posts.module.scss";

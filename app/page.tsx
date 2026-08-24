@@ -1,6 +1,6 @@
-import AppLayout from "@/components/AppLayout";
-import TopicHeader from "@/components/TopicHeader";
-import TopicSectionView from "@/components/TopicSectionView";
+import AppLayout from "@/components/layout/AppLayout";
+import TopicHeader from "@/components/topic/TopicHeader";
+import TopicSectionView from "@/components/topic/TopicSectionView";
 import { lifestyleTopic, lifestyleSections } from "@/data/lifestyle";
 
 export default function Home() {

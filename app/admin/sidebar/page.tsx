@@ -20,7 +20,7 @@ import {
   SearchOutlined,
   TagsOutlined,
 } from "@ant-design/icons";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import {
   loadSidebarItems,
   saveSidebarItems,

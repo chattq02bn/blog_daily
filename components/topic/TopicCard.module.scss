@@ -1,0 +1,138 @@
+.card {
+  display: block;
+  width: 9rem;
+  flex-shrink: 0;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 12px;
+  transition: background-color 0.25s, box-shadow 0.25s;
+
+  @media (min-width: 640px) {
+    width: 12rem;
+  }
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    box-shadow: 0 4px 14px rgba(8, 19, 26, 0.06);
+  }
+}
+
+.featured {
+  display: block;
+  width: 16rem;
+  flex-shrink: 0;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 12px;
+  transition: background-color 0.25s, box-shadow 0.25s;
+
+  @media (min-width: 640px) {
+    width: 22rem;
+  }
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    box-shadow: 0 4px 14px rgba(8, 19, 26, 0.06);
+  }
+}
+
+.featuredExcerpt {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cover {
+  position: relative;
+  aspect-ratio: 1280 / 670;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--color-surface-quaternary);
+
+  img {
+    transition: transform 0.3s var(--easeInOutExpo);
+  }
+}
+
+.card:hover .cover img {
+  transform: scale(1.02);
+}
+
+.seeAll {
+  display: flex;
+  width: 9rem;
+  flex-shrink: 0;
+
+  @media (min-width: 640px) {
+    width: 12rem;
+  }
+}
+
+.seeAllLarge {
+  display: flex;
+  width: 16rem;
+  flex-shrink: 0;
+
+  @media (min-width: 640px) {
+    width: 22rem;
+  }
+}
+
+.seeAllBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: var(--color-background-secondary);
+  }
+}
+
+.likeRow {
+  display: flex;
+  margin-top: 10px;
+}
+
+.likeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(209, 62, 92, 0.08);
+    color: #d13e5c;
+    transform: scale(1.05);
+  }
+
+  &.liked {
+    color: #d13e5c;
+    font-weight: 600;
+
+    &:hover {
+      color: #d13e5c;
+    }
+  }
+}

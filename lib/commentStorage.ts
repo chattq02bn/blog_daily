@@ -171,7 +171,7 @@ export function getCommentsWithHierarchy(noteId: string): {
   children: Record<string, Comment[]>;
 } {
   const comments = loadComments(noteId);
-  const parents = comments.filter((c) => c.parentId === null).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const parents = comments.filter((c) => c.parentId === null).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const children: Record<string, Comment[]> = {};
 
   comments
@@ -188,6 +188,33 @@ export function getCommentsWithHierarchy(noteId: string): {
   });
 
   return { parents, children };
+}
+
+export function updateUser(name: string): boolean {
+  if (typeof window === "undefined") return false;
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+
+  const userStr = localStorage.getItem("note_user");
+  let user: { name?: string; avatar?: string } = {};
+  try {
+    user = userStr ? JSON.parse(userStr) : {};
+  } catch {}
+
+  const oldName = user.name || "Người dùng";
+  user.name = trimmed;
+  localStorage.setItem("note_user", JSON.stringify(user));
+
+  const allComments = getStoredComments();
+  let changed = false;
+  allComments.forEach((c) => {
+    if (c.author === oldName) {
+      c.author = trimmed;
+      changed = true;
+    }
+  });
+  if (changed) saveComments(allComments);
+  return true;
 }
 
 export function getCurrentUser(): { name: string; avatar: string } {

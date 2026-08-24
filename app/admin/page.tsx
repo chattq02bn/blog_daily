@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Avatar, Card, Descriptions } from "antd";
 import { UserOutlined } from "@ant-design/icons";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { getStoredUser, type AuthSession } from "@/lib/auth";
 import styles from "./admin.module.scss";
 

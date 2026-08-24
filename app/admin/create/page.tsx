@@ -21,8 +21,8 @@ import {
 import type { UploadFile } from "antd";
 import type { UploadChangeParam } from "antd/es/upload/interface";
 import type { Block } from "@blocknote/core";
-import AppLayout from "@/components/AppLayout";
-import { Editor, PreviewEditor } from "@/components/DynamicEditor";
+import AppLayout from "@/components/layout/AppLayout";
+import { Editor, PreviewEditor } from "@/components/admin/DynamicEditor";
 import {
   loadPosts,
   loadTags,

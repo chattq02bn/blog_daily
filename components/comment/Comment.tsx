@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { MoreOutlined, DeleteOutlined, EditOutlined, HeartOutlined, MessageOutlined } from "@ant-design/icons";
+import { MoreOutlined, DeleteOutlined, EditOutlined, HeartOutlined, HeartFilled, MessageOutlined } from "@ant-design/icons";
 import { Popover, Modal, message } from "antd";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -10,6 +10,7 @@ import {
   Comment as CommentType,
   deleteComment,
   updateComment,
+  toggleEmojiReaction,
 } from "@/lib/commentStorage";
 import styles from "./Comment.module.scss";
 
@@ -17,7 +18,7 @@ interface CommentProps {
   comment: CommentType;
   parentAuthor?: string;
   onReply: (parentId: string, parentAuthor: string) => void;
-  onDelete: (commentId: string) => void;
+  onDataChange: () => void;
   isCurrentUser: boolean;
   depth: number;
   isLast?: boolean;
@@ -27,15 +28,21 @@ export default function Comment({
   comment,
   parentAuthor,
   onReply,
-  onDelete,
+  onDataChange,
   isCurrentUser,
-  depth,
   isLast = false,
 }: CommentProps) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [liked, setLiked] = useState(false);
+
+  const heartCount = comment.emojis?.["❤️"] || 0;
+  const liked = !!comment.userReactions?.["❤️"];
+
+  const handleToggleLike = () => {
+    toggleEmojiReaction(comment.id, "❤️");
+    onDataChange();
+  };
 
   const handleEdit = () => {
     setEditing(true);
@@ -58,7 +65,7 @@ export default function Comment({
   const handleDelete = () => {
     const success = deleteComment(comment.id);
     if (success) {
-      onDelete(comment.id);
+      onDataChange();
       message.success("Đã xóa bình luận");
     }
     setShowDeleteConfirm(false);
@@ -81,8 +88,8 @@ export default function Comment({
         <Image
           src={comment.authorAvatar}
           alt={comment.author}
-          width={32}
-          height={32}
+          width={36}
+          height={36}
           className={styles.avatar}
           unoptimized
         />
@@ -152,14 +159,19 @@ export default function Comment({
 
           <div className={styles.commentFooter}>
             <button
-              className={`${styles.actionButton} ${liked ? styles.liked : ""}`}
-              onClick={() => setLiked(!liked)}
+              className={`${styles.likeButton} ${liked ? styles.liked : ""}`}
+              onClick={handleToggleLike}
+              aria-label="Thích bình luận"
             >
-              <HeartOutlined />
+              {liked ? <HeartFilled /> : <HeartOutlined />}
+              {heartCount > 0 && (
+                <span className={styles.likeCount}>{heartCount}</span>
+              )}
             </button>
             <button
               className={styles.actionButton}
               onClick={() => onReply(comment.id, comment.author)}
+              aria-label="Trả lời"
             >
               <MessageOutlined />
             </button>

@@ -1,4 +1,4 @@
-import AppLayout from "@/components/AppLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button, Result } from "antd";
 
 export default function NotFound() {

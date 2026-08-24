@@ -18,7 +18,7 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import styles from "./users.module.scss";
 
 type Role = "admin" | "user";

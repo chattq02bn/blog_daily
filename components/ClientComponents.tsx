@@ -3,11 +3,11 @@
 import dynamic from "next/dynamic";
 import type { Note } from "@/data/notes";
 
-const CommentList = dynamic(() => import("@/components/CommentList"), {
+const CommentList = dynamic(() => import("@/components/comment/CommentList"), {
   ssr: false,
 });
 
-const TopicCard = dynamic(() => import("@/components/TopicCard"), {
+const TopicCard = dynamic(() => import("@/components/topic/TopicCard"), {
   ssr: false,
 });
 

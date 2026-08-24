@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import AppLayout from "@/components/AppLayout";
-import NoteActions from "@/components/NoteActions";
-import NoteTitleActions from "@/components/NoteTitleActions";
+import AppLayout from "@/components/layout/AppLayout";
+import NoteActions from "@/components/note/NoteActions";
+import NoteTitleActions from "@/components/note/NoteTitleActions";
 import {
   ClientCommentList,
   ClientTopicCard,
 } from "@/components/ClientComponents";
+import SocialLinks from "@/components/note/SocialLinks";
+import BackButton from "@/components/note/BackButton";
 import { getNoteById, notes, Note } from "@/data/notes";
 import { lifestyleNotes } from "@/data/lifestyle";
 import styles from "./note.module.scss";
@@ -57,6 +59,7 @@ export default async function NotePage({ params }: PageProps) {
         <div className={styles.articleInner}>
           <div className={styles.layout}>
             <aside className={styles.sidebar}>
+             
               <div className={styles.creatorProfile}>
                 <Image
                   src={note.avatar}
@@ -68,10 +71,12 @@ export default async function NotePage({ params }: PageProps) {
                 <div className={styles.profileBody}>
                   <div className={styles.profileName}>{note.author}</div>
                   <div className={styles.profileDescription}>
-                    {note.excerpt}
+                    {note.excerpt || note.body?.[0]}
                   </div>
+                  <SocialLinks />
                 </div>
               </div>
+               <BackButton />
             </aside>
 
             <div className={styles.content}>
@@ -129,22 +134,6 @@ export default async function NotePage({ params }: PageProps) {
                 <NoteActions likes={note.likes} comments={note.comments} />
               </div>
 
-              <nav className={styles.breadcrumb}>
-                <Link href="/" className={styles.breadcrumbItem}>
-                  note.com
-                </Link>
-                <span className={styles.breadcrumbSep} aria-hidden="true">
-                  ›
-                </span>
-                <Link href="/" className={styles.breadcrumbItem}>
-                  Trang chủ
-                </Link>
-                <span className={styles.breadcrumbSep} aria-hidden="true">
-                  ›
-                </span>
-                <span className={styles.breadcrumbCurrent}>{note.title}</span>
-              </nav>
-
               <div className={styles.commentSection}>
                 <ClientCommentList noteId={note.id} />
               </div>
@@ -166,6 +155,8 @@ export default async function NotePage({ params }: PageProps) {
                 </div>
               )}
             </div>
+
+            <div className={styles.rightRail} aria-hidden="true" />
           </div>
         </div>
       </div>
