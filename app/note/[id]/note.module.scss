@@ -155,14 +155,6 @@
   line-height: 2;
   color: var(--color-text-primary);
 
-  p {
-    margin: 36px 0;
-
-    @media (max-width: 768px) {
-      margin: 30px 0;
-    }
-  }
-
   /* BlockNote view-only: bỏ chrome, mọi block căn cùng lề trái */
   :global(.bn-container),
   :global(.bn-editor) {
@@ -311,7 +303,8 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 0px;
   margin: 0px -8px;
-  > a {
+
+  >a {
     width: 100%;
     flex-shrink: 1;
   }

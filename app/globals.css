@@ -140,6 +140,18 @@ input[type="search"]::-webkit-search-results-decoration {
   font-family: var(--font-family);
 }
 
+/* Mobile: thu gọn side menu của BlockNote (chứa nút xóa khối) */
+@media (max-width: 767px) {
+  .bn-side-menu {
+    --bn-panel-border-radius: 10px;
+  }
+
+  .bn-side-menu .bn-button {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 /* antd overrides */
 .ant-btn.note-btn-primary {
   background-color: var(--color-surface-primary);

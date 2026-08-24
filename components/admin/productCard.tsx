@@ -2,35 +2,28 @@
 
 import { createReactBlockSpec } from "@blocknote/react";
 import { BlockNoteSchema } from "@blocknote/core";
+import styles from "./productCard.module.scss";
+
+/* Đọc file ảnh thành data URL để nhúng thẳng vào props */
+const fileToDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 
 export const ProductBlock = createReactBlockSpec(
   {
     type: "productCard",
 
     propSchema: {
-      badge: {
-        default: "SẢN PHẨM MỚI",
-      },
-
       title: {
         default: "Tên sản phẩm",
       },
 
       description: {
-        default:
-          "Mô tả chi tiết về sản phẩm. Đây là nơi bạn có thể giới thiệu những đặc điểm nổi bật, công dụng và ưu điểm của sản phẩm.",
-      },
-
-      price: {
-        default: "1.990.000đ",
-      },
-
-      oldPrice: {
-        default: "2.490.000đ",
-      },
-
-      discount: {
-        default: "-20%",
+        default: "",
       },
 
       imageUrl: {
@@ -44,18 +37,6 @@ export const ProductBlock = createReactBlockSpec(
       buttonUrl: {
         default: "#",
       },
-
-      feature1: {
-        default: "✓ Chính hãng 100%",
-      },
-
-      feature2: {
-        default: "✓ Bảo hành 12 tháng",
-      },
-
-      feature3: {
-        default: "✓ Miễn phí vận chuyển",
-      },
     },
 
     /*
@@ -67,20 +48,8 @@ export const ProductBlock = createReactBlockSpec(
 
   {
     render: (props) => {
-      const {
-        badge,
-        title,
-        description,
-        price,
-        oldPrice,
-        discount,
-        imageUrl,
-        buttonText,
-        buttonUrl,
-        feature1,
-        feature2,
-        feature3,
-      } = props.block.props;
+      const { title, description, imageUrl, buttonText, buttonUrl } =
+        props.block.props;
 
       const readOnly = !props.editor.isEditable;
 
@@ -89,20 +58,8 @@ export const ProductBlock = createReactBlockSpec(
       ===================================================== */
 
       const updateProp = (
-        key:
-          | "badge"
-          | "title"
-          | "description"
-          | "price"
-          | "oldPrice"
-          | "discount"
-          | "imageUrl"
-          | "buttonText"
-          | "buttonUrl"
-          | "feature1"
-          | "feature2"
-          | "feature3",
-        value: string
+        key: "title" | "description" | "imageUrl" | "buttonText" | "buttonUrl",
+        value: string,
       ) => {
         if (readOnly) return;
 
@@ -113,461 +70,138 @@ export const ProductBlock = createReactBlockSpec(
         });
       };
 
+      /* Mở hộp chọn file mà không cần hook (render() không phải component) */
+      const openFilePicker = () => {
+        if (readOnly) return;
+
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        input.onchange = async () => {
+          const file: File | undefined | null = input.files?.[0];
+          if (!file) return;
+          try {
+            const url = await fileToDataUrl(file);
+            updateProp("imageUrl", url);
+          } catch {
+            /* bỏ qua lỗi đọc file */
+          }
+        };
+
+        input.click();
+      };
+
       return (
         <div
-          style={{
-            width: "100%",
-            maxWidth: "850px",
-            margin: "20px 0",
-
-            display: "flex",
-
-            border: "1px solid #e5e7eb",
-            borderRadius: "16px",
-
-            background: "#ffffff",
-
-            overflow: "hidden",
-
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.07)",
-          }}
+          data-product-card=""
+          className={`${styles.card} ${readOnly ? styles.preview : ""}`}
         >
-          {/* LEFT - PRODUCT CONTENT */}
+          {/* LEFT - THÔNG TIN SẢN PHẨM */}
 
           <div
-            style={{
-              width: "58%",
-
-              padding: "30px",
-
-              boxSizing: "border-box",
-
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-            }}
+            className={`${styles.info} ${readOnly ? styles.previewInfo : ""}`}
           >
-            {/* BADGE */}
+            {/* NHÓM TRÊN: TÊN + MÔ TẢ */}
 
-            <input
-              value={badge}
-              onChange={(e) => updateProp("badge", e.target.value)}
-              placeholder="Nhãn sản phẩm"
-              readOnly={readOnly}
-              style={{
-                alignSelf: "flex-start",
+            <div className={styles.infoTop}>
+              {/* TITLE — khi xem: xuống dòng tối đa 2 dòng */}
 
-                marginBottom: "14px",
+              {readOnly ? (
+                <div className={styles.titleView}>{title}</div>
+              ) : (
+                <input
+                  className={styles.title}
+                  value={title}
+                  onChange={(e) => updateProp("title", e.target.value)}
+                  placeholder="Tên sản phẩm"
+                />
+              )}
 
-                padding: "5px 10px",
+              {/* DESCRIPTION — hiển thị tối đa 3 dòng khi xem */}
 
-                border: "none",
-                borderRadius: "20px",
-
-                outline: "none",
-
-                background: "#fff1f0",
-
-                color: "#ff4d4f",
-
-                fontSize: "11px",
-
-                fontWeight: 700,
-
-                letterSpacing: "0.3px",
-              }}
-            />
-
-            {/* TITLE */}
-
-            <input
-              value={title}
-              onChange={(e) => updateProp("title", e.target.value)}
-              placeholder="Tên sản phẩm"
-              readOnly={readOnly}
-              style={{
-                width: "100%",
-
-                marginBottom: "12px",
-
-                padding: 0,
-
-                border: "none",
-                outline: "none",
-
-                background: "transparent",
-
-                fontSize: "27px",
-
-                lineHeight: 1.3,
-
-                fontWeight: 700,
-
-                color: "#111827",
-
-                boxSizing: "border-box",
-              }}
-            />
-
-            {/* DESCRIPTION */}
-
-            <textarea
-              value={description}
-              onChange={(e) => updateProp("description", e.target.value)}
-              placeholder="Mô tả sản phẩm..."
-              rows={4}
-              readOnly={readOnly}
-              style={{
-                width: "100%",
-
-                marginBottom: "18px",
-
-                padding: 0,
-
-                border: "none",
-                outline: "none",
-
-                resize: "none",
-
-                background: "transparent",
-
-                fontFamily: "inherit",
-
-                fontSize: "14px",
-
-                lineHeight: 1.7,
-
-                color: "#6b7280",
-
-                boxSizing: "border-box",
-              }}
-            />
-
-            {/* FEATURES */}
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-
-                gap: "7px",
-
-                marginBottom: "22px",
-              }}
-            >
-              <input
-                value={feature1}
-                onChange={(e) => updateProp("feature1", e.target.value)}
-                readOnly={readOnly}
-                style={{
-                  width: "100%",
-
-                  padding: "0",
-
-                  border: "none",
-                  outline: "none",
-
-                  background: "transparent",
-
-                  fontSize: "13px",
-
-                  color: "#374151",
-                }}
-              />
-
-              <input
-                value={feature2}
-                onChange={(e) => updateProp("feature2", e.target.value)}
-                readOnly={readOnly}
-                style={{
-                  width: "100%",
-
-                  padding: "0",
-
-                  border: "none",
-                  outline: "none",
-
-                  background: "transparent",
-
-                  fontSize: "13px",
-
-                  color: "#374151",
-                }}
-              />
-
-              <input
-                value={feature3}
-                onChange={(e) => updateProp("feature3", e.target.value)}
-                readOnly={readOnly}
-                style={{
-                  width: "100%",
-
-                  padding: "0",
-
-                  border: "none",
-                  outline: "none",
-
-                  background: "transparent",
-
-                  fontSize: "13px",
-
-                  color: "#374151",
-                }}
-              />
+              {readOnly ? (
+                description && <p className={styles.desc}>{description}</p>
+              ) : (
+                <textarea
+                  className={styles.descInput}
+                  value={description}
+                  onChange={(e) => updateProp("description", e.target.value)}
+                  placeholder="Mô tả ngắn về sản phẩm..."
+                  rows={3}
+                  readOnly={readOnly}
+                />
+              )}
             </div>
 
-            {/* PRICE */}
+            {/* NHÓM DƯỚI: NÚT MUA — luôn nằm cuối cột, giãn cách với nhóm trên */}
 
-            <div
-              style={{
-                display: "flex",
+            <div className={styles.infoBottom}>
+              {readOnly && buttonUrl && buttonUrl !== "#" ? (
+                <a
+                  className={styles.btn}
+                  href={buttonUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {buttonText}
+                </a>
+              ) : (
+                <button type="button" className={styles.btn}>
+                  {buttonText}
+                </button>
+              )}
 
-                alignItems: "center",
+              {!readOnly && (
+                <div className={styles.tools}>
+                  <button
+                    type="button"
+                    className={styles.uploadBtn}
+                    onClick={openFilePicker}
+                  >
+                    ⬆ Tải ảnh lên
+                  </button>
 
-                gap: "10px",
+                  <input
+                    className={styles.tiny}
+                    style={{ width: "100%" }}
+                    value={buttonText}
+                    onChange={(e) => updateProp("buttonText", e.target.value)}
+                    placeholder="Tên nút..."
+                  />
 
-                marginBottom: "20px",
-              }}
-            >
-              <input
-                value={price}
-                onChange={(e) => updateProp("price", e.target.value)}
-                placeholder="Giá bán"
-                readOnly={readOnly}
-                style={{
-                  width: "150px",
+                  {/* Gán link cho nút mua — hiển thị trống khi đang là "#" */}
 
-                  padding: 0,
+                  <input
+                    className={styles.tiny}
+                    style={{ width: "100%" }}
+                    value={buttonUrl === "#" ? "" : buttonUrl}
+                    onChange={(e) =>
+                      updateProp("buttonUrl", e.target.value || "#")
+                    }
+                    placeholder="Gán link cho nút mua hàng..."
+                  />
 
-                  border: "none",
-                  outline: "none",
-
-                  background: "transparent",
-
-                  fontSize: "23px",
-
-                  fontWeight: 700,
-
-                  color: "#ff4d4f",
-                }}
-              />
-
-              <input
-                value={oldPrice}
-                onChange={(e) => updateProp("oldPrice", e.target.value)}
-                placeholder="Giá cũ"
-                readOnly={readOnly}
-                style={{
-                  width: "110px",
-
-                  padding: 0,
-
-                  border: "none",
-                  outline: "none",
-
-                  background: "transparent",
-
-                  fontSize: "13px",
-
-                  color: "#9ca3af",
-
-                  textDecoration: "line-through",
-                }}
-              />
-
-              <input
-                value={discount}
-                onChange={(e) => updateProp("discount", e.target.value)}
-                placeholder="-20%"
-                readOnly={readOnly}
-                style={{
-                  width: "55px",
-
-                  padding: "4px 7px",
-
-                  border: "none",
-                  outline: "none",
-
-                  borderRadius: "5px",
-
-                  background: "#fff1f0",
-
-                  color: "#ff4d4f",
-
-                  fontSize: "12px",
-
-                  fontWeight: 600,
-
-                  textAlign: "center",
-                }}
-              />
+                  <input
+                    className={styles.tiny}
+                    style={{ width: "100%" }}
+                    value={imageUrl}
+                    onChange={(e) => updateProp("imageUrl", e.target.value)}
+                    placeholder="Hoặc dán link ảnh sản phẩm..."
+                  />
+                </div>
+              )}
             </div>
-
-            {/* BUY BUTTON */}
-
-            <div
-              style={{
-                display: "flex",
-
-                alignItems: "center",
-
-                gap: "10px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                }}
-                style={{
-                  padding: "11px 25px",
-
-                  border: "none",
-
-                  borderRadius: "8px",
-
-                  background: "#1677ff",
-
-                  color: "#ffffff",
-
-                  fontSize: "14px",
-
-                  fontWeight: 600,
-
-                  cursor: "pointer",
-
-                  boxShadow: "0 3px 8px rgba(22,119,255,0.25)",
-                }}
-              >
-                {buttonText}
-              </button>
-
-              <input
-                value={buttonText}
-                onChange={(e) => updateProp("buttonText", e.target.value)}
-                placeholder="Tên nút"
-                readOnly={readOnly}
-                style={{
-                  width: "100px",
-
-                  padding: "7px 9px",
-
-                  border: "1px solid #d9d9d9",
-
-                  borderRadius: "6px",
-
-                  outline: "none",
-
-                  fontSize: "12px",
-                }}
-              />
-            </div>
-
-            {/* BUTTON URL */}
-
-            <input
-              value={buttonUrl}
-              onChange={(e) => updateProp("buttonUrl", e.target.value)}
-              placeholder="Link mua hàng..."
-              readOnly={readOnly}
-              style={{
-                width: "100%",
-
-                marginTop: "12px",
-
-                padding: "7px 9px",
-
-                border: "1px solid #e5e7eb",
-
-                borderRadius: "6px",
-
-                outline: "none",
-
-                fontSize: "12px",
-
-                color: "#6b7280",
-
-                boxSizing: "border-box",
-              }}
-            />
           </div>
 
-          {/* RIGHT - PRODUCT IMAGE */}
+          {/* RIGHT - ẢNH SẢN PHẨM */}
 
-          <div
-            style={{
-              width: "42%",
-
-              minHeight: "390px",
-
-              position: "relative",
-
-              background: "#f7f8fa",
-
-              display: "flex",
-
-              alignItems: "center",
-
-              justifyContent: "center",
-
-              overflow: "hidden",
-            }}
-          >
+          <div className={styles.imgWrap}>
             {imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrl}
-                alt={title}
-                style={{
-                  width: "100%",
-
-                  height: "100%",
-
-                  minHeight: "390px",
-
-                  objectFit: "cover",
-
-                  display: "block",
-                }}
-              />
+              <img src={imageUrl} alt={title} className={styles.img} />
             ) : (
-              <div
-                style={{
-                  width: "100%",
-
-                  height: "100%",
-
-                  minHeight: "390px",
-
-                  display: "flex",
-
-                  flexDirection: "column",
-
-                  alignItems: "center",
-
-                  justifyContent: "center",
-
-                  color: "#9ca3af",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "50px",
-
-                    marginBottom: "10px",
-                  }}
-                >
-                  🛍️
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "13px",
-                  }}
-                >
-                  Hình ảnh sản phẩm
-                </div>
-              </div>
+              <span className={styles.imgPlaceholder}>🛍️</span>
             )}
           </div>
         </div>

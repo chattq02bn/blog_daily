@@ -13,6 +13,7 @@ export const adminTopics: AdminTopic[] = [
   { id: "t6", name: "Sống một mình", description: "Kinh nghiệm sống độc lập cho người trẻ." },
   { id: "t7", name: "Ăn vặt văn phòng", description: "Đồ ăn vặt phù hợp cho dân công sở." },
   { id: "t8", name: "Mẹo tiết kiệm", description: "Cách quản lý chi tiêu và tiết kiệm hiệu quả." },
+  { id: "t9", name: "Review sản phẩm", description: "Đánh giá chi tiết, trung thực các sản phẩm sau khi sử dụng thực tế." },
 ];
 
 export interface AdminTag {
@@ -29,4 +30,5 @@ export const adminTags: AdminTag[] = [
   { id: "tag6", name: "kỹ năng" },
   { id: "tag7", name: "du lịch" },
   { id: "tag8", name: "sức khỏe" },
+  { id: "tag9", name: "review" },
 ];

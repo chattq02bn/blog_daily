@@ -3,18 +3,12 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  padding: 24px 24px 0;
-}
+  padding: 10px 24px 0;
 
-.topBar {
-  margin-bottom: 16px;
-
-  :global(.ant-breadcrumb) {
-    ol {
-      flex-wrap: nowrap;
-      align-items: center;
-      white-space: nowrap;
-    }
+  @media (max-width: 768px) {
+    height: auto;
+    min-height: 100%;
+    padding: 12px 12px 0;
   }
 }
 
@@ -42,31 +36,91 @@
 
 .grid {
   display: grid;
-  gap: 24px;
+  gap: 12px;
   flex: 1;
   min-height: 0;
-  grid-template-columns: minmax(0, 1fr);
 
+  /* Mobile: 1 cột xếp dọc — tiêu đề → ảnh bìa → nội dung → topics/tags */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "title"
+    "cover"
+    "right"
+    "meta";
+
+  .titleCol {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  .metaCol {
+    grid-area: meta;
+  }
+
+  .contentCol {
+    grid-area: right;
+    min-width: 0;
+  }
+
+  .coverCol {
+    grid-area: cover;
+  }
+
+  /* Desktop: cột trái = tiêu đề → topics/tags → ảnh bìa */
   @media (min-width: 941px) {
+    gap: 20px 24px;
     grid-template-columns: 340px minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "title right"
+      "meta  right"
+      "cover right";
+
+    .metaCol {
+      align-self: start;
+    }
   }
 }
 
-.imageCol {
+.coverCol {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  align-self: start;
+}
+
+.titleCol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  :global(.ant-breadcrumb) {
+    ol {
+      flex-wrap: nowrap;
+      align-items: center;
+      white-space: nowrap;
+    }
+  }
+}
+
+.metaCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
 .coverRow {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .coverInput {
   flex: 1;
+  min-width: 120px;
   border-bottom: 1px solid var(--color-border-default);
 
   input {
@@ -102,10 +156,10 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
 
   @media (min-width: 941px) {
+    min-height: 0;
+    overflow-y: auto;
     border-left: 1px solid var(--color-border-default);
     padding-left: 24px;
   }
@@ -117,6 +171,10 @@
   line-height: 1.3;
   padding: 4px 11px;
   resize: none;
+
+  @media (max-width: 940px) {
+    font-size: 20px;
+  }
 }
 
 .formWrap {
@@ -143,8 +201,35 @@
   align-items: center;
   margin: 16px -24px 0;
   padding: 12px 24px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
   background: var(--color-surface-normal);
   border-top: 1px solid var(--color-border-default);
+
+  @media (max-width: 768px) {
+    margin: 12px -12px 0;
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    justify-content: stretch;
+
+    /* 3 nút co đều, luôn thẳng hàng một dòng */
+    :global(.ant-space) {
+      width: 100%;
+    }
+
+    :global(.ant-space-item) {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+
+      >* {
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        padding-inline: 8px;
+        white-space: nowrap;
+      }
+    }
+  }
 }
 
 .previewCard {
@@ -159,6 +244,27 @@
   border-radius: 0;
   max-width: 720px;
   margin: 0 auto;
+  padding: 0;
+}
+
+/* Modal xem trước chiếm toàn màn hình */
+.previewModal {
+  max-width: 100vw;
+  padding-bottom: 0;
+
+  :global(.ant-modal-content) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  :global(.ant-modal-body) {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0;
+  }
 }
 
 .previewCover {
@@ -181,9 +287,6 @@
 }
 
 .previewEditor {
-  border-top: 1px solid var(--color-border-default);
-  padding-top: 16px;
-
   :global(.bn-container) {
     padding: 0;
   }

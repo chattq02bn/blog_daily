@@ -8,6 +8,7 @@ import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Select,
   Space,
@@ -29,8 +30,24 @@ import {
   loadTopics,
   savePosts,
   type AdminPost,
+  type PostStatus,
 } from "@/lib/adminStorage";
 import styles from "./create.module.scss";
+
+/* Nội dung được tính là có dữ liệu nếu tồn tại block chữ không rỗng
+   hoặc block đặc biệt (ảnh, product card, bảng...) */
+const hasContent = (blocks?: Block[]): boolean =>
+  Boolean(
+    blocks?.some((b) => {
+      const t = b as Block & { content?: unknown; children?: Block[] };
+      if (t.type === "paragraph" || t.type === "heading") {
+        return Array.isArray(t.content)
+          ? t.content.length > 0
+          : hasContent(t.children);
+      }
+      return true;
+    }),
+  );
 
 function CreateNoteContent() {
   const searchParams = useSearchParams();
@@ -87,7 +104,11 @@ function CreateNoteContent() {
     if (coverUrl.trim()) setCover(coverUrl.trim());
   };
 
-  const savePost = (navigateBack: boolean, validate: boolean) => {
+  const savePost = (
+    navigateBack: boolean,
+    validate: boolean,
+    status: PostStatus,
+  ) => {
     handleChange.flush();
     const persist = (values: {
       title: string;
@@ -100,35 +121,44 @@ function CreateNoteContent() {
         topicIds: values.topicIds ?? [],
         tagIds: values.tagIds ?? [],
         bodyBlocks: all.body ?? [],
+        status,
       };
       if (editId) {
         const posts = loadPosts().map((p) =>
           p.id === editId ? { ...p, ...data } : p,
         );
         savePosts(posts);
-        console.log("update post:", { id: editId, ...data });
       } else {
         const created: AdminPost = {
           id: `p_${Date.now().toString(36)}`,
           ...data,
         };
         savePosts([created, ...loadPosts()]);
-        console.log("create post:", created);
       }
+      message.success(
+        status === "draft"
+          ? "Đã lưu bài viết vào danh sách nháp"
+          : isEdit
+            ? "Đã cập nhật bài viết"
+            : "Đã đăng bài",
+      );
       if (navigateBack) router.push("/admin/posts");
     };
     if (validate) {
       form
         .validateFields()
         .then(persist)
-        .catch(() => {});
+        .catch(() => { });
     } else {
       persist(form.getFieldsValue());
     }
   };
 
+  /* Lưu nháp cũng phải validate như submit, chỉ lưu khi form hợp lệ */
+  const saveDraft = () => savePost(false, true, "draft");
+
   const publish = () => {
-    savePost(true, true);
+    savePost(true, true, "published");
   };
 
   const goBack = () => {
@@ -142,21 +172,6 @@ function CreateNoteContent() {
   return (
     <AppLayout hideSidebar>
       <div className={styles.wrap}>
-        <div className={styles.topBar}>
-          <Breadcrumb
-            items={[
-              {
-                title: (
-                  <span className={styles.backLink} onClick={goBack}>
-                    <RollbackOutlined /> Quay lại
-                  </span>
-                ),
-              },
-              { title: isEdit ? "Chỉnh sửa bài viết" : "Tạo bài viết" },
-            ]}
-          />
-        </div>
-
         <Form
           form={form}
           layout="vertical"
@@ -164,7 +179,19 @@ function CreateNoteContent() {
           className={styles.formWrap}
         >
           <div className={styles.grid}>
-            <div className={styles.imageCol}>
+            <div className={styles.titleCol}>
+              <Breadcrumb
+                items={[
+                  {
+                    title: (
+                      <span className={styles.backLink} onClick={goBack}>
+                        <RollbackOutlined /> Quay lại
+                      </span>
+                    ),
+                  },
+                  { title: isEdit ? "Chỉnh sửa bài viết" : "Tạo bài viết" },
+                ]}
+              />
               <Form.Item
                 name="title"
                 rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
@@ -175,6 +202,26 @@ function CreateNoteContent() {
                   className={styles.title}
                 />
               </Form.Item>
+            </div>
+            <div className={styles.contentCol}>
+              <Form.Item
+                name="body"
+                rules={[
+                  {
+                    validator: (_, value: Block[]) =>
+                      hasContent(value)
+                        ? Promise.resolve()
+                        : Promise.reject(
+                          new Error("Vui lòng nhập nội dung bài viết"),
+                        ),
+                  },
+                ]}
+              >
+                <Editor onChange={handleChange} />
+              </Form.Item>
+            </div>
+
+            <div className={styles.metaCol}>
               <Form.Item
                 name="topicIds"
                 rules={[
@@ -213,6 +260,9 @@ function CreateNoteContent() {
                   className={styles.metaSelect}
                 />
               </Form.Item>
+            </div>
+
+            <div className={styles.coverCol}>
               <div className={styles.coverRow}>
                 <Upload
                   accept="image/*"
@@ -242,21 +292,15 @@ function CreateNoteContent() {
                 )}
               </div>
             </div>
-
-            <div className={styles.contentCol}>
-              <Form.Item name="body">
-                <Editor onChange={handleChange} />
-              </Form.Item>
-            </div>
           </div>
         </Form>
 
         <div className={styles.actionBar}>
-          <Space>
+          <Space wrap>
             <Button size="large" icon={<EyeOutlined />} onClick={openPreview}>
               Xem trước
             </Button>
-            <Button size="large" onClick={() => savePost(false, false)}>
+            <Button size="large" onClick={saveDraft}>
               Lưu nháp
             </Button>
             <Button
@@ -289,6 +333,7 @@ function CreateNoteContent() {
             padding: 0,
           },
         }}
+
       >
         <article className={`${styles.previewCard} ${styles.previewCardModal}`}>
           {cover && (

@@ -1,0 +1,266 @@
+/* Editor chiếm toàn bộ chiều rộng, căn trái; chừa lề trái cho nút xóa block */
+.editorWrap {
+  position: relative;
+  width: 100%;
+
+  :global(.bn-container) {
+    width: 100%;
+  }
+
+  :global(.bn-editor) {
+    padding: 0;
+    margin-inline: 0;
+    max-width: none;
+    text-align: left;
+  }
+
+  /* Card sản phẩm: tắt hoàn toàn viền/overlay xanh khi bấm chọn block */
+  :global([data-content-type="productCard"].ProseMirror-selectednode)::after,
+  :global([data-content-type="productCard"].ProseMirror-selectednode)
+    > *::after,
+  :global(.ProseMirror-selectednode > [data-content-type="productCard"])
+    > *::after,
+  :global(.ProseMirror-selectednode > .bn-block-content)
+    > [data-content-type="productCard"]::after {
+    content: none;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* Không hiện focus outline trên bất kỳ phần tử nào trong card */
+  :global([data-content-type="productCard"]) *:focus {
+    outline: none;
+  }
+
+  /* Desktop: lề trái cho side menu mặc định (+, kéo thả) */
+  @media (min-width: 768px) {
+    :global(.bn-editor) {
+      padding-left: 54px;
+    }
+  }
+
+  /* Mobile: lề trái đủ rộng để bấm được nút xóa khối;
+     min-height để vùng viết không bị thấp khi trống, tự dãn theo nội dung */
+  @media (max-width: 767px) {
+    :global(.bn-editor) {
+      padding-left: 25px;
+      min-height: 40vh;
+    }
+  }
+}
+
+/* Responsive các thanh toolbar/menu của BlockNote.
+   Để :global ở mức top vì popup có thể bị portal ra ngoài .editorWrap */
+
+/* Toolbar nổi (format, ảnh...): không tràn khung nhỏ */
+:global(.bn-toolbar) {
+  max-width: min(92vw, 560px);
+}
+
+@media (max-width: 767px) {
+  /* Menu thả xuống ("/" slash menu, drag handle...) gói gọn trong màn hình */
+  :global(.bn-menu-dropdown),
+  :global(.bn-suggestion-menu),
+  :global(.bn-grid-suggestion-menu) {
+    max-width: calc(100vw - 16px);
+  }
+
+  :global(.bn-suggestion-menu-item) {
+    max-width: 100%;
+  }
+}
+
+/* Sheet của nút "+": nhãn nhóm */
+.sheetLabel {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+/* Sheet của nút "+": hàng nút định dạng (B, I, U, S, code) */
+.fmtRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.fmtBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 40px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 16px;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+.fmtBtnOn {
+  background: var(--color-surface-primary);
+  border-color: var(--color-surface-primary);
+  color: var(--color-text-invert);
+}
+
+/* Lưới chọn màu trong popover */
+.swatchGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 220px;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: 50%;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.swatchOn {
+  outline: 2px solid var(--color-surface-primary);
+  outline-offset: 2px;
+}
+
+/* Popover gán link */
+.linkPop {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(260px, calc(100vw - 48px));
+}
+
+.popActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.popBtn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.popPrimary {
+  background: var(--color-surface-primary);
+  border-color: var(--color-surface-primary);
+  color: var(--color-text-invert);
+}
+
+.popDanger {
+  color: #e5484d;
+}
+
+/* Mobile: nút xoá đỏ luôn hiển thị cạnh block đang đặt con trỏ */
+.blockDelete {
+  position: absolute;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #e5484d;
+  font-size: 15px;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+/* Nút "+" cố định đáy màn hình — chỉ render trên mobile */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 92px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-surface-primary);
+  color: var(--color-text-invert);
+  font-size: 22px;
+  box-shadow: 0 6px 16px rgba(8, 19, 26, 0.35);
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+.sheetGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 56vh;
+  overflow-y: auto;
+}
+
+.sheetItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  text-align: left;
+  background: var(--color-background-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-bg-hover);
+  }
+}
+
+.sheetIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sheetText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sheetTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sheetSubtext {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+}

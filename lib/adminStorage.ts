@@ -1,5 +1,6 @@
 import { adminTopics, adminTags, type AdminTopic, type AdminTag } from "@/data/admin";
 import { topics } from "@/data/notes";
+import { reviewProductSeed } from "@/data/reviewPost";
 import type { Block } from "@blocknote/core";
 
 export interface SidebarItem {
@@ -41,6 +42,7 @@ export const seedPosts: AdminPost[] = [
   { id: "p6", title: "Ăn vặt không tăng cân — 5 gợi ý cho dân văn phòng", topicIds: ["t7", "t4"], tagIds: ["tag3", "tag8"], cover: postCover("p6"), status: "published" },
   { id: "p7", title: "Sống một mình: 10 món đồ nên mua ngay từ đầu", topicIds: ["t6", "t1"], tagIds: ["tag5", "tag6"], cover: postCover("p7"), status: "draft" },
   { id: "p8", title: "Chuyện nhà tôi: cách cả nhà cùng nấu ăn cuối tuần", topicIds: ["t3", "t4"], tagIds: ["tag1", "tag4"], cover: postCover("p8"), status: "published" },
+  reviewProductSeed,
 ];
 
 export const seedSidebarItems: SidebarItem[] = [

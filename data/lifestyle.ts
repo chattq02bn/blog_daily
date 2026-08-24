@@ -1,4 +1,6 @@
-import type { Note, Topic, TopicSection } from "./notes";
+import type { Note, NoteBlock, Topic, TopicSection } from "./notes";
+import { reviewProductBody } from "./reviewPost";
+import { makeRichFakeBlocks } from "./noteBlocks";
 
 const lifestyleNote = (seed: string, overrides: Partial<Note>): Note => ({
   id: seed,
@@ -932,6 +934,66 @@ export const lifestyleSections: TopicSection[] = [
           "Nước ấm buổi sáng, đi dạo 15 phút buổi trưa, giãn cơ trước khi ngủ. Bí quyết là đừng cố \"làm cho hoàn hảo\".",
           "Hôm nay không làm thì mai làm tiếp. Sự thoải mái đó chính là người bạn đồng hành tốt nhất của sự kiên trì.",
         ],
+      }),
+    ],
+  },
+  {
+    id: "review",
+    title: "Review sản phẩm",
+    description:
+      "Đánh giá chi tiết, trung thực các sản phẩm sau khi sử dụng thực tế. Không quảng cáo, không màu hồng.",
+    href: "/topic/lifestyle",
+    notes: [
+      lifestyleNote("rv-1", {
+        title:
+          "Review chi tiết máy xay sinh tố Philips HR2223/90 sau 30 ngày sử dụng",
+        excerpt: "",
+        author: "Góc review nhà bếp",
+        likes: 1876,
+        comments: 143,
+        bookmark: 954,
+        date: "2026-08-24",
+        tags: ["review", "gia dụng", "nhà bếp"],
+        body: [
+          "Sau 30 ngày sử dụng liên tục mỗi ngày, mình đã đủ trải nghiệm — từ xay đá viên đến làm smoothie cho cả nhà — để viết một bài đánh giá thật lòng về chiếc máy xay sinh tố Philips HR2223/90.",
+          "Bài review này KHÔNG được tài trợ: chúng ta sẽ đi qua từng khía cạnh thiết kế, hiệu năng, độ ồn, vệ sinh và so sánh trực tiếp với 2 đối thủ cùng tầm giá.",
+          "Kết luận nhanh: 8.5/10 — lựa chọn an toàn nhất trong tầm giá 1.5–1.8 triệu hiện nay nếu bạn thường xuyên xay đá và làm smoothie cho gia đình từ 3 người trở lên.",
+        ],
+        blocks: reviewProductBody as unknown as NoteBlock[],
+      }),
+      lifestyleNote("rv-2", {
+        title:
+          "3 tháng dùng máy lọc không khí trong phòng ngủ: đáng tiền hay lãng phí?",
+        excerpt: "",
+        author: "Nhà 30 mét vuông",
+        likes: 934,
+        comments: 67,
+        bookmark: 421,
+        date: "2026-08-22",
+        tags: ["review", "gia dụng", "sức khỏe"],
+        body: [
+          "Mua máy lọc không khí lúc mùa bụi mù mịt, ban đầu chỉ định \"dùng thử\" rồi trả lại — kết quả là giữ luôn sau 3 tháng.",
+          "Số liệu đo bằng cảm biến riêng: bụi mịn PM2.5 giảm từ trung bình 55 xuống còn 15–20 µg/m³ khi đóng cửa phòng và bật máy ở chế độ tự động.",
+          "Điều bất ngờ nhất là chất lượng giấc ngủ: sáng dậy không còn nghẹt mũi. Với mức điện năng ~25W, hóa đơn tiền điện tăng không đáng kể.",
+        ],
+        blocks: makeRichFakeBlocks(1),
+      }),
+      lifestyleNote("rv-3", {
+        title:
+          "Trải nghiệm 2 tuần với bàn phím cơ giá dưới 1 triệu — có nên nâng cấp?",
+        excerpt: "",
+        author: "Bàn phím không click",
+        likes: 1122,
+        comments: 89,
+        bookmark: 507,
+        date: "2026-08-20",
+        tags: ["review", "công nghệ", "setup góc làm việc"],
+        body: [
+          "Switch đỏ hot-swap, keycap PBT double-shot, kết nối 3 chế độ — thông số nghe rất \"hời\" cho một bàn phím dưới 1 triệu. Nhưng trải nghiệm thực tế mới là điều đáng nói.",
+          "Sau 2 tuần gõ văn bản và code hàng ngày, mình ghi nhận khoảng trống keycap ổn, ổn định tốt khi gõ nhanh; điểm trừ là pin chỉ đạt 60% so với công bố và phần mềm mapping hơi khó dùng.",
+          "Nếu bạn đang gõ màng hình muốn lên cơ lần đầu thì đây là cửa ngõ hợp lý; dân lão luyện chắc chắn sẽ muốn thay switch sớm.",
+        ],
+        blocks: makeRichFakeBlocks(2),
       }),
     ],
   },
