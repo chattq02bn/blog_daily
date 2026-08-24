@@ -7,7 +7,8 @@
 }
 
 .inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 640px) 1fr;
   align-items: center;
   gap: 16px;
   height: 48px;
@@ -18,6 +19,13 @@
   }
 }
 
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
 /* Nút menu chỉ hiển thị trên mobile/tablet — desktop đã có sidebar cố định */
 .menuButton {
   @media (min-width: 1024px) {
@@ -26,13 +34,27 @@
 }
 
 .search {
-  flex: 1;
   min-width: 0;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.searchButton {
+  @media (min-width: 769px) {
+    display: none !important;
+  }
+}
+
+.mobileSearch {
+  padding: 0 16px 8px;
 }
 
 .actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
 }
 
@@ -68,7 +90,7 @@
   }
 }
 
-.create {
+.createText {
   @media (max-width: 768px) {
     display: none;
   }

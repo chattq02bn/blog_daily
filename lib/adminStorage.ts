@@ -9,6 +9,7 @@ export interface SidebarItem {
   postCount: number;
   topicIds: string[];
   description?: string;
+  idx: number;
   children?: SidebarItem[];
 }
 
@@ -43,11 +44,11 @@ export const seedPosts: AdminPost[] = [
 ];
 
 export const seedSidebarItems: SidebarItem[] = [
-  { id: "s1", name: "Trang chủ", href: "/", postCount: 120, topicIds: ["t1", "t5"], description: "Mặc định đưa người dùng về trang chủ của blog." },
-  { id: "s2", name: "Xu hướng", href: "/trend", postCount: 45, topicIds: ["t2"], description: "Những bài viết đang được quan tâm nhiều nhất tuần này." },
-  { id: "s3", name: "Trang cá nhân", href: "/mypage", postCount: 18, topicIds: [], description: "Không gian riêng: bài đã đăng, bản nháp và thư mục lưu." },
-  { id: "s4", name: "Tạp chí", href: "/magazines", postCount: 26, topicIds: ["t3", "t4"], description: "Các số tạp chí dài kỳ được tuyển chọn theo tháng." },
-  { id: "s5", name: "Vòng tròn", href: "/salons", postCount: 9, topicIds: [], description: "Cộng đồng thảo luận theo vòng tròn sở thích chung." },
+  { id: "s1", name: "Trang chủ", href: "/", postCount: 120, topicIds: ["t1", "t5"], description: "Mặc định đưa người dùng về trang chủ của blog.", idx: 0 },
+  { id: "s2", name: "Xu hướng", href: "/trend", postCount: 45, topicIds: ["t2"], description: "Những bài viết đang được quan tâm nhiều nhất tuần này.", idx: 1 },
+  { id: "s3", name: "Trang cá nhân", href: "/mypage", postCount: 18, topicIds: [], description: "Không gian riêng: bài đã đăng, bản nháp và thư mục lưu.", idx: 2 },
+  { id: "s4", name: "Tạp chí", href: "/magazines", postCount: 26, topicIds: ["t3", "t4"], description: "Các số tạp chí dài kỳ được tuyển chọn theo tháng.", idx: 3 },
+  { id: "s5", name: "Vòng tròn", href: "/salons", postCount: 9, topicIds: [], description: "Cộng đồng thảo luận theo vòng tròn sở thích chung.", idx: 4 },
   ...topics.map((topic, i) => ({
     id: `s${i + 6}`,
     name: topic.title,
@@ -58,6 +59,7 @@ export const seedSidebarItems: SidebarItem[] = [
       adminTopics[(i + 3) % adminTopics.length].id,
     ],
     description: sidebarDesc(topic.title, "parent"),
+    idx: i + 5,
     children: topic.children.map((child, j) => ({
       id: `s${i + 6}-${j + 1}`,
       name: child,
@@ -65,6 +67,7 @@ export const seedSidebarItems: SidebarItem[] = [
       postCount: ((i * 5 + j * 7) % 20) + 3,
       topicIds: [adminTopics[j % adminTopics.length].id],
       description: sidebarDesc(child, "child"),
+      idx: j,
     })),
   })),
 ];
@@ -140,7 +143,15 @@ export function loadSidebarItems(): SidebarItem[] {
   try {
     const raw = localStorage.getItem(SIDEBAR_ITEMS_KEY);
     if (!raw) return seedSidebarItems;
-    return JSON.parse(raw) as SidebarItem[];
+    const parsed = JSON.parse(raw) as SidebarItem[];
+    // Migration: dữ liệu cũ chưa có idx — gán theo vị trí hiện tại
+    const withIdx = (list: SidebarItem[]): SidebarItem[] =>
+      list.map((item, i) => ({
+        ...item,
+        idx: typeof item.idx === "number" ? item.idx : i,
+        children: item.children ? withIdx(item.children) : undefined,
+      }));
+    return withIdx(parsed);
   } catch {
     return seedSidebarItems;
   }

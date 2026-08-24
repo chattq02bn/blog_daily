@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -16,6 +16,7 @@ import {
 import {
   DeleteOutlined,
   EditOutlined,
+  HolderOutlined,
   PlusOutlined,
   SearchOutlined,
   TagsOutlined,
@@ -61,10 +62,54 @@ function insertItem(
   item: SidebarItem,
   parentId?: string
 ): SidebarItem[] {
-  if (!parentId) return [...items, item];
+  if (!parentId) {
+    const idx = items.reduce((max, i) => Math.max(max, i.idx), -1) + 1;
+    return [...items, { ...item, idx }];
+  }
+  return items.map((p) => {
+    if (p.id !== parentId) return p;
+    const children = p.children ?? [];
+    const idx = children.reduce((max, c) => Math.max(max, c.idx), -1) + 1;
+    return { ...p, children: [...children, { ...item, idx }] };
+  });
+}
+
+function sortTree(items: SidebarItem[]): SidebarItem[] {
+  return [...items]
+    .sort((a, b) => a.idx - b.idx)
+    .map((item) => ({
+      ...item,
+      children: item.children ? sortTree(item.children) : undefined,
+    }));
+}
+
+function moveWithinLevel(list: SidebarItem[], dragId: string, targetId: string): SidebarItem[] {
+  const from = list.findIndex((i) => i.id === dragId);
+  const to = list.findIndex((i) => i.id === targetId);
+  if (from === -1 || to === -1 || from === to) return list;
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next.map((item, i) => ({ ...item, idx: i }));
+}
+
+/* Chỉ cho phép kéo thả trong cùng một cấp — khác cấp thì giữ nguyên cây */
+function reorderTree(items: SidebarItem[], dragId: string, targetId: string): SidebarItem[] {
+  const dragParentId = findParent(items, dragId)?.id ?? null;
+  const targetParentId = findParent(items, targetId)?.id ?? null;
+  if (dragParentId !== targetParentId) return items;
+
+  if (dragParentId === null) return moveWithinLevel(items, dragId, targetId);
   return items.map((p) =>
-    p.id === parentId ? { ...p, children: [...(p.children ?? []), item] } : p
+    p.id === dragParentId && p.children
+      ? { ...p, children: moveWithinLevel(p.children, dragId, targetId) }
+      : p
   );
+}
+
+/* Row component đặt ngoài component chính để không bị remount khi re-render */
+function DragRow({ children, ...rest }: React.HTMLAttributes<HTMLTableRowElement>) {
+  return <tr {...rest}>{children}</tr>;
 }
 
 export default function AdminSidebarPage() {
@@ -81,6 +126,68 @@ export default function AdminSidebarPage() {
     parentId?: string;
   }>();
 
+  /* Trạng thái kéo thả lưu trong ref — không setState trong dragover để tránh lag */
+  const sortedRef = useRef<SidebarItem[]>([]);
+  const dragInfo = useRef<{
+    id: string | null;
+    parentId: string | null;
+    sourceRow: HTMLElement | null;
+    indicator: HTMLElement | null;
+  }>({ id: null, parentId: null, sourceRow: null, indicator: null });
+
+  const levelOf = (id: string): string | null =>
+    findParent(sortedRef.current, id)?.id ?? null;
+
+  const setIndicator = (row: HTMLElement | null) => {
+    if (dragInfo.current.indicator === row) return;
+    dragInfo.current.indicator?.classList.remove(styles.dropTarget);
+    row?.classList.add(styles.dropTarget);
+    dragInfo.current.indicator = row;
+  };
+
+  const endDrag = (row: HTMLElement) => {
+    row.classList.remove(styles.dragging);
+    row.removeAttribute("draggable");
+    setIndicator(null);
+    dragInfo.current = { id: null, parentId: null, sourceRow: null, indicator: null };
+  };
+
+  const enableRowDrag = (e: React.MouseEvent) => {
+    (e.currentTarget as HTMLElement).closest("tr")?.setAttribute("draggable", "true");
+  };
+
+  const disableRowDrag = (e: React.MouseEvent) => {
+    (e.currentTarget as HTMLElement).closest("tr")?.removeAttribute("draggable");
+  };
+
+  const getRowProps = (record: SidebarItem): React.HTMLAttributes<HTMLTableRowElement> => ({
+    draggable: false,
+    onDragStart: (e) => {
+      dragInfo.current.id = record.id;
+      dragInfo.current.parentId = levelOf(record.id);
+      dragInfo.current.sourceRow = e.currentTarget;
+      e.currentTarget.classList.add(styles.dragging);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", record.id);
+    },
+    onDragOver: (e) => {
+      if (!dragInfo.current.id || dragInfo.current.id === record.id) return;
+      if (dragInfo.current.parentId !== levelOf(record.id)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setIndicator(e.currentTarget);
+    },
+    onDrop: (e) => {
+      e.preventDefault();
+      const draggedId = dragInfo.current.id;
+      if (draggedId && draggedId !== record.id) {
+        setItems((prev) => reorderTree(sortTree(prev), draggedId, record.id));
+      }
+      endDrag(e.currentTarget);
+    },
+    onDragEnd: (e) => endDrag(e.currentTarget),
+  });
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage chỉ đọc được ở client sau khi mount
     setItems(loadSidebarItems());
@@ -90,27 +197,33 @@ export default function AdminSidebarPage() {
     saveSidebarItems(items);
   }, [items]);
 
+  const sorted = useMemo(() => sortTree(items), [items]);
+
+  useEffect(() => {
+    sortedRef.current = sorted;
+  }, [sorted]);
+
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
-    if (!kw) return items;
+    if (!kw) return sorted;
     const matches = (item: SidebarItem) =>
       item.name.toLowerCase().includes(kw) ||
       item.href.toLowerCase().includes(kw) ||
       (item.description ?? "").toLowerCase().includes(kw);
-    return items
+    return sorted
       .filter((p) => matches(p) || p.children?.some(matches))
       .map((p) => ({
         ...p,
         children: p.children?.filter(matches),
       }));
-  }, [items, keyword]);
+  }, [sorted, keyword]);
 
   const allParentIds = useMemo(
-    () => items.filter((item) => item.children?.length).map((item) => item.id),
-    [items]
+    () => sorted.filter((item) => item.children?.length).map((item) => item.id),
+    [sorted]
   );
 
-  const parentOptions = items.map((item) => ({
+  const parentOptions = sorted.map((item) => ({
     value: item.id,
     label: item.name,
   }));
@@ -147,7 +260,7 @@ export default function AdminSidebarPage() {
           href: href.trim(),
           description: description?.trim() || undefined,
         };
-        const rest = removeItem(items, editing.id);
+        const rest = removeItem(sorted, editing.id);
         setItems(insertItem(rest, updated, parentId));
         console.log("update sidebar item:", updated, "parent:", parentId);
       } else {
@@ -158,6 +271,7 @@ export default function AdminSidebarPage() {
           postCount: 0,
           topicIds: [],
           description: description?.trim() || undefined,
+          idx: 0,
         };
         setItems(insertItem(items, created, parentId));
         console.log("create sidebar item:", created, "parent:", parentId);
@@ -173,12 +287,28 @@ export default function AdminSidebarPage() {
 
   const columns = [
     {
+      title: "",
+      key: "drag",
+      width: 40,
+      render: (_: unknown, record: SidebarItem) => (
+        <span
+          className={styles.dragHandle}
+          title="Kéo để sắp xếp"
+          aria-label={`Kéo để sắp xếp ${record.name}`}
+          onMouseDown={enableRowDrag}
+          onMouseUp={disableRowDrag}
+        >
+          <HolderOutlined />
+        </span>
+      ),
+    },
+    {
       title: "Tên",
       dataIndex: "name",
       key: "name",
       width: 260,
       render: (name: string, record: SidebarItem) => {
-        const child = isChild(items, record.id);
+        const child = isChild(sorted, record.id);
         return (
           <div className={styles.nameCell}>
             {child && <div className={styles.childSpacer} aria-hidden="true" />}
@@ -241,7 +371,7 @@ export default function AdminSidebarPage() {
       width: 240,
       render: (_: unknown, record: SidebarItem) => (
         <div className={styles.actions}>
-          {!isChild(items, record.id) && (
+          {!isChild(sorted, record.id) && (
             <Tooltip title="Thêm mục con">
               <Button
                 type="text"
@@ -311,15 +441,18 @@ export default function AdminSidebarPage() {
           </div>
         </div>
         <Table
-          scroll={{ x: 1250, y: "calc(100dvh - 250px)" }}
+          scroll={{ x: 1290, y: "calc(100dvh - 250px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}
           pagination={false}
           indentSize={1}
+          components={{ body: { row: DragRow } }}
+          onRow={getRowProps}
           expandable={{
             defaultExpandAllRows: true,
             expandedRowKeys: keyword.trim() ? allParentIds : undefined,
+            expandIconColumnIndex: 1,
           }}
         />
       </div>
@@ -334,7 +467,7 @@ export default function AdminSidebarPage() {
         afterOpenChange={(open) => {
           if (!open) return;
           if (editing) {
-            const parent = findParent(items, editing.id);
+            const parent = findParent(sorted, editing.id);
             form.setFieldsValue({
               name: editing.name,
               href: editing.href,

@@ -55,7 +55,8 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 24px 0px;
+  gap: 0px;
+  margin: 0px -8px;
 
   > a {
     width: 100%;

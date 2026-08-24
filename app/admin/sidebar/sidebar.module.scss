@@ -124,3 +124,35 @@
 :global(.ant-table-row-expand-icon-collapsed:hover) {
   transform: scale(1.15);
 }
+
+/* Kéo thả sắp xếp thứ tự — chỉ trong cùng cấp, kéo từ icon handle */
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  transition: color 0.2s, background-color 0.2s;
+
+  &:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-background-secondary);
+  }
+
+  &:active {
+    cursor: grabbing;
+    color: var(--color-text-primary);
+  }
+}
+
+.dragging td {
+  opacity: 0.45;
+  background-color: var(--color-background-secondary);
+}
+
+.dropTarget td {
+  box-shadow: inset 0 2px 0 0 var(--color-primary);
+}

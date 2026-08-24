@@ -310,7 +310,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0px;
-
+  margin: 0px -8px;
   > a {
     width: 100%;
     flex-shrink: 1;
