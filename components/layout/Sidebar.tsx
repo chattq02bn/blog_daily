@@ -13,7 +13,20 @@ import styles from "./Sidebar.module.scss";
 
 const CHILD_LIMIT = 10;
 
-function TopicChildren({ children }: { children: string[] }) {
+interface SidebarProps {
+  /** desktop: ẩn trên mobile; drawer: hiển thị trong Drawer */
+  variant?: "desktop" | "drawer";
+  /** Gọi khi người dùng bấm một link (để đóng Drawer) */
+  onNavigate?: () => void;
+}
+
+function TopicChildren({
+  children,
+  onNavigate,
+}: {
+  children: string[];
+  onNavigate?: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   const visible = expanded ? children : children.slice(0, CHILD_LIMIT);
@@ -25,6 +38,7 @@ function TopicChildren({ children }: { children: string[] }) {
           key={child}
           href={`/tag/${encodeURIComponent(child)}`}
           className={styles.childLink}
+          onClick={onNavigate}
         >
           {child}
         </Link>
@@ -42,7 +56,7 @@ function TopicChildren({ children }: { children: string[] }) {
   );
 }
 
-function TopicList() {
+function TopicList({ onNavigate }: { onNavigate?: () => void }) {
   const [collapsedTopics, setCollapsedTopics] = useState<Record<string, boolean>>({});
 
   const toggleTopic = (title: string) => {
@@ -56,7 +70,11 @@ function TopicList() {
         return (
           <div key={topic.title} className={styles.topicItem}>
             <div className={styles.topicRow}>
-              <Link href={topic.href} className={styles.topicParent}>
+              <Link
+                href={topic.href}
+                className={styles.topicParent}
+                onClick={onNavigate}
+              >
                 {topic.title}
               </Link>
               <button
@@ -69,7 +87,11 @@ function TopicList() {
                 <RightOutlined />
               </button>
             </div>
-            {isOpen && <TopicChildren>{topic.children}</TopicChildren>}
+            {isOpen && (
+              <TopicChildren onNavigate={onNavigate}>
+                {topic.children}
+              </TopicChildren>
+            )}
           </div>
         );
       })}
@@ -114,20 +136,32 @@ function SnsBox() {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({
+  variant = "desktop",
+  onNavigate,
+}: SidebarProps) {
+  const rootClass =
+    variant === "drawer"
+      ? "flex w-full flex-col overflow-y-auto"
+      : "hidden w-[12.625rem] shrink-0 flex-col overflow-y-auto border-r border-border-default pr-4 lg:flex";
+
   return (
-    <aside className="hidden w-[12.625rem] shrink-0 flex-col overflow-y-auto border-r border-border-default pr-4 lg:flex">
+    <aside className={rootClass}>
       <div className="flex flex-col gap-4">
         <div className="border-b border-border-default pb-4">
-          <SnsBox />
           <nav className="flex flex-col gap-1 mt-3">
-            <Link href="/" className={`${styles.navLink} ${styles.navLinkActive}`}>
+            <Link
+              href="/"
+              onClick={onNavigate}
+              className={`${styles.navLink} ${styles.navLinkActive}`}
+            >
               <span>Trang chủ</span>
             </Link>
           </nav>
+          <SnsBox />
         </div>
         <div className="border-b border-border-default pb-4">
-          <TopicList />
+          <TopicList onNavigate={onNavigate} />
         </div>
       </div>
     </aside>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Input, Popconfirm, Table, Tag, Tooltip } from "antd";
 import {
@@ -11,12 +12,23 @@ import {
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
 import type { AdminTopic, AdminTag } from "@/data/admin";
-import { loadPosts, loadTags, loadTopics, type AdminPost } from "@/lib/adminStorage";
+import {
+  loadPosts,
+  loadTags,
+  loadTopics,
+  type AdminPost,
+  type PostStatus,
+} from "@/lib/adminStorage";
 import styles from "./posts.module.scss";
 
 function nameOf(list: AdminTopic[] | AdminTag[], id: string): string | undefined {
   return list.find((item) => item.id === id)?.name;
 }
+
+const statusMeta: Record<PostStatus, { label: string; color: string }> = {
+  draft: { label: "Nháp", color: "orange" },
+  published: { label: "Đã đăng", color: "green" },
+};
 
 export default function AdminPostsPage() {
   const router = useRouter();
@@ -53,8 +65,24 @@ export default function AdminPostsPage() {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      width: 110,
+      width: 100,
       render: (id: string) => <span className={styles.postId}>{id}</span>,
+    },
+    {
+      title: "Ảnh",
+      dataIndex: "cover",
+      key: "cover",
+      width: 110,
+      render: (cover: string | undefined, record: AdminPost) => (
+        <Image
+          src={cover || `https://picsum.photos/seed/${record.id}/360/220`}
+          alt={record.title}
+          width={72}
+          height={45}
+          className={styles.thumb}
+          unoptimized
+        />
+      ),
     },
     {
       title: "Tiêu đề",
@@ -62,6 +90,16 @@ export default function AdminPostsPage() {
       key: "title",
       ellipsis: true,
       render: (title: string) => <span className={styles.postTitle}>{title}</span>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status: PostStatus | undefined) => {
+        const meta = statusMeta[status ?? "draft"];
+        return <Tag color={meta.color}>{meta.label}</Tag>;
+      },
     },
     {
       title: "Topics",
@@ -147,6 +185,7 @@ export default function AdminPostsPage() {
           </div>
         </div>
         <Table
+          scroll={{ y: "calc(100dvh - 330px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}

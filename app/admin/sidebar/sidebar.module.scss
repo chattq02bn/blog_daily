@@ -31,13 +31,44 @@
 
 .itemName {
   font-weight: 700;
+  font-size: 15px;
   color: var(--color-text-primary);
 }
 
 .childName {
+  margin-left: 46px;
   font-weight: 400;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-text-secondary);
+}
+
+/* Ô tên: cha và con dùng chung cấu trúc — spacer div full-width đẩy chữ
+   xuống dòng riêng, tất cả mục con căn trái tuyệt đối, luôn thẳng hàng */
+.nameCell {
+  display: block;
+  min-width: 0;
+}
+
+.childSpacer {
+  display: block;
+  width: 100%;
+}
+
+.childName {
+  display: block;
+  margin-left: 46px;
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--color-text-secondary);
+}
+
+.description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.noDescription {
+  color: var(--color-text-tertiary);
 }
 
 .postCount {

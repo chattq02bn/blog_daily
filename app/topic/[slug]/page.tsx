@@ -84,7 +84,7 @@ export default async function TopicDetailPage({
       <div className={styles.page}>
         <TopicHeader topic={lifestyleTopic} />
         <p className={styles.count}>
-          {totalNotes.toLocaleString()} bài viết · cập nhật hàng ngày
+          {totalNotes.toLocaleString("vi-VN")} bài viết · cập nhật hàng ngày
         </p>
 
         <div className={styles.backLinkWrap}>

@@ -19,7 +19,7 @@ export default function NoteActions({
       <div className={styles.item}>
         <button className={styles.iconButton} aria-label="Bình luận">
           <CommentOutlined />
-          <span>{comments.toLocaleString()}</span>
+          <span>{comments.toLocaleString("vi-VN")}</span>
         </button>
       </div>
       <div className={styles.spacer} />

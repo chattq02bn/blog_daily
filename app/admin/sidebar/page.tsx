@@ -74,7 +74,12 @@ export default function AdminSidebarPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<SidebarItem | null>(null);
   const [draftParentId, setDraftParentId] = useState<string | undefined>(undefined);
-  const [form] = Form.useForm<{ name: string; href: string; parentId?: string }>();
+  const [form] = Form.useForm<{
+    name: string;
+    href: string;
+    description?: string;
+    parentId?: string;
+  }>();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage chỉ đọc được ở client sau khi mount
@@ -89,7 +94,9 @@ export default function AdminSidebarPage() {
     const kw = keyword.trim().toLowerCase();
     if (!kw) return items;
     const matches = (item: SidebarItem) =>
-      item.name.toLowerCase().includes(kw) || item.href.toLowerCase().includes(kw);
+      item.name.toLowerCase().includes(kw) ||
+      item.href.toLowerCase().includes(kw) ||
+      (item.description ?? "").toLowerCase().includes(kw);
     return items
       .filter((p) => matches(p) || p.children?.some(matches))
       .map((p) => ({
@@ -132,12 +139,13 @@ export default function AdminSidebarPage() {
 
   const handleSubmit = () => {
     form.validateFields().then((values) => {
-      const { name, href, parentId } = values;
+      const { name, href, description, parentId } = values;
       if (editing) {
         const updated: SidebarItem = {
           ...editing,
           name: name.trim(),
           href: href.trim(),
+          description: description?.trim() || undefined,
         };
         const rest = removeItem(items, editing.id);
         setItems(insertItem(rest, updated, parentId));
@@ -149,6 +157,7 @@ export default function AdminSidebarPage() {
           href: href.trim(),
           postCount: 0,
           topicIds: [],
+          description: description?.trim() || undefined,
         };
         setItems(insertItem(items, created, parentId));
         console.log("create sidebar item:", created, "parent:", parentId);
@@ -167,11 +176,29 @@ export default function AdminSidebarPage() {
       title: "Tên",
       dataIndex: "name",
       key: "name",
-      render: (name: string, record: SidebarItem) => (
-        <span className={isChild(items, record.id) ? styles.childName : styles.itemName}>
-          {name}
-        </span>
-      ),
+      render: (name: string, record: SidebarItem) => {
+        const child = isChild(items, record.id);
+        return (
+          <div className={styles.nameCell}>
+            {child && <div className={styles.childSpacer} aria-hidden="true" />}
+            <div className={child ? styles.childName : styles.itemName}>
+              {name}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+      ellipsis: true,
+      render: (description: string | undefined) =>
+        description ? (
+          <span className={styles.description}>{description}</span>
+        ) : (
+          <span className={styles.noDescription}>—</span>
+        ),
     },
     {
       title: "Đường dẫn",
@@ -281,10 +308,12 @@ export default function AdminSidebarPage() {
           </div>
         </div>
         <Table
+          scroll={{ y: "calc(100dvh - 250px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}
           pagination={false}
+          indentSize={1}
           expandable={{
             defaultExpandAllRows: true,
             expandedRowKeys: keyword.trim() ? allParentIds : undefined,
@@ -306,6 +335,7 @@ export default function AdminSidebarPage() {
             form.setFieldsValue({
               name: editing.name,
               href: editing.href,
+              description: editing.description,
               parentId: parent?.id,
             });
           } else {
@@ -328,6 +358,17 @@ export default function AdminSidebarPage() {
             rules={[{ required: true, message: "Nhập đường dẫn" }]}
           >
             <Input placeholder="VD: /topic/challenge" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Mô tả"
+          >
+            <Input.TextArea
+              rows={2}
+              placeholder="Mô tả ngắn về mục này (hiển thị trong bảng)"
+              maxLength={200}
+              showCount
+            />
           </Form.Item>
           <Form.Item
             name="parentId"

@@ -1,19 +1,21 @@
 .wrap {
   display: flex;
-  justify-content: center;
-  padding: 48px 16px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
 }
 
 .card {
   width: 100%;
-  max-width: 640px;
 }
 
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .heading {
@@ -28,4 +30,44 @@
   margin: 4px 0 0;
   color: var(--color-text-secondary);
   font-size: 14px;
+}
+
+.monthFilter {
+  width: 180px;
+}
+
+.statsRow {
+  margin-bottom: 8px;
+}
+
+.chartWrap {
+  width: 100%;
+}
+
+.profileLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.profileName {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.profileRole {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.profileDesc {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }

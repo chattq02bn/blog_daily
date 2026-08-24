@@ -19,23 +19,37 @@
 .layout {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr) 300px;
-  gap: 28px;
+  gap: 25px;
 
-  @media (max-width: 900px) {
+  /* Màn vừa (≤1400px): bỏ rail phải, creator card thu còn 240px cho content rộng hơn */
+  @media (max-width: 1400px) {
+    grid-template-columns: 240px minmax(0, 1fr);
+
+    .rightRail {
+      display: none;
+    }
+  }
+
+  /* Màn nhỏ (≤1100px, vd 912×1368): dồn 1 cột, ẩn sidebar, nội dung chiếm trọn chiều rộng */
+  @media (max-width: 1100px) {
     display: block;
+
+    .sidebar {
+      display: none;
+    }
   }
 }
 
 .sidebar {
   position: sticky;
   top: 80px;
-  padding: 0 15px;
   align-self: start;
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-right: 20px;
 
-  @media (max-width: 900px) {
+  @media (max-width: 1100px) {
     display: none;
   }
 }
@@ -44,7 +58,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-Top: 16px;
+  margin-top: 16px;
   padding: 8px 18px;
   font-size: 13px;
   font-weight: 600;
@@ -65,7 +79,7 @@
 }
 
 .rightRail {
-  @media (max-width: 900px) {
+  @media (max-width: 1400px) {
     display: none;
   }
 }
@@ -148,6 +162,32 @@
       margin: 30px 0;
     }
   }
+
+  /* BlockNote view-only: bỏ chrome, mọi block căn cùng lề trái */
+  :global(.bn-container),
+  :global(.bn-editor) {
+    padding: 0;
+    background: transparent;
+  }
+
+  :global(.bn-block-outer),
+  :global(.bn-block) {
+    margin: 18px 0;
+    padding: 0;
+  }
+
+  :global(.bn-block-outer:first-child),
+  :global(.bn-block-outer:last-child) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  :global(.bn-block-content) {
+    font-size: 16px;
+    line-height: 1.9;
+    text-align: left;
+    color: var(--color-text-primary);
+  }
 }
 
 .hashtags {
@@ -180,7 +220,7 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 24px 16px;
+  padding: 20px 15px;
   text-align: center;
   background: var(--color-surface-normal);
   border: 1px solid var(--color-border-default);

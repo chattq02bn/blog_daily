@@ -1,4 +1,5 @@
 import type { Note } from "./notes";
+import { makeRichFakeBlocks } from "./noteBlocks";
 
 const FAKE_AUTHORS = [
   "Bầu trời xanh",
@@ -29,6 +30,7 @@ export function makeFakeNotes(sectionId: string, count = 4): Note[] {
         "Bạn có thể thay thế bằng dữ liệu thật từ API sau này.",
         "Mỗi bài viết đều có ảnh bìa, tác giả và số liệu tương tác riêng để card trông sống động hơn.",
       ],
+      blocks: makeRichFakeBlocks(i),
     };
   });
 }

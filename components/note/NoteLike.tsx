@@ -30,7 +30,7 @@ export default function NoteLike({ likes }: { likes: number }) {
         </button>
       </span>
       <button onClick={toggle} className={styles.count}>
-        {count.toLocaleString()}
+        {count.toLocaleString("vi-VN")}
       </button>
     </span>
   );

@@ -18,6 +18,13 @@
   }
 }
 
+/* Nút menu chỉ hiển thị trên mobile/tablet — desktop đã có sidebar cố định */
+.menuButton {
+  @media (min-width: 1024px) {
+    display: none !important;
+  }
+}
+
 .search {
   flex: 1;
   min-width: 0;

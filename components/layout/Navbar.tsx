@@ -33,7 +33,7 @@ export default function Navbar() {
           aria-label="Menu"
           icon={<MenuOutlined />}
           onClick={() => setDrawerOpen(true)}
-          className="inline-flex items-center justify-center"
+          className={`lg:hidden inline-flex items-center justify-center ${styles.menuButton}`}
           style={{ fontSize: 20 }}
         />
         <NoteLogo />
@@ -55,16 +55,21 @@ export default function Navbar() {
           />
         </div>
         <div className={styles.actions}>
-          <Link href="/admin/create">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              className={styles.create}
-              style={{ fontWeight: 700, color: "var(--color-text-primary)" }}
-            >
-              Tạo bài viết
-            </Button>
-          </Link>
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            className={styles.create}
+            style={{ fontWeight: 700, color: "var(--color-text-primary)" }}
+            onClick={() => {
+              if (hasAuth()) {
+                router.push("/admin/create");
+              } else {
+                setLoginOpen(true);
+              }
+            }}
+          >
+            Tạo bài viết
+          </Button>
           <Popover
             trigger="click"
             placement="bottomRight"

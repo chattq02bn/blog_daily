@@ -8,10 +8,12 @@ import NoteTitleActions from "@/components/note/NoteTitleActions";
 import {
   ClientCommentList,
   ClientTopicCard,
+  ClientNoteBody,
 } from "@/components/ClientComponents";
 import SocialLinks from "@/components/note/SocialLinks";
 import BackButton from "@/components/note/BackButton";
 import { getNoteById, notes, Note } from "@/data/notes";
+import { bodyToBlocks } from "@/data/noteBlocks";
 import { lifestyleNotes } from "@/data/lifestyle";
 import styles from "./note.module.scss";
 
@@ -87,6 +89,7 @@ export default async function NotePage({ params }: PageProps) {
                   fill
                   sizes="(max-width: 900px) 100vw, 700px"
                   priority
+                  style={{ borderRadius: 8 }}
                 />
               </figure>
 
@@ -113,9 +116,7 @@ export default async function NotePage({ params }: PageProps) {
               </header>
 
               <div className={styles.body}>
-                {note.body.map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
+                <ClientNoteBody blocks={bodyToBlocks(note)} />
               </div>
 
               <div className={styles.hashtags}>

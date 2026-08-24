@@ -1,3 +1,9 @@
+export type NoteBlock = {
+  type: string;
+  props?: Record<string, unknown>;
+  content?: unknown;
+};
+
 export type Note = {
   id: string;
   title: string;
@@ -11,6 +17,8 @@ export type Note = {
   date: string;
   tags: string[];
   body: string[];
+  /** Nội dung dạng khối cho editor xem-chi-tiết; nếu bỏ trống sẽ suy ra từ body */
+  blocks?: NoteBlock[];
 };
 
 export type Topic = {

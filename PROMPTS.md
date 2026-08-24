@@ -601,6 +601,239 @@ components/
 
 ---
 
+### Nội dung chi tiết bài viết render bằng editor view + fake data giàu định dạng
+
+**Prompt:** Trong chi tiết bài viết, phần nội dung (note.body.map → p) nên sửa lại thành component editor ở chế độ view và fake lại dữ liệu nhiều
+
+**Thực hiện:**
+1. **Render bằng editor view:** Thay map `<p>` bằng `<PreviewEditor blocks={bodyToBlocks(note)} />` (BlockNoteView `editable={false}` sẵn có trong admin/)
+2. **Mở rộng dữ liệu:** Note type thêm trường tùy chọn `blocks?: Partial<Block>[]`; tạo `data/noteBlocks.ts`:
+   - `bodyToBlocks()` — note có `blocks` dùng luôn, không thì chuyển từng đoạn body thành paragraph block
+   - `makeRichFakeBlocks(index)` — sinh nội dung demo đa định dạng: heading 2 cấp, bullet list, numbered list, quote, ảnh (picsum) kèm caption
+3. **Fake data:** `makeFakeNotes` (topicExtraNotes) gắn `blocks` rich theo index — các bài extra trong trang topic đều có bài viết dài, nhiều định dạng
+4. **CSS:** `.body` neutralize chrome BlockNote (padding 0, nền trong suốt), nhịp chữ 16px/1.9 đồng bộ với trang
+
+**Files đã sửa/tạo:**
+- `FE/app/note/[id]/page.tsx` - PreviewEditor thay <p> map
+- `FE/data/noteBlocks.ts` - Tạo mới
+- `FE/data/notes.ts` - Note.blocks?
+- `FE/data/topicExtraNotes.ts` - blocks cho fake notes
+- `FE/components/admin/PreviewEditor.tsx` - Nhận Partial<Block>[]
+- `FE/app/note/[id]/note.module.scss` - Override editor styles
+
+---
+
+### Nội dung editor thẳng hàng + responsive layout chi tiết bài viết
+
+**Prompt:** Trong PreviewEditor muốn nội dung thẳng hàng, và NotePage responsive lại: màn hình bé thì .layout css lại để nội dung chiếm nhiều hơn; kèm fix lỗi type Partial<Block>
+
+**Thực hiện:**
+1. **Fix type:** Đổi `Partial<Block>[]` (BlockNote type quá nghiêm ngặt) sang type tự định nghĩa `NoteBlock { type, props?, content? }` — PreviewEditor nhận `Record<string, unknown>[]` rồi cast khi truyền vào editor
+2. **Nội dung thẳng hàng:** Override CSS BlockNote trong `.body`: `.bn-container/.bn-editor` padding 0, mọi block margin/padding 0 + rhythm 18px đều nhau, text-align left
+3. **Responsive .layout:**
+   - ≥1400px: 3 cột 300px | content | 300px như cũ
+   - ≤1400px: bỏ rail phải, creator card còn 240px → content rộng hơn hẳn
+   - ≤1100px: dồn 1 cột, ẩn sidebar/rail → nội dung full width
+4. Sửa typo `margin-Top` → `margin-top` ở .backButton
+
+**Files đã sửa:**
+- `FE/data/notes.ts` - NoteBlock type
+- `FE/data/noteBlocks.ts` - Dùng NoteBlocks loose type
+- `FE/components/admin/PreviewEditor.tsx` - Props Record<string, unknown>[]
+- `FE/app/note/[id]/note.module.scss` - Editor align + layout responsive
+
+---
+
+### Fix lỗi runtime useCreateBlockNote khi SSR
+
+**Prompt:** Lỗi runtime tại `components/admin/PreviewEditor.tsx (12:36) @ useCreateBlockNote` trong trang chi tiết bài viết
+
+**Nguyên nhân:** Client component vẫn bị server-render — `useCreateBlockNote` của BlockNote cần window/document nên crash khi SSR. Trang admin cũ né bằng dynamic import `ssr: false`, nhưng trang note import PreviewEditor trực tiếp.
+
+**Thực hiện:** Thêm vào `ClientComponents.tsx`:
+- `PreviewEditor = dynamic(() => import("...admin/PreviewEditor"), { ssr: false })`
+- Export `ClientNoteBody({ blocks })` bọc component
+- Note page dùng `<ClientNoteBody blocks={bodyToBlocks(note)} />` thay cho PreviewEditor trực tiếp
+
+**Files đã sửa:**
+- `FE/components/ClientComponents.tsx` - Dynamic import ssr:false
+- `FE/app/note/[id]/page.tsx` - Đổi sang ClientNoteBody
+
+---
+
+### Admin quản lý bài viết: thêm cột ảnh + trạng thái
+
+**Prompt:** Trong trang quản trị, ở trang quản lý bài viết ở table nên thêm ảnh và thêm trạng thái: nháp hoặc đã đăng
+
+**Thực hiện:**
+1. `AdminPost` thêm `cover?: string` và `status?: "draft" | "published"` (type `PostStatus`) — seed 8 bài có ảnh picsum theo id + trạng thái trộn đều nháp/đã đăng
+2. Table thêm 2 cột:
+   - **Ảnh**: thumbnail 72×45 bo góc 8px (next/image `unoptimized`), không có cover thì fallback picsum theo id
+   - **Trạng thái**: antd Tag — "Nháp" màu orange, "Đã đăng" màu green; dữ liệu cũ trong localStorage không có status sẽ mặc định hiện "Nháp"
+3. Cột ID thu hẹp còn 100px cho vừa hàng
+
+**Files đã sửa:**
+- `FE/lib/adminStorage.ts` - PostStatus, seedPosts có cover/status
+- `FE/app/admin/posts/page.tsx` - 2 cột mới
+- `FE/app/admin/posts/posts.module.scss` - .thumb
+
+---
+
+### Cột ID đứng trước ảnh + tất cả table có scrollY
+
+**Prompt:** Cột ID đứng trước cột ảnh, và tất cả các table đều có scrollY để responsive
+
+**Thực hiện:**
+1. Đổi thứ tự cột trong bảng bài viết: ID → Ảnh → Tiêu đề → Trạng thái → ...
+2. Thêm scroll dọc cho 5 table admin (posts, sidebar, sidebar topic [id], tags, users) bằng `scroll={{ y: 420 }}` — lưu ý antd v6 không có prop `scrollY`, phải dùng object `scroll`
+
+**Files đã sửa:**
+- `FE/app/admin/posts/page.tsx`
+- `FE/app/admin/sidebar/page.tsx`
+- `FE/app/admin/sidebar/topic/[id]/page.tsx`
+- `FE/app/admin/tags/page.tsx`
+- `FE/app/admin/users/page.tsx`
+
+---
+
+### Chiều cao table tính theo màn hình
+
+**Prompt:** Chiều cao của table tính toán theo chiều cao màn hình, tránh để scroll ngoài layout
+
+**Thực hiện:** Đổi `scroll={{ y: 420 }}` (cố định) → `scroll={{ y: "calc(100dvh - 330px)" }}` ở cả 5 table admin. Con số 330px = navbar + padding trang + header bảng + phân trang; layout admin vốn `h-dvh` + `main overflow-y-auto` nên giờ scroll chỉ nằm trong body bảng, không cuộn ngoài khung
+
+**Files đã sửa:** 5 file page admin như trên
+
+---
+
+### Quản lý sidebar: cột Mô tả + CRUD mô tả, fake data
+
+**Prompt:** Trong quản lý sidebar thêm phần description trong bảng và crud fake thêm dữ liệu
+
+**Thực hiện:**
+1. `SidebarItem` thêm `description?: string`
+2. **Fake data:** `sidebarDesc()` sinh mô tả tự động theo tên cho toàn bộ seed (5 mục gốc + 5 nhóm topic + mọi mục con)
+3. **Bảng:** Thêm cột "Mô tả" (ellipsis 1 dòng, thiếu mô tả hiện "—"), search lọc được cả theo mô tả
+4. **CRUD:** Form thêm/sửa có TextArea "Mô tả" (max 200 ký tự, đếm số ký tự); tạo mới/sửa đều lưu description
+
+**Files đã sửa:**
+- `FE/lib/adminStorage.ts` - SidebarItem.description + seed
+- `FE/app/admin/sidebar/page.tsx` - Cột, form, filter
+- `FE/app/admin/sidebar/sidebar.module.scss` - .description/.noDescription
+
+---
+
+### Trang tổng quan: thống kê truy cập + hồ sơ cá nhân
+
+**Prompt:** Trang tổng quan: thống kê số lượt truy cập hàng tháng phía trên, có filter theo tháng, dùng chart; bên dưới trái là thông tin cá nhân + đổi avatar, phải là form cập nhật thông tin + thay đổi tên logo
+
+**Thực hiện:**
+1. Cài `recharts`; tạo `data/dashboard.ts` — fake lượt truy cập từng ngày của 12 tháng (deterministic bằng pseudo(), không Math.random để tránh lệch hydration)
+2. Card trên: DatePicker `picker="month"` (chỉ chọn trong năm 2026 qua disabledDate) + 3 Statistic (Tổng / Ngày cao nhất / TB ngày) + AreaChart gradient
+3. Tạo `lib/profileStorage.ts` — AdminProfile {name, email, role, avatar, logoName, description}, lưu localStorage + dispatch event
+4. Card dưới trái: avatar lớn + nút Đổi avatar (Upload → FileReader base64, giới hạn 2MB)
+5. Card dưới phải: Form Tên hiển thị / Email / Vai trò (**disabled, chỉ đọc**) / **Tên logo** + TextArea Mô tả full hàng — Lưu xong NoteLogo ở navbar tự cập nhật qua event `admin-profile-changed`
+6. Fix lỗi: type form thiếu description; eslint set-state-in-effect (đưa disable comment sát dòng setProfile); toLocaleString cố định "vi-VN" toàn dự án (fix hydration); PreviewEditor bọc dynamic ssr:false (`ClientNoteBody`)
+
+**Files đã sửa/tạo:**
+- `FE/package.json` - thêm recharts
+- `FE/data/dashboard.ts`, `FE/lib/profileStorage.ts` - Tạo mới
+- `FE/app/admin/page.tsx` - Viết lại trang tổng quan
+- `FE/components/layout/NoteLogo.tsx` - Đọc logoName động
+- `FE/app/admin/admin.module.scss` - Layout dashboard
+- `FE/components/ClientComponents.tsx`, `app/note/[id]/page.tsx` - ClientNoteBody
+- `FE/components/note/NoteLike.tsx`, `NoteActions.tsx`, `components/comment/CommentList.tsx`, `app/topic/[slug]/page.tsx` - locale vi-VN
+
+---
+
+### Quản lý sidebar: căn thẳng chữ cột Tên
+
+**Prompt:** Trong quản lý sidebar, các chữ trong cột Tên phải thẳng hàng nhau; tất cả đều phải cập nhật vào prompts.md
+
+**Thực hiện:**
+1. Table thêm `indentSize={0}` để antd không thụt dòng con theo cấp
+2. Cả `.itemName` và `.childName` thống nhất font-size 15px, dùng class chung `.nameAligned` (inline-block); `.childName` margin-left 25px đúng bằng bề rộng nút expand của dòng cha → chữ cha/con bắt đầu cùng một vị trí dọc
+
+**Files đã sửa:**
+- `FE/app/admin/sidebar/page.tsx` - indentSize={0}, nameAligned
+- `FE/app/admin/sidebar/sidebar.module.scss` - .nameAligned, .childName margin
+
+---
+
+### Fix mục con vẫn lệch: dùng spacer cố định
+
+**Prompt:** `${childName} ${nameAligned}` hiện tại cứ bị thò thụt, muốn thẳng hàng với nhau — chỉnh sửa tiếp
+
+**Nguyên nhân:** Margin-left trên span không đáng tin vì antd tự chèn indent span/nút expand khác nhau giữa các dòng.
+
+**Thực hiện:** Đổi sang spacer cố định trong render cột Tên:
+- Mọi ô tên bọc `.nameCell` (inline-flex)
+- Dòng con chèn `.childSpacer` rộng 44px (flex-shrink 0) trước chữ → mọi mục con bắt đầu chữ tại cùng một vị trí tuyệt đối, thụt lề so với mục cha, không phụ thuộc icon/indent của antd
+- Bỏ class nameAligned/margin cũ
+
+**Files đã sửa:**
+- `FE/app/admin/sidebar/page.tsx` - Render nameCell + childSpacer
+- `FE/app/admin/sidebar/sidebar.module.scss` - .nameCell/.childSpacer
+
+---
+
+### childSpacer đổi sang div full-width, xuống dòng, căn trái
+
+**Prompt:** .childSpacer nên để thẻ div để chiếm đủ chiều rộng và xuống dòng, tất cả các .childSpacer căn trái và không được thò thụt, thẳng hàng nhau
+
+**Thực hiện:**
+1. `.nameCell` đổi span → div (display block) — tránh nest div trong span sai HTML
+2. `.childSpacer` thành div block width 100%, height tự co về 0 → đẩy tên mục con xuống dòng riêng
+3. `.childName` display block — mọi mục con căn trái tuyệt đối tại lề ô, giống hệt nhau, không thò thụt
+
+**Files đã sửa:**
+- `FE/app/admin/sidebar/page.tsx` - div thay span
+- `FE/app/admin/sidebar/sidebar.module.scss` - Block layout cho nameCell/childSpacer/childName
+
+---
+
+### childName margin 46px + nút Tạo bài viết check token
+
+**Prompt:** .childName sửa margin-left 46px, font 15px; nút Tạo bài viết check token — có token thì sang trang tạo bài viết, không thì mở popup đăng nhập
+
+**Thực hiện:**
+1. `.childName` thêm `margin-left: 46px`, font-size 15px (giữ display block)
+2. Navbar: bỏ Link bọc ngoài, nút "Tạo bài viết" onClick kiểm tra `hasAuth()` — có token → `router.push("/admin/create")`, không → `setLoginOpen(true)` mở LoginModal
+
+**Files đã sửa:**
+- `FE/app/admin/sidebar/sidebar.module.scss` - .childName
+- `FE/components/layout/Navbar.tsx` - Nút tạo bài viết có check auth
+
+---
+
+### Menu button chỉ hiện mobile + Drawer dùng đúng Sidebar
+
+**Prompt:** Responsive — ở màn điện thoại mới hiển thị nút menu (MenuOutlined mở Drawer), và khi mở sidebar trong Drawer thì nội dung ứng với các sidebar ở desktop
+
+**Thực hiện:**
+1. **Nút menu ẩn trên desktop:** Thêm class `.menuButton` với media query ≥1024px `display:none !important` (desktop đã có sidebar cố định)
+2. **Sidebar tái sử dụng được:** Thêm props `variant` ("desktop" | "drawer" — drawer bỏ hidden/border/width cố định) và `onNavigate` (truyền xuống mọi Link: Trang chủ, topic cha, mục con để bấm xong tự đóng Drawer)
+3. **SidebarDrawer:** Bỏ list link hardcode cũ, render `<Sidebar variant="drawer" onNavigate={onClose} />` → mobile có cùng cấu trúc cha-con/mô tả như desktop
+
+**Files đã sửa:**
+- `FE/components/layout/Sidebar.tsx` - Props variant/onNavigate
+- `FE/components/layout/SidebarDrawer.tsx` - Render Sidebar
+- `FE/components/layout/Navbar.tsx` - menuButton ẩn desktop
+- `FE/components/layout/Navbar.module.scss` - .menuButton
+
+---
+
+### Căn chỉnh lại mức thụt lùi của mục con trong quản lý sidebar
+
+**Prompt:** Các text ở mục con phải thẳng hàng nhau và thụt lùi vào so với mục cha
+
+**Thực hiện:** `.childName` tăng margin-left lên 50px — các mục con bắt đầu chữ tại cùng một vị trí (thẳng hàng nhau) và thụt lùi sâu hơn dòng mục cha (~25px)
+
+**Files đã sửa:**
+- `FE/app/admin/sidebar/sidebar.module.scss` - margin .childName
+
+---
+
 ### Đậm hover card, title topic có mũi tên, trang chi tiết topic + fake data
 
 **Prompt:** Màu hover topiccard đậm hơn chút; trong TopicSection phần title thêm icon right arrow, hover vào title có màu background, ấn vào thì sang màn chi tiết topic — fake thêm data

@@ -315,7 +315,7 @@ export default function CommentList({ noteId, currentUserId }: CommentListProps)
   return (
     <div className={styles.commentList}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Bình luận {totalCount.toLocaleString()}</h3>
+        <h3 className={styles.title}>Bình luận {totalCount.toLocaleString("vi-VN")}</h3>
       </div>
 
       <CommentForm
