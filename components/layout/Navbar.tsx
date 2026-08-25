@@ -4,11 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Input, Button, Avatar, Popover } from "antd";
-import { SearchOutlined, MenuOutlined, EditOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  SearchOutlined,
+  MenuOutlined,
+  EditOutlined,
+  UserOutlined,
+  SunOutlined,
+  MoonOutlined,
+} from "@ant-design/icons";
 import NoteLogo from "./NoteLogo";
 import SidebarDrawer from "./SidebarDrawer";
 import AdminSidebarDrawer from "../admin/AdminSidebarDrawer";
 import LoginModal from "./LoginModal";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import { clearAuth, hasAuth } from "@/lib/auth";
 import styles from "./Navbar.module.scss";
 
@@ -21,6 +29,7 @@ export default function Navbar() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isAuthed, setIsAuthed] = useState(() => hasAuth());
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     clearAuth();
@@ -85,6 +94,14 @@ export default function Navbar() {
           >
             <span className={styles.createText}>Tạo bài viết</span>
           </Button>
+          <Button
+            type="text"
+            aria-label={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+            icon={theme === "dark" ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+            className={`inline-flex items-center justify-center ${styles.themeToggle}`}
+            style={{ fontSize: 18, color: "var(--color-text-primary)" }}
+          />
           <Popover
             trigger="click"
             placement="bottomRight"

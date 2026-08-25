@@ -36,6 +36,7 @@
 }
 
 :root {
+  color-scheme: light;
   --color-text-primary: #08131a;
   --color-text-secondary: #08131aa8;
   --color-text-tertiary: #08131a66;
@@ -66,6 +67,36 @@
   --easeInOutExpo: cubic-bezier(0.34, 1.56, 0.64, 1);
   --font-family: "Be Vietnam Pro", "Segoe UI", system-ui, Arial, sans-serif;
   --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-text-primary: #f5f8fa;
+  --color-text-secondary: #f5f8faa8;
+  --color-text-tertiary: #f5f8fa66;
+  --color-text-clickable-icon: #f5f8fa80;
+  --color-text-disabled: #f5f8fa80;
+  --color-text-placeholder: #8b959b;
+  --color-text-like: #ff7d92;
+  --color-text-invert: #08131a;
+  --color-surface-normal: #0d1d26;
+  --color-surface-primary: #f5f8fa;
+  --color-surface-primary-reaction: #dbe4ea;
+  --color-surface-quaternary: #14232c;
+  --color-surface-like: #ff5c78;
+  --color-surface-invert: #ffffff;
+  --color-border-default: #f5f8fa24;
+  --color-border-weak: #08131a;
+  --color-border-strong: #f5f8fa38;
+  --color-background-primary: #08131a;
+  --color-background-secondary: #14232c;
+  --color-social-note: #5ac8b8;
+
+  --color-primary: #f5f8fa;
+  --color-bg-primary: #08131a;
+  --color-bg-secondary: #14232c;
+  --color-bg-hover: #1b2b35;
+  --color-bg-tertiary: #233340;
 }
 
 html,

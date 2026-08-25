@@ -17,6 +17,15 @@
   @media (min-width: 769px) {
     height: 64px;
   }
+
+  /* Mobile: search bị ẩn (display:none) nhưng grid track vẫn chiếm chỗ,
+     khiến .actions đè lên logo và chặn click -> dùng flex cho gọn */
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
 }
 
 .left {
@@ -56,6 +65,21 @@
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
+}
+
+.themeToggle {
+  border: 1px solid var(--color-border-default);
+  border-radius: 100%;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    background-color: var(--color-bg-hover);
+  }
+
+  @media (min-width: 769px) {
+    margin-right: 4px;
+  }
 }
 
 .avatar {

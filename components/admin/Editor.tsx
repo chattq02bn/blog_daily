@@ -16,6 +16,7 @@ import {
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { Drawer, Input, Popover } from "antd";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import {
   BgColorsOutlined,
   BoldOutlined,
@@ -394,6 +395,7 @@ export default function Editor({
   value?: Block[];
   onChange?: (blocks: Block[]) => void;
 }) {
+  const { theme } = useTheme();
   const editor = useCreateBlockNote({
     schema: productCardSchema,
     initialContent:
@@ -538,7 +540,7 @@ export default function Editor({
         )}
         <BlockNoteView
           editor={editor}
-          theme="light"
+          theme={theme}
           slashMenu={false}
           /* Desktop: side menu mặc định (+, kéo thả). Mobile: đã có nút xoá riêng.
              Mobile: tắt formatting toolbar nổi, định dạng nằm trong nút "+" */
