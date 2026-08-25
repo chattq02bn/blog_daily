@@ -1,0 +1,58 @@
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 160px;
+}
+
+.gate {
+  position: relative;
+
+  &[data-ready="false"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+
+    .loading {
+      min-height: 0;
+    }
+  }
+}
+
+.dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--color-text-tertiary);
+  animation: dotPulse 1.2s infinite ease-in-out;
+
+  &:nth-child(2) {
+    animation-delay: 0.18s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.36s;
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.55);
+    opacity: 0.35;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

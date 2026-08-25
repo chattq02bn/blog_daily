@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { Note } from "@/data/notes";
+import EditorLoading from "@/components/admin/EditorLoading";
 
 const CommentList = dynamic(() => import("@/components/comment/CommentList"), {
   ssr: false,
@@ -13,7 +14,7 @@ const TopicCard = dynamic(() => import("@/components/topic/TopicCard"), {
 
 const PreviewEditor = dynamic(
   () => import("@/components/admin/PreviewEditor"),
-  { ssr: false }
+  { ssr: false, loading: () => <EditorLoading /> }
 );
 
 export function ClientNoteBody({

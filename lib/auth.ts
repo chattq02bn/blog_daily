@@ -9,7 +9,7 @@ export interface AuthSession {
 }
 
 const USER_KEY = "note_user";
-const ACCESS_TOKEN_KEY = "note_access_token";
+export const ACCESS_TOKEN_KEY = "note_access_token";
 const REFRESH_TOKEN_KEY = "note_refresh_token";
 
 export const AUTH_COOKIE_NAME = "note_access_token";

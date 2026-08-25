@@ -4,6 +4,9 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { productCardSchema } from "./productCard";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import EditorLoading from "./EditorLoading";
+import styles from "./EditorLoading.module.scss";
+import { useEditorReady } from "./useEditorReady";
 
 export default function PreviewEditor({
   blocks,
@@ -11,6 +14,7 @@ export default function PreviewEditor({
   blocks: Record<string, unknown>[];
 }) {
   const { theme } = useTheme();
+  const { ref, ready } = useEditorReady<HTMLDivElement>();
   const editor = useCreateBlockNote({
     schema: productCardSchema,
     initialContent: blocks.length
@@ -18,5 +22,10 @@ export default function PreviewEditor({
       : undefined,
   });
 
-  return <BlockNoteView editor={editor} editable={false} theme={theme} />;
+  return (
+    <div ref={ref} className={styles.gate} data-ready={ready}>
+      {!ready && <EditorLoading />}
+      <BlockNoteView editor={editor} editable={false} theme={theme} />
+    </div>
+  );
 }

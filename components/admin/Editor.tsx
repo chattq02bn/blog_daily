@@ -17,6 +17,9 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { Drawer, Input, Popover } from "antd";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import EditorLoading from "./EditorLoading";
+import loadingStyles from "./EditorLoading.module.scss";
+import { useEditorReady } from "./useEditorReady";
 import {
   BgColorsOutlined,
   BoldOutlined,
@@ -396,6 +399,7 @@ export default function Editor({
   onChange?: (blocks: Block[]) => void;
 }) {
   const { theme } = useTheme();
+  const { ref: readyRef, ready } = useEditorReady<HTMLDivElement>();
   const editor = useCreateBlockNote({
     schema: productCardSchema,
     initialContent:
@@ -538,22 +542,25 @@ export default function Editor({
             <DeleteOutlined />
           </button>
         )}
-        <BlockNoteView
-          editor={editor}
-          theme={theme}
-          slashMenu={false}
-          /* Desktop: side menu mặc định (+, kéo thả). Mobile: đã có nút xoá riêng.
-             Mobile: tắt formatting toolbar nổi, định dạng nằm trong nút "+" */
-          sideMenu={!isPhone}
-          formattingToolbar={!isPhone}
-        >
-          <SuggestionMenuController
-            triggerCharacter="/"
-            getItems={async (query) =>
-              filterSuggestionItems(getCustomSlashMenuItems(), query)
-            }
-          />
-        </BlockNoteView>
+        <div ref={readyRef} className={loadingStyles.gate} data-ready={ready}>
+          {!ready && <EditorLoading />}
+          <BlockNoteView
+            editor={editor}
+            theme={theme}
+            slashMenu={false}
+            /* Desktop: side menu mặc định (+, kéo thả). Mobile: đã có nút xoá riêng.
+               Mobile: tắt formatting toolbar nổi, định dạng nằm trong nút "+" */
+            sideMenu={!isPhone}
+            formattingToolbar={!isPhone}
+          >
+            <SuggestionMenuController
+              triggerCharacter="/"
+              getItems={async (query) =>
+                filterSuggestionItems(getCustomSlashMenuItems(), query)
+              }
+            />
+          </BlockNoteView>
+        </div>
       </div>
 
       {/* Mobile: nút "+" cố định đáy màn hình, mở sheet định dạng + chèn khối */}

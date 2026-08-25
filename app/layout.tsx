@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import ThemeProvider from "@/components/theme/ThemeProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body>
         <AntdRegistry>
-          <ThemeProvider>{children}</ThemeProvider>
+          <QueryProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </QueryProvider>
         </AntdRegistry>
       </body>
     </html>
