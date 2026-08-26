@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   RightOutlined,
@@ -8,93 +8,157 @@ import {
   InstagramOutlined,
   FacebookFilled,
 } from "@ant-design/icons";
-import { topics } from "@/data/notes";
+import { Spin } from "antd";
+import { useInView } from "@/hooks/use-in-view";
+import { useSidebarChildren, useSidebarTopicsInfinite } from "@/hooks/use-api";
+import {
+  SIDEBAR_CHILDREN_LIMIT,
+  SIDEBAR_NAV_PAGE_SIZE,
+} from "@/lib/sidebar-utils";
+import { sidebarApi, type ApiSidebarItem } from "@/lib/api";
 import styles from "./Sidebar.module.scss";
 
-const CHILD_LIMIT = 10;
-
-interface SidebarProps {
-  /** desktop: ẩn trên mobile; drawer: hiển thị trong Drawer */
-  variant?: "desktop" | "drawer";
-  /** Gọi khi người dùng bấm một link (để đóng Drawer) */
-  onNavigate?: () => void;
+/* Infinite pagination có thể trùng phần ranh giới giữa 2 trang sau khi refetch -> lọc theo id */
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }
 
-function TopicChildren({
-  children,
+/**
+ * Mục con của một topic: hiển thị sẵn phần nhúng từ API (tối đa 10),
+ * nếu còn thì bấm "Xem thêm" để call /sidebar/:id/children lấy tiếp 5 mục.
+ */
+function LazyChildren({
+  topic,
   onNavigate,
 }: {
-  children: string[];
+  topic: ApiSidebarItem;
   onNavigate?: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const base = topic.children ?? [];
+  const [extraChildren, setExtraChildren] = useState<ApiSidebarItem[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [apiTotal, setApiTotal] = useState<number | null>(null);
 
-  const visible = expanded ? children : children.slice(0, CHILD_LIMIT);
+  const shown = useMemo(
+    () => dedupeById([...base, ...extraChildren]),
+    [base, extraChildren]
+  );
+  const total = apiTotal ?? topic.childrenCount ?? base.length;
+  const hiddenCount = Math.max(0, total - shown.length);
+
+  const loadMore = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await sidebarApi.listChildren(topic.id, {
+        offset: shown.length,
+        limit: SIDEBAR_CHILDREN_LIMIT,
+      });
+      setExtraChildren((prev) => {
+        const seenIds = new Set(shown.map((item) => item.id));
+        return [...prev, ...res.data.filter((child) => !seenIds.has(child.id))];
+      });
+      setApiTotal(res.total);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <nav className={styles.childNav}>
-      {visible.map((child) => (
+      {shown.map((child) => (
         <Link
-          key={child}
-          href={`/tag/${encodeURIComponent(child)}`}
+          key={child.id}
+          href={`/topic/${child.slug}`}
           className={styles.childLink}
           onClick={onNavigate}
         >
-          {child}
+          {child.name}
         </Link>
       ))}
-      {children.length > CHILD_LIMIT && !expanded && (
+
+      {hiddenCount > 0 && (
         <button
           type="button"
           className={styles.moreButton}
-          onClick={() => setExpanded(true)}
+          onClick={() => void loadMore()}
+          disabled={loadingMore}
         >
-          Xem thêm ({children.length - CHILD_LIMIT})
+          {loadingMore ? <Spin size="small" /> : `Xem thêm (${hiddenCount})`}
         </button>
       )}
     </nav>
   );
 }
 
-function TopicList({ onNavigate }: { onNavigate?: () => void }) {
-  const [collapsedTopics, setCollapsedTopics] = useState<Record<string, boolean>>({});
+function ParentItem({
+  topic,
+  onNavigate,
+}: {
+  topic: ApiSidebarItem;
+  onNavigate?: () => void;
+}) {
+  /* Luôn hiển thị expanded — 5 mục con đầu có sẵn, phần còn lại bấm "Xem thêm" lazy load */
+  const totalChildren = topic.childrenCount ?? topic.children.length;
 
-  const toggleTopic = (title: string) => {
-    setCollapsedTopics((prev) => ({ ...prev, [title]: !prev[title] }));
-  };
+  return (
+    <div className={styles.topicItem}>
+      <div className={styles.topicRow}>
+        <Link
+          href={`/topic/${topic.slug}`}
+          className={styles.topicParent}
+          onClick={onNavigate}
+        >
+          {topic.name}
+        </Link>
+        {totalChildren > 0 && (
+          <span className={styles.topicToggle}>
+            <RightOutlined />
+          </span>
+        )}
+      </div>
+      {totalChildren > 0 && <LazyChildren topic={topic} onNavigate={onNavigate} />}
+    </div>
+  );
+}
+
+function TopicList({ onNavigate }: { onNavigate?: () => void }) {
+  /* Phân trang từ BE: lần đầu 15 mục cha (kèm tối đa 10 mục con của mỗi mục),
+     kéo sát đáy sidebar -> useInView gọi trang tiếp theo */
+  const query = useSidebarTopicsInfinite(SIDEBAR_NAV_PAGE_SIZE);
+
+  const items = useMemo(
+    () => dedupeById((query.data?.pages ?? []).flatMap((page) => page.data)),
+    [query.data]
+  );
+
+  const { ref: sentinelRef, inView: sentinelInView } = useInView<HTMLDivElement>({
+    rootMargin: "200px",
+    onEnter: () => {
+      if (query.hasNextPage && !query.isFetchingNextPage) {
+        void query.fetchNextPage();
+      }
+    },
+  });
 
   return (
     <nav className={styles.topicGroup}>
-      {topics.map((topic) => {
-        const isOpen = !collapsedTopics[topic.title];
-        return (
-          <div key={topic.title} className={styles.topicItem}>
-            <div className={styles.topicRow}>
-              <Link
-                href={topic.href}
-                className={styles.topicParent}
-                onClick={onNavigate}
-              >
-                {topic.title}
-              </Link>
-              <button
-                type="button"
-                className={`${styles.topicToggle} ${isOpen ? styles.topicToggleOpen : ""}`}
-                onClick={() => toggleTopic(topic.title)}
-                aria-expanded={isOpen}
-                aria-label={`${isOpen ? "Đóng" : "Mở"} ${topic.title}`}
-              >
-                <RightOutlined />
-              </button>
-            </div>
-            {isOpen && (
-              <TopicChildren onNavigate={onNavigate}>
-                {topic.children}
-              </TopicChildren>
-            )}
-          </div>
-        );
-      })}
+      {items.map((topic) => (
+        <ParentItem key={topic.id} topic={topic} onNavigate={onNavigate} />
+      ))}
+
+      {/* Sentinel cuối danh sách chủ đề trong sidebar */}
+      <div ref={sentinelRef} aria-hidden="true" />
+      {(query.hasNextPage && sentinelInView) || query.isFetchingNextPage ? (
+        <div className="flex justify-center py-3">
+          <Spin size="small" />
+        </div>
+      ) : null}
     </nav>
   );
 }
@@ -134,6 +198,13 @@ function SnsBox() {
       </div>
     </div>
   );
+}
+
+interface SidebarProps {
+  /** desktop: ẩn trên mobile; drawer: hiển thị trong Drawer */
+  variant?: "desktop" | "drawer";
+  /** Gọi khi người dùng bấm một link (để đóng Drawer) */
+  onNavigate?: () => void;
 }
 
 export default function Sidebar({

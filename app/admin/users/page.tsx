@@ -5,6 +5,7 @@ import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Select,
@@ -19,26 +20,14 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
+import {
+  useCreateUser,
+  useDeleteUser,
+  useUpdateUser,
+  useUsers,
+} from "@/hooks/use-api";
+import type { ApiUser, ApiUserRole } from "@/lib/api";
 import styles from "./users.module.scss";
-
-type Role = "admin" | "user";
-
-interface UserItem {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-}
-
-const seedUsers: UserItem[] = [
-  { id: "u1", name: "Admin", email: "admin@note.com", role: "admin" },
-  { id: "u2", name: "Lan", email: "lan@example.com", role: "user" },
-  { id: "u3", name: "Minh", email: "minh@example.com", role: "user" },
-  { id: "u4", name: "Hương", email: "huong@example.com", role: "user" },
-  { id: "u5", name: "Đức", email: "duc@example.com", role: "user" },
-  { id: "u6", name: "Trang", email: "trang@example.com", role: "admin" },
-  { id: "u7", name: "Nam", email: "nam@example.com", role: "user" },
-];
 
 const roleOptions = [
   { value: "admin", label: "Admin" },
@@ -46,20 +35,27 @@ const roleOptions = [
 ];
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserItem[]>(seedUsers);
   const [keyword, setKeyword] = useState("");
-  const [roleFilter, setRoleFilter] = useState<Role | undefined>(undefined);
+  const [roleFilter, setRoleFilter] = useState<ApiUserRole | undefined>(undefined);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<UserItem | null>(null);
-  const [form] = Form.useForm<{ name: string; email: string; role: Role }>();
+  const [editing, setEditing] = useState<ApiUser | null>(null);
+  const [form] = Form.useForm<{ name: string; email: string; role: ApiUserRole }>();
 
+  const usersQuery = useUsers({ limit: 100 });
+  const users: ApiUser[] = useMemo(() => usersQuery.data?.data ?? [], [usersQuery.data]);
+
+  const createMutation = useCreateUser();
+  const updateMutation = useUpdateUser();
+  const deleteMutation = useDeleteUser();
+
+  /* Lọc hiển thị làm client-side cho mượt (dữ liệu đã tải sẵn) */
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     return users.filter((u) => {
       const matchRole = !roleFilter || u.role === roleFilter;
       const matchKw =
         !kw ||
-        u.name.toLowerCase().includes(kw) ||
+        (u.name ?? "").toLowerCase().includes(kw) ||
         u.email.toLowerCase().includes(kw) ||
         u.id.toLowerCase().includes(kw);
       return matchRole && matchKw;
@@ -71,7 +67,7 @@ export default function AdminUsersPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (user: UserItem) => {
+  const openEdit = (user: ApiUser) => {
     setEditing(user);
     setModalOpen(true);
   };
@@ -79,36 +75,45 @@ export default function AdminUsersPage() {
   const handleSubmit = () => {
     form.validateFields().then((values) => {
       if (editing) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === editing.id
-              ? {
-                  ...u,
-                  name: values.name,
-                  email: values.email,
-                  role: editing.role === "admin" ? "admin" : values.role,
-                }
-              : u
-          )
+        updateMutation.mutate(
+          {
+            id: editing.id,
+            body: {
+              name: values.name,
+              email: values.email,
+              role: editing.role === "admin" ? "ADMIN" : (values.role.toUpperCase() as "USER" | "ADMIN"),
+            },
+          },
+          {
+            onSuccess: () => message.success("Đã cập nhật người dùng"),
+            onError: () => message.error("Cập nhật thất bại"),
+          }
         );
-        console.log("update user:", { ...editing, ...values });
       } else {
-        const newUser: UserItem = {
-          id: `u_${Date.now().toString(36)}`,
-          name: values.name,
-          email: values.email,
-          role: values.role,
-        };
-        setUsers((prev) => [newUser, ...prev]);
-        console.log("create user:", newUser);
+        // Mật khẩu tạm thời sinh ngẫu nhiên — người dùng đổi sau
+        const tempPassword = `Note${Math.random().toString(36).slice(2, 10)}!1`;
+        createMutation.mutate(
+          {
+            name: values.name,
+            email: values.email,
+            password: tempPassword,
+            role: values.role.toUpperCase() as "USER" | "ADMIN",
+          },
+          {
+            onSuccess: () => message.success("Đã thêm người dùng"),
+            onError: () => message.error("Thêm người dùng thất bại (email có thể đã tồn tại)"),
+          }
+        );
       }
       setModalOpen(false);
     });
   };
 
-  const handleDelete = (user: UserItem) => {
-    setUsers((prev) => prev.filter((u) => u.id !== user.id));
-    console.log("delete user:", user);
+  const handleDelete = (user: ApiUser) => {
+    deleteMutation.mutate(user.id, {
+      onSuccess: () => message.success(`Đã xóa "${user.name ?? user.email}"`),
+      onError: () => message.error("Xóa người dùng thất bại"),
+    });
   };
 
   const columns = [
@@ -123,7 +128,7 @@ export default function AdminUsersPage() {
       title: "Tên",
       dataIndex: "name",
       key: "name",
-      render: (name: string) => <span className={styles.userName}>{name}</span>,
+      render: (name: string | null) => <span className={styles.userName}>{name ?? "—"}</span>,
     },
     {
       title: "Email",
@@ -135,7 +140,7 @@ export default function AdminUsersPage() {
       dataIndex: "role",
       key: "role",
       width: 110,
-      render: (role: Role) => (
+      render: (role: ApiUserRole) => (
         <Tag color={role === "admin" ? "red" : "default"} className={styles.roleTag}>
           {role === "admin" ? "Admin" : "User"}
         </Tag>
@@ -145,14 +150,14 @@ export default function AdminUsersPage() {
       title: "Thao tác",
       key: "actions",
       width: 140,
-      render: (_: unknown, record: UserItem) => (
+      render: (_: unknown, record: ApiUser) => (
         <div className={styles.actions}>
           <Tooltip title="Sửa">
             <Button
               type="text"
               icon={<EditOutlined />}
               onClick={() => openEdit(record)}
-              aria-label={`Sửa ${record.name}`}
+              aria-label={`Sửa ${record.name ?? record.email}`}
             />
           </Tooltip>
           {record.role === "admin" ? (
@@ -162,7 +167,7 @@ export default function AdminUsersPage() {
           ) : (
             <Popconfirm
               title="Xóa người dùng"
-              description={`Bạn có chắc muốn xóa "${record.name}"?`}
+              description={`Bạn có chắc muốn xóa "${record.name ?? record.email}"?`}
               okText="Xóa"
               cancelText="Hủy"
               okButtonProps={{ danger: true }}
@@ -227,7 +232,11 @@ export default function AdminUsersPage() {
         afterOpenChange={(open) => {
           if (!open) return;
           if (editing) {
-            form.setFieldsValue({ name: editing.name, email: editing.email, role: editing.role });
+            form.setFieldsValue({
+              name: editing.name ?? "",
+              email: editing.email,
+              role: editing.role,
+            });
           } else {
             form.resetFields();
             form.setFieldsValue({ role: "user" });

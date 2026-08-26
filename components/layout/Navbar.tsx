@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Input, Button, Avatar, Popover } from "antd";
+import { useAtomValue } from "jotai";
 import {
   SearchOutlined,
   MenuOutlined,
@@ -17,7 +18,8 @@ import SidebarDrawer from "./SidebarDrawer";
 import AdminSidebarDrawer from "../admin/AdminSidebarDrawer";
 import LoginModal from "./LoginModal";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { clearAuth, hasAuth } from "@/lib/auth";
+import { clearAuth } from "@/lib/auth";
+import { isAuthedAtom, openLoginModal } from "@/lib/jotai/auth";
 import styles from "./Navbar.module.scss";
 
 export default function Navbar() {
@@ -25,15 +27,13 @@ export default function Navbar() {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [isAuthed, setIsAuthed] = useState(() => hasAuth());
+  const isAuthed = useAtomValue(isAuthedAtom);
   const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     clearAuth();
-    setIsAuthed(false);
     setPopoverOpen(false);
     router.push("/");
   };
@@ -85,10 +85,10 @@ export default function Navbar() {
             className={styles.create}
             style={{ fontWeight: 700, color: "var(--color-text-primary)" }}
             onClick={() => {
-              if (hasAuth()) {
+              if (isAuthed) {
                 router.push("/admin/create");
               } else {
-                setLoginOpen(true);
+                openLoginModal();
               }
             }}
           >
@@ -129,7 +129,7 @@ export default function Navbar() {
                     className={styles.popoverItem}
                     onClick={() => {
                       setPopoverOpen(false);
-                      setLoginOpen(true);
+                      openLoginModal();
                     }}
                   >
                     Đăng nhập
@@ -154,7 +154,7 @@ export default function Navbar() {
       ) : (
         <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       )}
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} onLoginSuccess={() => setIsAuthed(true)} />
+      <LoginModal />
     </header>
   );
 }

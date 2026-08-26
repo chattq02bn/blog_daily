@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Table,
@@ -17,30 +18,22 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { adminTags } from "@/data/admin";
-import { loadTags, saveTags } from "@/lib/adminStorage";
+import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from "@/hooks/use-api";
+import type { ApiTag } from "@/lib/api";
 import styles from "./tags.module.scss";
 
-interface TagItem {
-  id: string;
-  name: string;
-}
-
 export default function AdminTagsPage() {
-  const [tags, setTags] = useState<TagItem[]>(adminTags);
   const [keyword, setKeyword] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<TagItem | null>(null);
+  const [editing, setEditing] = useState<ApiTag | null>(null);
   const [form] = Form.useForm<{ name: string }>();
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage chỉ đọc được ở client sau khi mount
-    setTags(loadTags());
-  }, []);
+  const tagsQuery = useTags();
+  const createMutation = useCreateTag();
+  const updateMutation = useUpdateTag();
+  const deleteMutation = useDeleteTag();
 
-  useEffect(() => {
-    saveTags(tags);
-  }, [tags]);
+  const tags: ApiTag[] = useMemo(() => tagsQuery.data ?? [], [tagsQuery.data]);
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -55,7 +48,7 @@ export default function AdminTagsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (tag: TagItem) => {
+  const openEdit = (tag: ApiTag) => {
     setEditing(tag);
     setModalOpen(true);
   };
@@ -64,20 +57,28 @@ export default function AdminTagsPage() {
     form.validateFields().then((values) => {
       const name = values.name.trim();
       if (editing) {
-        setTags((prev) => prev.map((t) => (t.id === editing.id ? { ...t, name } : t)));
-        console.log("update tag:", { ...editing, name });
+        updateMutation.mutate(
+          { id: editing.id, name },
+          {
+            onSuccess: () => message.success("Đã cập nhật tag"),
+            onError: () => message.error("Cập nhật tag thất bại"),
+          }
+        );
       } else {
-        const newTag: TagItem = { id: `t_${Date.now().toString(36)}`, name };
-        setTags((prev) => [newTag, ...prev]);
-        console.log("create tag:", newTag);
+        createMutation.mutate(name, {
+          onSuccess: () => message.success("Đã thêm tag"),
+          onError: () => message.error("Thêm tag thất bại"),
+        });
       }
       setModalOpen(false);
     });
   };
 
-  const handleDelete = (tag: TagItem) => {
-    setTags((prev) => prev.filter((t) => t.id !== tag.id));
-    console.log("delete tag:", tag);
+  const handleDelete = (tag: ApiTag) => {
+    deleteMutation.mutate(tag.id, {
+      onSuccess: () => message.success(`Đã xóa tag "${tag.name}"`),
+      onError: () => message.error("Xóa tag thất bại"),
+    });
   };
 
   const columns = [
@@ -98,7 +99,7 @@ export default function AdminTagsPage() {
       title: "Thao tác",
       key: "actions",
       width: 140,
-      render: (_: unknown, record: TagItem) => (
+      render: (_: unknown, record: ApiTag) => (
         <div className={styles.actions}>
           <Tooltip title="Sửa">
             <Button

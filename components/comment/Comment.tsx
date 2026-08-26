@@ -2,25 +2,27 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { MoreOutlined, DeleteOutlined, EditOutlined, HeartOutlined, HeartFilled, MessageOutlined } from "@ant-design/icons";
-import { Popover, Modal, message } from "antd";
+import {
+  MoreOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  HeartOutlined,
+  HeartFilled,
+  MessageOutlined,
+} from "@ant-design/icons";
+import { Popover, Modal } from "antd";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import {
-  Comment as CommentType,
-  deleteComment,
-  updateComment,
-  toggleEmojiReaction,
-} from "@/lib/commentStorage";
+import type { Comment as CommentType } from "@/lib/commentStorage";
 import styles from "./Comment.module.scss";
 
 interface CommentProps {
   comment: CommentType;
   parentAuthor?: string;
   onReply: (parentId: string, parentAuthor: string) => void;
-  onDataChange: () => void;
-  isCurrentUser: boolean;
-  depth: number;
+  onDelete: () => void;
+  onSaveEdit: (content: string) => void;
+  onToggleLike: () => void;
   isLast?: boolean;
 }
 
@@ -28,8 +30,9 @@ export default function Comment({
   comment,
   parentAuthor,
   onReply,
-  onDataChange,
-  isCurrentUser,
+  onDelete,
+  onSaveEdit,
+  onToggleLike,
   isLast = false,
 }: CommentProps) {
   const [editing, setEditing] = useState(false);
@@ -39,36 +42,21 @@ export default function Comment({
   const heartCount = comment.emojis?.["❤️"] || 0;
   const liked = !!comment.userReactions?.["❤️"];
 
-  const handleToggleLike = () => {
-    toggleEmojiReaction(comment.id, "❤️");
-    onDataChange();
-  };
-
   const handleEdit = () => {
     setEditing(true);
     setEditContent(comment.content);
   };
 
   const handleSaveEdit = () => {
-    const updated = updateComment(comment.id, editContent.trim());
-    if (updated) {
-      setEditing(false);
-      message.success("Đã cập nhật bình luận");
-    }
+    const trimmed = editContent.trim();
+    if (!trimmed) return;
+    onSaveEdit(trimmed);
+    setEditing(false);
   };
 
   const handleCancelEdit = () => {
     setEditing(false);
     setEditContent(comment.content);
-  };
-
-  const handleDelete = () => {
-    const success = deleteComment(comment.id);
-    if (success) {
-      onDataChange();
-      message.success("Đã xóa bình luận");
-    }
-    setShowDeleteConfirm(false);
   };
 
   const formatDate = (dateStr: string) => {
@@ -107,31 +95,26 @@ export default function Comment({
             {comment.isEdited && (
               <span className={styles.editedBadge}>Đã chỉnh sửa</span>
             )}
-            {isCurrentUser && (
-              <Popover
-                content={
-                  <div className={styles.popoverMenu}>
-                    <div
-                      className={styles.popoverItem}
-                      onClick={handleEdit}
-                    >
-                      <EditOutlined /> Chỉnh sửa
-                    </div>
-                    <div
-                      className={styles.popoverItem}
-                      onClick={() => setShowDeleteConfirm(true)}
-                    >
-                      <DeleteOutlined /> Xóa
-                    </div>
+            <Popover
+              content={
+                <div className={styles.popoverMenu}>
+                  <div className={styles.popoverItem} onClick={handleEdit}>
+                    <EditOutlined /> Chỉnh sửa
                   </div>
-                }
-                trigger="click"
-              >
-                <button className={styles.moreButton} aria-label="Tùy chọn">
-                  <MoreOutlined />
-                </button>
-              </Popover>
-            )}
+                  <div
+                    className={styles.popoverItem}
+                    onClick={() => setShowDeleteConfirm(true)}
+                  >
+                    <DeleteOutlined /> Xóa
+                  </div>
+                </div>
+              }
+              trigger="click"
+            >
+              <button className={styles.moreButton} aria-label="Tùy chọn">
+                <MoreOutlined />
+              </button>
+            </Popover>
           </div>
 
           {editing ? (
@@ -160,7 +143,7 @@ export default function Comment({
           <div className={styles.commentFooter}>
             <button
               className={`${styles.likeButton} ${liked ? styles.liked : ""}`}
-              onClick={handleToggleLike}
+              onClick={onToggleLike}
               aria-label="Thích bình luận"
             >
               {liked ? <HeartFilled /> : <HeartOutlined />}
@@ -181,7 +164,10 @@ export default function Comment({
 
       <Modal
         open={showDeleteConfirm}
-        onOk={handleDelete}
+        onOk={() => {
+          setShowDeleteConfirm(false);
+          onDelete();
+        }}
         onCancel={() => setShowDeleteConfirm(false)}
         title="Xóa bình luận"
         okText="Xóa"

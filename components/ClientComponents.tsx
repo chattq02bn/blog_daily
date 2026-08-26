@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { Note } from "@/data/notes";
+import type { Note } from "@/lib/view-models";
 import EditorLoading from "@/components/admin/EditorLoading";
 
 const CommentList = dynamic(() => import("@/components/comment/CommentList"), {

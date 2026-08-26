@@ -28,6 +28,8 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   isEdited: boolean;
+  /** Số reply trực tiếp — để lazy-load phân trang */
+  repliesCount?: number;
 }
 
 export interface CommentFormData {

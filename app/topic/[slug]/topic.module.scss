@@ -11,7 +11,7 @@
 }
 
 .backLinkWrap {
-  margin: 16px 0 8px;
+  margin: 16px 0 36px 0px;
 }
 
 .backLink {
@@ -36,7 +36,7 @@
 }
 
 .section {
-  margin-top: 40px;
+  margin-top: 0px;
 }
 
 .sectionTitle {
@@ -47,8 +47,8 @@
 }
 
 .sectionDesc {
-  margin: 0 0 16px;
-  font-size: 13px;
+  margin: 4px 0 4px;
+  font-size: 14px;
   color: var(--color-text-secondary);
 }
 
@@ -58,7 +58,7 @@
   gap: 0px;
   margin: 0px -8px;
 
-  > a {
+  >a {
     width: 100%;
     flex-shrink: 1;
   }

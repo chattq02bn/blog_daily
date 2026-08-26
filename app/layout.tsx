@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import ThemeProvider from "@/components/theme/ThemeProvider";
 import QueryProvider from "@/components/providers/QueryProvider";
+import JotaiProvider from "@/components/providers/JotaiProvider";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
@@ -36,7 +37,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <AntdRegistry>
           <QueryProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <JotaiProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </JotaiProvider>
           </QueryProvider>
         </AntdRegistry>
       </body>

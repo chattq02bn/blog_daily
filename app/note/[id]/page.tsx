@@ -1,166 +1,58 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import AppLayout from "@/components/layout/AppLayout";
-import NoteActions from "@/components/note/NoteActions";
-import NoteTitleActions from "@/components/note/NoteTitleActions";
-import {
-  ClientCommentList,
-  ClientTopicCard,
-  ClientNoteBody,
-} from "@/components/ClientComponents";
-import SocialLinks from "@/components/note/SocialLinks";
-import BackButton from "@/components/note/BackButton";
-import { getNoteById, notes, Note } from "@/data/notes";
-import { bodyToBlocks } from "@/data/noteBlocks";
-import { lifestyleNotes } from "@/data/lifestyle";
-import styles from "./note.module.scss";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import NoteView from "./NoteView";
+import LikesProvider from "@/components/likes/LikesProvider";
+import { commentsApi, postsApi, type CommentsPage } from "@/lib/api";
+import { getQueryClient } from "@/lib/query-client";
+import { qk } from "@/lib/query-keys";
+import { getInitialLikedIds } from "@/lib/post-likes.server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const note = getNoteById(id);
-  if (!note) return { title: "Không tìm thấy bài viết | note" };
-  return { title: `${note.title} | ${note.author} | note` };
-}
 
-function getRelatedNotes(
-  currentNote: Note,
-  allNotes: Note[],
-  count = 2,
-): Note[] {
-  return allNotes
-    .filter((n) => n.id !== currentNote.id)
-    .map((n) => ({
-      note: n,
-      score: n.tags.filter((tag) => currentNote.tags.includes(tag)).length,
-    }))
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, count)
-    .map((item) => item.note);
+  try {
+    const note = await postsApi.get(id);
+    return { title: `${note.title} | ${note.authorName} | note` };
+  } catch {
+    return { title: "Không tìm thấy bài viết | note" };
+  }
 }
 
 export default async function NotePage({ params }: PageProps) {
   const { id } = await params;
-  const note = getNoteById(id);
-  if (!note) notFound();
+  const queryClient = getQueryClient();
+  const initialLikedIds = await getInitialLikedIds();
 
-  const allNotes = [...notes, ...lifestyleNotes];
-  const relatedNotes = getRelatedNotes(note, allNotes);
+  // Prefetch trước: chi tiết bài viết + trang đầu của bình luận.
+  // Comments dùng useInfiniteQuery phía client nên phải prefetchInfiniteQuery
+  // (prefetchQuery thường sẽ cache thiếu cấu trúc pages -> lỗi .length khi hydrate).
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: qk.post(id),
+      queryFn: () => postsApi.get(id),
+    }),
+    queryClient.prefetchInfiniteQuery({
+      queryKey: qk.commentsInfinite(id, 10),
+      queryFn: ({ pageParam }) =>
+        commentsApi.listByPost(id, { page: pageParam as number, limit: 10 }),
+      initialPageParam: 1,
+      getNextPageParam: (lastPage: CommentsPage) => {
+        const meta = lastPage.meta;
+        if (!meta) return undefined;
+        return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+      },
+    }),
+  ]);
 
   return (
-    <AppLayout hideSidebar>
-      <div className={styles.article}>
-        <div className={styles.articleInner}>
-          <div className={styles.layout}>
-            <aside className={styles.sidebar}>
-             
-              <div className={styles.creatorProfile}>
-                <Image
-                  src={note.avatar}
-                  alt={note.author}
-                  width={80}
-                  height={80}
-                  className={styles.profileAvatar}
-                />
-                <div className={styles.profileBody}>
-                  <div className={styles.profileName}>{note.author}</div>
-                  <div className={styles.profileDescription}>
-                    {note.excerpt || note.body?.[0]}
-                  </div>
-                  <SocialLinks />
-                </div>
-              </div>
-               <BackButton />
-            </aside>
-
-            <div className={styles.content}>
-              <figure className={styles.eyecatch}>
-                <Image
-                  src={note.cover}
-                  alt={note.title}
-                  fill
-                  sizes="(max-width: 900px) 100vw, 700px"
-                  priority
-                  style={{ borderRadius: 8 }}
-                />
-              </figure>
-
-              <header className={styles.header}>
-                <h1 className={styles.title}>{note.title}</h1>
-
-                <div className={styles.titleAttachment}>
-                  <NoteTitleActions likes={note.likes} />
-                </div>
-
-                <div className={styles.creatorInfo}>
-                  <Image
-                    src={note.avatar}
-                    alt={note.author}
-                    width={32}
-                    height={32}
-                    className={styles.avatar}
-                  />
-                  <div className={styles.creatorInfoText}>
-                    <div className={styles.creatorName}>{note.author}</div>
-                    <time className={styles.creatorDate}>{note.date}</time>
-                  </div>
-                </div>
-              </header>
-
-              <div className={styles.body}>
-                <ClientNoteBody blocks={bodyToBlocks(note)} />
-              </div>
-
-              <div className={styles.hashtags}>
-                {note.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={`/tag/${encodeURIComponent(tag)}`}
-                    className={styles.tag}
-                  >
-                    #{tag}
-                  </Link>
-                ))}
-              </div>
-
-              <div className={styles.actionBar}>
-                <NoteActions likes={note.likes} comments={note.comments} />
-              </div>
-
-              <div className={styles.commentSection}>
-                <ClientCommentList noteId={note.id} />
-              </div>
-
-              {relatedNotes.length > 0 && (
-                <div className={styles.recommendedSection}>
-                  <h3 className={styles.recommendedTitle}>
-                    Bài viết liên quan
-                  </h3>
-                  <div className={styles.recommendedGrid}>
-                    {relatedNotes.map((related) => (
-                      <ClientTopicCard
-                        key={related.id}
-                        note={related}
-                        featured={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className={styles.rightRail} aria-hidden="true" />
-          </div>
-        </div>
-      </div>
-    </AppLayout>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <LikesProvider initialLikedIds={initialLikedIds}>
+        <NoteView id={id} />
+      </LikesProvider>
+    </HydrationBoundary>
   );
 }

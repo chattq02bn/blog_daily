@@ -8,6 +8,7 @@ import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Table,
@@ -24,26 +25,50 @@ import {
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
-  deleteTopic,
-  loadSidebarItems,
-  loadTopics,
-  saveSidebarItems,
-  saveTopic,
-} from "@/lib/adminStorage";
-import { type AdminTopic } from "@/data/admin";
+  useCreateTopic,
+  useDeleteTopic,
+  useSidebar,
+  useTopics,
+  useUpdateTopic,
+} from "@/hooks/use-api";
+import { sidebarApi } from "@/lib/api";
+import type { ApiTopic } from "@/lib/api";
 import styles from "./topic.module.scss";
 
 function TopicCreatePage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [topics, setTopics] = useState<AdminTopic[]>(() => loadTopics());
   const [keyword, setKeyword] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<AdminTopic | null>(null);
+  const [editing, setEditing] = useState<ApiTopic | null>(null);
   const [form] = Form.useForm<{ name: string; description?: string }>();
+  const [messageApi, contextHolder] = message.useMessage();
 
+  const topicsQuery = useTopics();
+  const sidebarQuery = useSidebar();
+
+  const topics: ApiTopic[] = useMemo(() => topicsQuery.data ?? [], [topicsQuery.data]);
   const itemName = searchParams.get("name") ?? "";
+
+  const refreshSidebarItem = async (topicId: string) => {
+    // Gắn topic mới vào mục sidebar hiện tại (replace-all API)
+    const items = sidebarQuery.data ?? [];
+    const target = items.find((it) => it.id === params.id);
+    if (!target) return;
+
+    const payload = items.map((item) =>
+      item.id === target.id
+        ? { ...item, topicIds: [...item.topicIds, topicId] }
+        : item
+    );
+    await sidebarApi.replace(payload);
+    await sidebarQuery.refetch();
+  };
+
+  const createMutation = useCreateTopic();
+  const updateMutation = useUpdateTopic();
+  const deleteMutation = useDeleteTopic();
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -51,7 +76,7 @@ function TopicCreatePage() {
     return topics.filter(
       (t) =>
         t.name.toLowerCase().includes(kw) ||
-        t.description.toLowerCase().includes(kw)
+        (t.description ?? "").toLowerCase().includes(kw)
     );
   }, [topics, keyword]);
 
@@ -60,7 +85,7 @@ function TopicCreatePage() {
     setModalOpen(true);
   };
 
-  const openEdit = (topic: AdminTopic) => {
+  const openEdit = (topic: ApiTopic) => {
     setEditing(topic);
     setModalOpen(true);
   };
@@ -72,41 +97,38 @@ function TopicCreatePage() {
         description: values.description?.trim() ?? "",
       };
       if (editing) {
-        const updated: AdminTopic = { ...editing, ...data };
-        saveTopic(updated);
-        setTopics((prev) => prev.map((t) => (t.id === editing.id ? updated : t)));
-        console.log("update topic:", updated);
+        updateMutation.mutate(
+          { id: editing.id, body: data },
+          {
+            onSuccess: () => messageApi.success("Đã cập nhật topic"),
+            onError: () => messageApi.error("Cập nhật topic thất bại"),
+          }
+        );
       } else {
-        const created: AdminTopic = {
-          id: `t_${Date.now().toString(36)}`,
-          ...data,
-        };
-        saveTopic(created);
-        setTopics((prev) => [...prev, created]);
-        const items = loadSidebarItems();
-        const item = items.find((it) => it.id === params.id);
-        if (item) {
-          saveSidebarItems(
-            items.map((it) =>
-              it.id === item.id
-                ? { ...it, topicIds: [...it.topicIds, created.id] }
-                : it
-            )
-          );
-        }
-        console.log("create topic:", created, "-> item:", item?.name ?? itemName);
+        createMutation.mutate(data, {
+          onSuccess: async (created) => {
+            messageApi.success("Đã thêm topic");
+            try {
+              await refreshSidebarItem(created.id);
+            } catch {
+              messageApi.warning("Đã tạo topic nhưng chưa gắn được vào mục sidebar");
+            }
+          },
+          onError: () => messageApi.error("Thêm topic thất bại"),
+        });
       }
       setModalOpen(false);
     });
   };
 
-  const handleDelete = (topic: AdminTopic) => {
-    deleteTopic(topic.id);
-    setTopics((prev) => prev.filter((t) => t.id !== topic.id));
-    console.log("delete topic:", topic);
+  const handleDelete = (topic: ApiTopic) => {
+    deleteMutation.mutate(topic.id, {
+      onSuccess: () => messageApi.success(`Đã xóa topic "${topic.name}"`),
+      onError: () => messageApi.error("Xóa topic thất bại"),
+    });
   };
 
-  const columns: TableProps<AdminTopic>["columns"] = [
+  const columns: TableProps<ApiTopic>["columns"] = [
     {
       title: "ID",
       dataIndex: "id",
@@ -138,7 +160,7 @@ function TopicCreatePage() {
       title: "Thao tác",
       key: "actions",
       width: 130,
-      render: (_: unknown, record: AdminTopic) => (
+      render: (_: unknown, record: ApiTopic) => (
         <div className={styles.actions}>
           <Tooltip title="Tạo bài viết">
             <Button
@@ -173,6 +195,7 @@ function TopicCreatePage() {
 
   return (
     <AdminLayout>
+      {contextHolder}
       <div className={styles.wrap}>
         <div className={styles.toolbar}>
           <Breadcrumb
@@ -227,7 +250,7 @@ function TopicCreatePage() {
           if (editing) {
             form.setFieldsValue({
               name: editing.name,
-              description: editing.description,
+              description: editing.description ?? undefined,
             });
           } else {
             form.resetFields();
