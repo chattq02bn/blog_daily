@@ -12,7 +12,6 @@ import { sectionsApi, sidebarApi, type ApiSidebarItem } from "@/lib/api";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ s?: string }>;
 };
 
 async function getSidebarItem(slug: string): Promise<ApiSidebarItem | null> {
@@ -36,21 +35,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title };
 }
 
-export default async function TopicDetailPage({ params, searchParams }: PageProps) {
+export default async function TopicDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const { s } = await searchParams;
   const initialLikedIds = await getInitialLikedIds();
 
-  // Slug có trùng một mục trong sidebar (mục cha hoặc mục con) không?
-  // - Mục cha: hiển thị header của mục cha, dữ liệu gom sections của các mục con
-  // - Mục con: hiển thị header của chính mục con, dữ liệu là sections theo slug
   const sidebarItem = await getSidebarItem(slug);
   const isParent = Boolean(sidebarItem && sidebarItem.children.length > 0);
   const childrenSlugs = sidebarItem?.children.map((child) => child.slug) ?? [];
 
+  const topicHref = "/";
+
   const queryClient = getQueryClient();
 
-  // Prefetch trước để dữ liệu có sẵn khi client render
   if (isParent) {
     await queryClient.prefetchQuery({
       queryKey: qk.sectionsMulti(childrenSlugs),
@@ -66,13 +62,13 @@ export default async function TopicDetailPage({ params, searchParams }: PageProp
   return (
     <AppLayout>
       <div className={styles.page}>
-        {/* Mục nào trong sidebar (kể cả mục cha lẫn mục con) cũng hiển thị header tên + mô tả */}
         {sidebarItem && (
           <TopicHeader
             topic={{
               name: sidebarItem.name,
               description: sidebarItem.description ?? "",
             }}
+            href={topicHref}
           />
         )}
 
@@ -80,7 +76,6 @@ export default async function TopicDetailPage({ params, searchParams }: PageProp
           <LikesProvider initialLikedIds={initialLikedIds}>
             <TopicSectionList
               slug={slug}
-              activeSectionId={s}
               childrenSlugs={isParent ? childrenSlugs : undefined}
             />
           </LikesProvider>

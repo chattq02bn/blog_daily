@@ -73,6 +73,33 @@ export function usePostsInfinite(params: Omit<ListPostsParams, "page"> = {}) {
   });
 }
 
+/* Infinite query cho section detail — trả về posts + section info */
+export function useSectionPostsInfinite(sectionId: string, limit = 12) {
+  const query = useInfiniteQuery({
+    queryKey: qk.postsInfinite({ sectionId, status: "published", limit }),
+    queryFn: ({ pageParam }) =>
+      postsApi.listBySection(sectionId, { page: pageParam, limit }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+    enabled: Boolean(sectionId),
+  });
+
+  const section = query.data?.pages[0]?.section;
+  const posts = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const totalPosts = query.data?.pages[0]?.meta?.total ?? 0;
+
+  return {
+    ...query,
+    section,
+    posts,
+    totalPosts,
+  };
+}
+
 export function usePost(idOrSlug: string) {
   return useQuery({
     queryKey: qk.post(idOrSlug),

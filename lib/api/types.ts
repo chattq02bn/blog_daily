@@ -47,6 +47,23 @@ export interface ApiSection {
   posts: ApiPost[];
 }
 
+/** Section info không có posts (dùng cho response phân trang) */
+export interface ApiSectionInfo {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  idx: number;
+  topicSlug: string;
+}
+
+/** Response từ API /posts/section/:sectionId */
+export interface ApiSectionPostsResponse {
+  data: ApiPost[];
+  meta?: ApiMeta;
+  section: ApiSectionInfo;
+}
+
 export interface ApiTopic {
   id: string;
   name: string;

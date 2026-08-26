@@ -5,6 +5,7 @@ import type {
   ApiMeta,
   ApiPost,
   ApiSection,
+  ApiSectionPostsResponse,
   ApiSidebarItem,
   ApiTag,
   ApiTopic,
@@ -92,6 +93,14 @@ export const postsApi = {
     };
     const res = await api.get<Envelope<ApiPost[]>>("/posts", { params: query });
     return { data: res.data.data, meta: res.data.meta };
+  },
+  async listBySection(sectionId: string, params: { page?: number; limit?: number } = {}): Promise<ApiSectionPostsResponse> {
+    const res = await api.get<Envelope<ApiPost[]>>(`/posts/section/${sectionId}`, { params });
+    return {
+      data: res.data.data,
+      meta: res.data.meta,
+      section: (res.data as unknown as { section: ApiSectionPostsResponse["section"] }).section,
+    };
   },
   async get(idOrSlug: string): Promise<ApiPost> {
     return unwrap(await api.get<Envelope<ApiPost>>(`/posts/${idOrSlug}`));

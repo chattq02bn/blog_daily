@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 export default function TopicHeader({
   topic,
+  href,
   className = "",
 }: {
   topic: {
@@ -7,10 +10,11 @@ export default function TopicHeader({
     emoji?: string;
     description?: string;
   };
+  href?: string;
   className?: string;
 }) {
-  return (
-    <header className={`mb-4 px-0 ${className}`.trim()}>
+  const content = (
+    <>
       <div className="flex items-center gap-3">
         <div className="flex size-12 items-center justify-center rounded-xl bg-surface-quaternary text-2xl font-bold">
           {topic.emoji ?? topic.name.charAt(0).toUpperCase()}
@@ -19,6 +23,18 @@ export default function TopicHeader({
       </div>
       {topic.description && (
         <p className="mt-2 text-sm text-text-secondary">{topic.description}</p>
+      )}
+    </>
+  );
+
+  return (
+    <header className={`mb-4 px-0 ${className}`.trim()}>
+      {href ? (
+        <Link href={href} className="block hover:opacity-80 transition-opacity">
+          {content}
+        </Link>
+      ) : (
+        content
       )}
     </header>
   );

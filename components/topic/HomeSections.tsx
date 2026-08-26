@@ -117,7 +117,7 @@ export default function HomeSections() {
 
   /* Sentinel ở CUỐI TOÀN BỘ LAYOUT: rootMargin lớn để nạp sớm khi user mới cuộn xuống */
   const { ref: sentinelRef, inView: sentinelInView } = useInView<HTMLDivElement>({
-    rootMargin: "400px",
+    rootMargin: "600px",
     onEnter: () => {
       if (sidebarQuery.hasNextPage && !sidebarQuery.isFetchingNextPage) {
         void sidebarQuery.fetchNextPage();
