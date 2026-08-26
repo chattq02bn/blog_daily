@@ -1,47 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Button, Input, Popconfirm, Table, Tag, Tooltip } from "antd";
-import {
+import { Button, Input, Popconfirm, Table, Tag, Tooltip, message } from "antd";import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
-import type { AdminTopic, AdminTag } from "@/data/admin";
 import {
-  loadPosts,
-  loadTags,
-  loadTopics,
-  type AdminPost,
-  type PostStatus,
-} from "@/lib/adminStorage";
+  useDeletePost,
+  usePosts,
+} from "@/hooks/use-api";
+import type { ApiPost } from "@/lib/api";
 import styles from "./posts.module.scss";
 
-function nameOf(list: AdminTopic[] | AdminTag[], id: string): string | undefined {
-  return list.find((item) => item.id === id)?.name;
-}
-
-const statusMeta: Record<PostStatus, { label: string; color: string }> = {
+const statusMeta: Record<"draft" | "published", { label: string; color: string }> = {
   draft: { label: "Nháp", color: "orange" },
   published: { label: "Đã đăng", color: "green" },
 };
 
 export default function AdminPostsPage() {
   const router = useRouter();
-  const [posts, setPosts] = useState<AdminPost[]>([]);
   const [keyword, setKeyword] = useState("");
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage chỉ đọc được ở client sau khi mount
-    setPosts(loadPosts());
-  }, []);
+  const postsQuery = usePosts({ limit: 100 });
+  const deleteMutation = useDeletePost();
 
-  const topics = useMemo(() => loadTopics(), []);
-  const tags = useMemo(() => loadTags(), []);
+  const posts: ApiPost[] = useMemo(() => postsQuery.data?.data ?? [], [postsQuery.data]);
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -50,14 +38,16 @@ export default function AdminPostsPage() {
       (p) =>
         p.title.toLowerCase().includes(kw) ||
         p.id.toLowerCase().includes(kw) ||
-        p.topicIds.some((id) => nameOf(topics, id)?.toLowerCase().includes(kw)) ||
-        p.tagIds.some((id) => nameOf(tags, id)?.toLowerCase().includes(kw))
+        p.topics.some((t) => t.name.toLowerCase().includes(kw)) ||
+        p.tags.some((t) => t.name.toLowerCase().includes(kw))
     );
-  }, [posts, keyword, topics, tags]);
+  }, [posts, keyword]);
 
-  const handleDelete = (post: AdminPost) => {
-    setPosts((prev) => prev.filter((p) => p.id !== post.id));
-    console.log("delete post:", post);
+  const handleDelete = (post: ApiPost) => {
+    deleteMutation.mutate(post.id, {
+      onSuccess: () => message.success(`Đã xóa "${post.title}"`),
+      onError: () => message.error("Xóa bài viết thất bại"),
+    });
   };
 
   const columns = [
@@ -66,14 +56,14 @@ export default function AdminPostsPage() {
       dataIndex: "id",
       key: "id",
       width: 100,
-      render: (id: string) => <span className={styles.postId}>{id}</span>,
+      render: (id: string) => <span className={styles.postId}>{id.slice(-8)}</span>,
     },
     {
       title: "Ảnh",
       dataIndex: "cover",
       key: "cover",
       width: 110,
-      render: (cover: string | undefined, record: AdminPost) => (
+      render: (cover: string | null, record: ApiPost) => (
         <Image
           src={cover || `https://picsum.photos/seed/${record.id}/360/220`}
           alt={record.title}
@@ -96,21 +86,20 @@ export default function AdminPostsPage() {
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (status: PostStatus | undefined) => {
+      render: (status: "draft" | "published") => {
         const meta = statusMeta[status ?? "draft"];
         return <Tag color={meta.color}>{meta.label}</Tag>;
       },
     },
     {
       title: "Topics",
-      dataIndex: "topicIds",
-      key: "topicIds",
+      key: "topics",
       width: 240,
-      render: (topicIds: string[]) => (
+      render: (_: unknown, record: ApiPost) => (
         <div className={styles.list}>
-          {topicIds.map((id) => (
-            <Tag key={id} className={styles.itemTag}>
-              {nameOf(topics, id) ?? id}
+          {record.topics.map((topic) => (
+            <Tag key={topic.id} className={styles.itemTag}>
+              {topic.name}
             </Tag>
           ))}
         </div>
@@ -118,14 +107,13 @@ export default function AdminPostsPage() {
     },
     {
       title: "Tags",
-      dataIndex: "tagIds",
-      key: "tagIds",
+      key: "tags",
       width: 200,
-      render: (tagIds: string[]) => (
+      render: (_: unknown, record: ApiPost) => (
         <div className={styles.list}>
-          {tagIds.map((id) => (
-            <Tag key={id} className={styles.itemTag}>
-              #{nameOf(tags, id) ?? id}
+          {record.tags.map((tag) => (
+            <Tag key={tag.id} className={styles.itemTag}>
+              #{tag.name}
             </Tag>
           ))}
         </div>
@@ -135,7 +123,7 @@ export default function AdminPostsPage() {
       title: "Thao tác",
       key: "actions",
       width: 140,
-      render: (_: unknown, record: AdminPost) => (
+      render: (_: unknown, record: ApiPost) => (
         <div className={styles.actions}>
           <Tooltip title="Chỉnh sửa">
             <Button

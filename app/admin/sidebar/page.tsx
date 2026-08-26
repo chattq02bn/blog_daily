@@ -6,6 +6,7 @@ import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Select,
@@ -22,13 +23,50 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
-import {
-  loadSidebarItems,
-  saveSidebarItems,
-  seedSidebarItems,
-  type SidebarItem,
-} from "@/lib/adminStorage";
+import { useReplaceSidebar, useSidebar, useTopics } from "@/hooks/use-api";
+import type { ApiSidebarItem } from "@/lib/api";
 import styles from "./sidebar.module.scss";
+
+interface SidebarItem {
+  id: string;
+  name: string;
+  slug: string;
+  postCount: number;
+  topicIds: string[];
+  description?: string;
+  idx: number;
+  children?: SidebarItem[];
+}
+
+function apiToItem(item: ApiSidebarItem, topicPostCount: Record<string, number>): SidebarItem {
+  const postCount = item.topicIds.reduce((sum, tid) => sum + (topicPostCount[tid] ?? 0), 0);
+  return {
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    description: item.description ?? undefined,
+    idx: item.idx,
+    topicIds: item.topicIds,
+    postCount,
+    children: item.children.length
+      ? item.children.map((child) => apiToItem(child, topicPostCount))
+      : undefined,
+  };
+}
+
+function itemToApiPayload(item: SidebarItem): Record<string, unknown> {
+  return {
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    description: item.description ?? null,
+    idx: item.idx,
+    topicIds: item.topicIds,
+    ...(item.children?.length
+      ? { children: item.children.map(itemToApiPayload) }
+      : { children: [] }),
+  };
+}
 
 function totalPosts(item: SidebarItem): number {
   if (item.children?.length) {
@@ -48,7 +86,7 @@ function isChild(items: SidebarItem[], id: string): boolean {
   return Boolean(findParent(items, id));
 }
 
-/* Tự sinh đường dẫn từ tên khi form không còn nhập href */
+/* Tự sinh slug từ tên — dùng cho /topic/[slug] khi click mục sidebar */
 function slugify(name: string): string {
   const slug = name
     .normalize("NFD")
@@ -127,7 +165,7 @@ function DragRow({ children, ...rest }: React.HTMLAttributes<HTMLTableRowElement
 
 export default function AdminSidebarPage() {
   const router = useRouter();
-  const [items, setItems] = useState<SidebarItem[]>(seedSidebarItems);
+  const [items, setItems] = useState<SidebarItem[]>([]);
   const [keyword, setKeyword] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<SidebarItem | null>(null);
@@ -137,6 +175,45 @@ export default function AdminSidebarPage() {
     description?: string;
     parentId?: string;
   }>();
+
+  const sidebarQuery = useSidebar();
+  const topicsQuery = useTopics();
+  const replaceMutation = useReplaceSidebar();
+
+  /* postCount tính từ số bài của topic gắn với mục */
+  const topicPostCount = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const topic of topicsQuery.data ?? []) {
+      map[topic.id] = topic.postCount;
+    }
+    return map;
+  }, [topicsQuery.data]);
+
+  /* Nạp dữ liệu từ API vào state lần đầu */
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current || !sidebarQuery.data) return;
+    hydratedRef.current = true;
+    setItems(sidebarQuery.data.map((item) => apiToItem(item, topicPostCount)));
+  }, [sidebarQuery.data, topicPostCount]);
+
+  /* Tự lưu lên server (debounce) sau mỗi thay đổi cục bộ */
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    dirtyRef.current = true;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      replaceMutation.mutate(
+        items.map(itemToApiPayload),
+        {
+          onError: () => message.error("Lưu sidebar thất bại"),
+        }
+      );
+    }, 600);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi items đổi
+  }, [items]);
 
   /* Trạng thái kéo thả lưu trong ref — không setState trong dragover để tránh lag */
   const sortedRef = useRef<SidebarItem[]>([]);
@@ -200,15 +277,6 @@ export default function AdminSidebarPage() {
     onDragEnd: (e) => endDrag(e.currentTarget),
   });
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage chỉ đọc được ở client sau khi mount
-    setItems(loadSidebarItems());
-  }, []);
-
-  useEffect(() => {
-    saveSidebarItems(items);
-  }, [items]);
-
   const sorted = useMemo(() => sortTree(items), [items]);
 
   useEffect(() => {
@@ -220,7 +288,7 @@ export default function AdminSidebarPage() {
     if (!kw) return sorted;
     const matches = (item: SidebarItem) =>
       item.name.toLowerCase().includes(kw) ||
-      item.href.toLowerCase().includes(kw) ||
+      item.slug.toLowerCase().includes(kw) ||
       (item.description ?? "").toLowerCase().includes(kw);
     return sorted
       .filter((p) => matches(p) || p.children?.some(matches))
@@ -269,7 +337,7 @@ export default function AdminSidebarPage() {
         const updated: SidebarItem = {
           ...editing,
           name: name.trim(),
-          href: editing.href || `/${slugify(name.trim())}`,
+          slug: editing.slug || slugify(name.trim()),
           description: description?.trim() || undefined,
         };
         const rest = removeItem(sorted, editing.id);
@@ -279,7 +347,7 @@ export default function AdminSidebarPage() {
         const created: SidebarItem = {
           id: `s_${Date.now().toString(36)}`,
           name: name.trim(),
-          href: `/${slugify(name.trim())}`,
+          slug: slugify(name.trim()),
           postCount: 0,
           topicIds: [],
           description: description?.trim() || undefined,

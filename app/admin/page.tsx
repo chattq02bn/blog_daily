@@ -12,6 +12,7 @@ import {
   Input,
   message,
   Row,
+  Skeleton,
   Statistic,
   Upload,
 } from "antd";
@@ -26,19 +27,13 @@ import {
   YAxis,
 } from "recharts";
 import AdminLayout from "@/components/admin/AdminLayout";
-import {
-  getMonthlyVisits,
-  peakDay,
-  sumVisits,
-  type DayVisit,
-} from "@/data/dashboard";
-import {
-  loadProfile,
-  saveProfile,
-  defaultProfile,
-  type AdminProfile,
-} from "@/lib/profileStorage";
+import { useProfile, useUpdateProfile, useVisits } from "@/hooks/use-api";
 import styles from "./admin.module.scss";
+
+interface DayVisit {
+  day: number;
+  visits: number;
+}
 
 /** Chỉ cho chọn tháng trong năm 2026 */
 function disabledMonth(current: Dayjs): boolean {
@@ -49,7 +44,6 @@ const formatNumber = (n: number) => n.toLocaleString("vi-VN");
 
 export default function AdminPage() {
   const [month, setMonth] = useState<Dayjs>(dayjs("2026-08-01"));
-  const [profile, setProfile] = useState<AdminProfile>(defaultProfile);
   const [form] = Form.useForm<{
     name: string;
     email: string;
@@ -57,39 +51,57 @@ export default function AdminPage() {
     logoName: string;
     description?: string;
   }>();
+  const [avatar, setAvatar] = useState<string | undefined>(undefined);
+  const [messageApi, contextHolder] = message.useMessage();
 
-  useEffect(() => {
-    const loaded = loadProfile();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage chỉ đọc được ở client sau khi mount
-    setProfile(loaded);
-    form.setFieldsValue({
-      name: loaded.name,
-      email: loaded.email,
-      role: loaded.role,
-      logoName: loaded.logoName,
-      description: loaded.description,
-    });
-  }, [form]);
+  const monthKey = month.format("YYYY-MM");
+  const visitsQuery = useVisits(monthKey);
+  const profileQuery = useProfile();
+  const updateProfileMutation = useUpdateProfile();
 
+  /* Dữ liệu biểu đồ */
   const data: DayVisit[] = useMemo(
-    () => getMonthlyVisits(month.month()),
-    [month]
+    () => (visitsQuery.data?.days ?? []).map((d) => ({ day: d.day, visits: d.visits })),
+    [visitsQuery.data]
   );
-  const total = useMemo(() => sumVisits(data), [data]);
-  const peak = useMemo<DayVisit>(() => peakDay(data), [data]);
+  const total = useMemo(() => data.reduce((sum, d) => sum + d.visits, 0), [data]);
+  const peak = useMemo<DayVisit>(
+    () => data.reduce((max, d) => (d && d.visits > (max?.visits ?? -1) ? d : max), data[0] ?? { day: 1, visits: 0 }),
+    [data]
+  );
   const avg = Math.round(total / (data.length || 1));
+
+  /* Nạp hồ sơ vào form */
+  useEffect(() => {
+    const profile = profileQuery.data;
+    if (!profile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- đồng bộ avatar từ dữ liệu server
+    setAvatar(profile.avatar ?? undefined);
+    form.setFieldsValue({
+      name: profile.name ?? "",
+      email: profile.email,
+      role: profile.role === "admin" ? "Admin" : "User",
+      logoName: profile.logoName ?? "note",
+      description: profile.description ?? "",
+    });
+  }, [profileQuery.data, form]);
 
   const handleAvatarChange = (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
-      message.error("Ảnh tối đa 2MB");
+      messageApi.error("Ảnh tối đa 2MB");
       return false;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      const next = { ...profile, avatar: String(reader.result) };
-      setProfile(next);
-      saveProfile(next);
-      message.success("Đã cập nhật avatar");
+      const base64 = String(reader.result);
+      setAvatar(base64);
+      updateProfileMutation.mutate(
+        { avatar: base64 },
+        {
+          onSuccess: () => messageApi.success("Đã cập nhật avatar"),
+          onError: () => messageApi.error("Cập nhật avatar thất bại"),
+        }
+      );
     };
     reader.readAsDataURL(file);
     return false; // chặn upload tự động của antd
@@ -102,21 +114,22 @@ export default function AdminPage() {
     logoName: string;
     description?: string;
   }) => {
-    const next: AdminProfile = {
-      ...profile,
-      name: values.name.trim(),
-      email: values.email.trim(),
-      role: values.role.trim() || profile.role,
-      logoName: values.logoName.trim() || "note",
-      description: values.description?.trim(),
-    };
-    setProfile(next);
-    saveProfile(next);
-    message.success("Đã lưu thông tin cá nhân");
+    updateProfileMutation.mutate(
+      {
+        name: values.name.trim(),
+        logoName: values.logoName.trim() || "note",
+        description: values.description?.trim() || null,
+      },
+      {
+        onSuccess: () => messageApi.success("Đã lưu thông tin cá nhân"),
+        onError: () => messageApi.error("Lưu thông tin thất bại"),
+      }
+    );
   };
 
   return (
     <AdminLayout>
+      {contextHolder}
       <div className={styles.wrap}>
         {/* ===== Thống kê truy cập ===== */}
         <Card className={styles.card}>
@@ -141,6 +154,7 @@ export default function AdminPage() {
                 title="Tổng truy cập"
                 value={formatNumber(total)}
                 suffix="lượt"
+                loading={visitsQuery.isPending}
               />
             </Col>
             <Col xs={24} sm={8}>
@@ -148,6 +162,7 @@ export default function AdminPage() {
                 title="Ngày cao nhất"
                 value={formatNumber(peak.visits)}
                 suffix={`(ngày ${peak.day})`}
+                loading={visitsQuery.isPending}
               />
             </Col>
             <Col xs={24} sm={8}>
@@ -155,6 +170,7 @@ export default function AdminPage() {
                 title="Trung bình mỗi ngày"
                 value={formatNumber(avg)}
                 suffix="lượt"
+                loading={visitsQuery.isPending}
               />
             </Col>
           </Row>
@@ -199,21 +215,29 @@ export default function AdminPage() {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={8}>
             <Card title="Hồ sơ" className={styles.card}>
-              <div className={styles.profileLeft}>
-                <Avatar src={profile.avatar} icon={<UserOutlined />} size={96} />
-                <div className={styles.profileName}>{profile.name}</div>
-                <div className={styles.profileRole}>{profile.role}</div>
-                {profile.description && (
-                  <p className={styles.profileDesc}>{profile.description}</p>
-                )}
-                <Upload
-                  accept="image/*"
-                  showUploadList={false}
-                  beforeUpload={(file) => handleAvatarChange(file)}
-                >
-                  <Button icon={<UploadOutlined />}>Đổi avatar</Button>
-                </Upload>
-              </div>
+              {profileQuery.isPending ? (
+                <Skeleton avatar active paragraph={{ rows: 2 }} />
+              ) : (
+                <div className={styles.profileLeft}>
+                  <Avatar src={avatar} icon={<UserOutlined />} size={96} />
+                  <div className={styles.profileName}>
+                    {profileQuery.data?.name ?? "—"}
+                  </div>
+                  <div className={styles.profileRole}>
+                    {profileQuery.data?.role === "admin" ? "Admin" : "User"}
+                  </div>
+                  {profileQuery.data?.description && (
+                    <p className={styles.profileDesc}>{profileQuery.data.description}</p>
+                  )}
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={(file) => handleAvatarChange(file)}
+                  >
+                    <Button icon={<UploadOutlined />}>Đổi avatar</Button>
+                  </Upload>
+                </div>
+              )}
             </Card>
           </Col>
           <Col xs={24} md={16}>
@@ -261,6 +285,7 @@ export default function AdminPage() {
                   type="primary"
                   htmlType="submit"
                   icon={<SaveOutlined />}
+                  loading={updateProfileMutation.isPending}
                   className="note-btn-primary"
                 >
                   Lưu thay đổi

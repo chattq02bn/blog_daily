@@ -4,9 +4,10 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { ACCESS_TOKEN_KEY, clearAuth } from "@/lib/auth";
+import { openLoginModal } from "@/lib/jotai/auth";
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
   timeout: 15000,
   headers: { "Content-Type": "application/json" },
 });
@@ -24,18 +25,23 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-let isRedirecting = false;
+let isHandling401 = false;
 
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      clearAuth();
-      if (!isRedirecting) {
-        isRedirecting = true;
-        // Hard reload on 401: interceptor runs outside React so useRouter is unavailable.
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = "/login";
+    const hadToken =
+      typeof window !== "undefined" && Boolean(localStorage.getItem(ACCESS_TOKEN_KEY));
+
+    if (error.response?.status === 401 && hadToken && typeof window !== "undefined") {
+      if (!isHandling401) {
+        isHandling401 = true;
+        clearAuth();
+        // Hết phiên: mở modal đăng nhập (global state) thay vì redirect /admin/auth.
+        openLoginModal("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        setTimeout(() => {
+          isHandling401 = false;
+        }, 1000);
       }
     }
     return Promise.reject(error);

@@ -1,21 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { HeartFilled, HeartOutlined } from "@ant-design/icons";
+import { useIsPostLiked } from "@/components/likes/LikesProvider";
+import { togglePostLiked } from "@/lib/post-likes";
 import styles from "./NoteLike.module.scss";
 
-export default function NoteLike({ likes }: { likes: number }) {
-  const [liked, setLiked] = useState(false);
-  const [count, setCount] = useState(likes);
+export default function NoteLike({ postId, likes }: { postId: string; likes: number }) {
+  // Trạng thái like được lưu ở localStorage + cookie nên giữ nguyên sau khi F5
+  const liked = useIsPostLiked(postId);
+  const count = likes + (liked ? 1 : 0);
 
-  const toggle = () => {
-    if (liked) {
-      setCount((c) => c - 1);
-    } else {
-      setCount((c) => c + 1);
-    }
-    setLiked(!liked);
-  };
+  const toggle = () => togglePostLiked(postId);
 
   return (
     <span className={styles.like}>

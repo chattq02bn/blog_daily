@@ -5,16 +5,18 @@ import NoteLike from "./NoteLike";
 import styles from "./NoteActions.module.scss";
 
 export default function NoteActions({
+  postId,
   likes,
   comments,
 }: {
+  postId: string;
   likes: number;
   comments: number;
 }) {
   return (
     <div className={styles.actionControl}>
       <div className={styles.item}>
-        <NoteLike likes={likes} />
+        <NoteLike postId={postId} likes={likes} />
       </div>
       <div className={styles.item}>
         <button className={styles.iconButton} aria-label="Bình luận">

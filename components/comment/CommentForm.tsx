@@ -5,7 +5,8 @@ import Image from "next/image";
 import { CloseOutlined, SendOutlined, SmileOutlined, EditOutlined } from "@ant-design/icons";
 import { Popover, message } from "antd";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
-import { createComment, getCurrentUser, updateUser } from "@/lib/commentStorage";
+import { getCurrentUser, updateUser } from "@/lib/commentStorage";
+import { commentsApi } from "@/lib/api";
 import styles from "./CommentForm.module.scss";
 
 interface CommentFormProps {
@@ -15,7 +16,7 @@ interface CommentFormProps {
   onSubmit: () => void;
   onCancel?: () => void;
   compact?: boolean;
-  onProfileChange?: () => void;
+  submitting?: boolean;
 }
 
 export default function CommentForm({
@@ -25,11 +26,10 @@ export default function CommentForm({
   onSubmit,
   onCancel,
   compact = false,
-  onProfileChange,
+  submitting = false,
 }: CommentFormProps) {
   const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -57,25 +57,30 @@ export default function CommentForm({
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmed = content.trim();
-    if (!trimmed || isSubmitting) return;
+    if (!trimmed || submitting) return;
 
-    setIsSubmitting(true);
     try {
-      createComment(noteId, currentUser.name, currentUser.avatar, trimmed, parentId);
+      await commentsApi.create(noteId, {
+        content: trimmed,
+        parentId,
+        authorName: currentUser.name,
+        ...(currentUser.avatar.startsWith("http") ? {} : { authorAvatar: currentUser.avatar }),
+      });
+
       setContent("");
       setIsFocused(false);
       setShowEmoji(false);
       onSubmit();
       if (onCancel) onCancel();
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      void handleSubmit();
     }
   };
 
@@ -95,7 +100,6 @@ export default function CommentForm({
     if (!trimmed || trimmed === currentUser.name) return;
     if (updateUser(trimmed)) {
       message.success("Đã cập nhật tên hiển thị");
-      onProfileChange?.();
     }
   };
 
@@ -161,7 +165,7 @@ export default function CommentForm({
         />
         <div className={styles.inputContainer}>
           {showForm ? (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => void handleSubmit(e)}>
               <textarea
                 ref={textareaRef}
                 className={styles.textarea}
@@ -171,7 +175,7 @@ export default function CommentForm({
                 onFocus={() => setIsFocused(true)}
                 placeholder={parentId ? `Trả lời @${parentAuthor}...` : "Viết bình luận..."}
                 rows={compact ? 2 : 3}
-                disabled={isSubmitting}
+                disabled={submitting}
                 autoFocus
               />
               <div className={styles.actions}>
@@ -213,7 +217,7 @@ export default function CommentForm({
                 <button
                   type="submit"
                   className={styles.submitButton}
-                  disabled={!content.trim() || isSubmitting}
+                  disabled={!content.trim() || submitting}
                 >
                   <SendOutlined />
                 </button>

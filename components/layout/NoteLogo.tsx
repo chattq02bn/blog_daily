@@ -1,19 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { loadProfile, PROFILE_CHANGED_EVENT } from "@/lib/profileStorage";
+import { useProfile } from "@/hooks/use-api";
 import styles from "./NoteLogo.module.scss";
 
 export default function NoteLogo() {
-  const [logoName, setLogoName] = useState("note");
-
-  useEffect(() => {
-    const sync = () => setLogoName(loadProfile().logoName || "note");
-    sync();
-    window.addEventListener(PROFILE_CHANGED_EVENT, sync);
-    return () => window.removeEventListener(PROFILE_CHANGED_EVENT, sync);
-  }, []);
+  const { data: profile } = useProfile();
+  const logoName = profile?.logoName || "note";
 
   return (
     <Link href="/" className={styles.logo} aria-label={logoName}>

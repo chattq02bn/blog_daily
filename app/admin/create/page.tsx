@@ -25,13 +25,13 @@ import type { Block } from "@blocknote/core";
 import AppLayout from "@/components/layout/AppLayout";
 import { Editor, PreviewEditor } from "@/components/admin/DynamicEditor";
 import {
-  loadPosts,
-  loadTags,
-  loadTopics,
-  savePosts,
-  type AdminPost,
-  type PostStatus,
-} from "@/lib/adminStorage";
+  useCreatePost,
+  usePost,
+  useTags,
+  useTopics,
+  useUpdatePost,
+} from "@/hooks/use-api";
+import type { PostWriteBody } from "@/lib/api";
 import styles from "./create.module.scss";
 
 /* Nội dung được tính là có dữ liệu nếu tồn tại block chữ không rỗng
@@ -54,8 +54,15 @@ function CreateNoteContent() {
   const router = useRouter();
   const editId = searchParams.get("id");
 
-  const [topics] = useState(() => loadTopics());
-  const [tags] = useState(() => loadTags());
+  const topicsQuery = useTopics();
+  const tagsQuery = useTags();
+  const postQuery = usePost(editId ?? "");
+  const createMutation = useCreatePost();
+  const updateMutation = useUpdatePost();
+
+  const topics = topicsQuery.data ?? [];
+  const tags = tagsQuery.data ?? [];
+
   const [form] = Form.useForm();
   const handleChange = useMemo(
     () =>
@@ -72,18 +79,22 @@ function CreateNoteContent() {
 
   const isEdit = Boolean(editId);
 
+  /* Nạp dữ liệu bài viết khi sửa */
   useEffect(() => {
-    if (!editId) return;
-    const post = loadPosts().find((p) => p.id === editId);
-    if (post) {
-      form.setFieldsValue({
-        title: post.title,
-        topicIds: post.topicIds,
-        tagIds: post.tagIds,
-        body: post.bodyBlocks ?? [],
-      });
+    if (!editId || !postQuery.data) return;
+    const post = postQuery.data;
+    form.setFieldsValue({
+      title: post.title,
+      topicIds: post.topicIds,
+      tagIds: post.tagIds,
+      body: (post.bodyBlocks as Block[]) ?? [],
+    });
+    if (post.cover) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- chỉ đồng bộ một lần khi tải bài viết
+      setCover(post.cover);
     }
-  }, [editId, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ nạp một lần khi có dữ liệu
+  }, [editId, postQuery.data]);
 
   useEffect(() => () => handleChange.cancel(), [handleChange]);
 
@@ -97,7 +108,14 @@ function CreateNoteContent() {
 
   const onUpload = (info: UploadChangeParam<UploadFile>) => {
     const file = info.fileList[0]?.originFileObj;
-    if (file) setCover(URL.createObjectURL(file));
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      message.error("Ảnh bìa tối đa 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setCover(String(reader.result));
+    reader.readAsDataURL(file);
   };
 
   const applyCoverUrl = () => {
@@ -107,42 +125,43 @@ function CreateNoteContent() {
   const savePost = (
     navigateBack: boolean,
     validate: boolean,
-    status: PostStatus,
+    status: "draft" | "published",
   ) => {
     handleChange.flush();
-    const persist = (values: {
-      title: string;
-      topicIds: string[];
-      tagIds: string[];
-    }) => {
+    const persist = (values: { title: string; topicIds: string[]; tagIds: string[] }) => {
       const all = form.getFieldsValue(true);
-      const data = {
+      const body: PostWriteBody & { title: string } = {
         title: values.title?.trim() ?? "",
         topicIds: values.topicIds ?? [],
         tagIds: values.tagIds ?? [],
-        bodyBlocks: all.body ?? [],
+        bodyBlocks: (all.body ?? []) as Record<string, unknown>[],
         status,
+        cover: cover || null,
       };
-      if (editId) {
-        const posts = loadPosts().map((p) =>
-          p.id === editId ? { ...p, ...data } : p,
+      if (!body.title) return;
+
+      if (editId && updateMutation) {
+        updateMutation.mutate(
+          { id: editId, body },
+          {
+            onSuccess: () => {
+              message.success(
+                status === "draft" ? "Đã lưu bài viết vào danh sách nháp" : "Đã cập nhật bài viết",
+              );
+              if (navigateBack) router.push("/admin/posts");
+            },
+            onError: () => message.error("Lưu bài viết thất bại"),
+          },
         );
-        savePosts(posts);
       } else {
-        const created: AdminPost = {
-          id: `p_${Date.now().toString(36)}`,
-          ...data,
-        };
-        savePosts([created, ...loadPosts()]);
+        createMutation.mutate(body, {
+          onSuccess: () => {
+            message.success(status === "draft" ? "Đã lưu bản nháp" : "Đã đăng bài");
+            if (navigateBack) router.push("/admin/posts");
+          },
+          onError: () => message.error("Tạo bài viết thất bại"),
+        });
       }
-      message.success(
-        status === "draft"
-          ? "Đã lưu bài viết vào danh sách nháp"
-          : isEdit
-            ? "Đã cập nhật bài viết"
-            : "Đã đăng bài",
-      );
-      if (navigateBack) router.push("/admin/posts");
     };
     if (validate) {
       form
@@ -300,12 +319,13 @@ function CreateNoteContent() {
             <Button size="large" icon={<EyeOutlined />} onClick={openPreview}>
               Xem trước
             </Button>
-            <Button size="large" onClick={saveDraft}>
+            <Button size="large" loading={createMutation.isPending || updateMutation.isPending} onClick={saveDraft}>
               Lưu nháp
             </Button>
             <Button
               type="primary"
               size="large"
+              loading={createMutation.isPending || updateMutation.isPending}
               className="note-btn-primary"
               onClick={publish}
             >

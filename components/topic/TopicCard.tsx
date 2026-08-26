@@ -1,43 +1,12 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { RightOutlined, HeartOutlined, HeartFilled } from "@ant-design/icons";
-import type { Note } from "@/data/notes";
+import { useIsPostLiked } from "@/components/likes/LikesProvider";
+import { togglePostLiked } from "@/lib/post-likes";
+import type { Note } from "@/lib/view-models";
 import styles from "./TopicCard.module.scss";
-
-const LIKED_KEY = "note_card_likes";
-
-function getLikedMap(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(LIKED_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-const likeListeners = new Set<() => void>();
-
-function subscribeLikes(callback: () => void) {
-  likeListeners.add(callback);
-  return () => {
-    likeListeners.delete(callback);
-  };
-}
-
-function emitLikeChange() {
-  likeListeners.forEach((listener) => listener());
-}
-
-function useLiked(noteId: string): boolean {
-  return useSyncExternalStore(
-    subscribeLikes,
-    () => !!getLikedMap()[noteId],
-    () => false
-  );
-}
 
 export default function TopicCard({
   note,
@@ -46,18 +15,14 @@ export default function TopicCard({
   note: Note;
   featured?: boolean;
 }) {
-  const liked = useLiked(note.id);
+  const liked = useIsPostLiked(note.id);
 
   const displayLikes = note.likes + (liked ? 1 : 0);
 
   const toggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const map = getLikedMap();
-    if (map[note.id]) delete map[note.id];
-    else map[note.id] = true;
-    localStorage.setItem(LIKED_KEY, JSON.stringify(map));
-    emitLikeChange();
+    togglePostLiked(note.id);
   };
 
   return (
@@ -96,6 +61,7 @@ export default function TopicCard({
           className={`${styles.likeButton} ${liked ? styles.liked : ""}`}
           onClick={toggleLike}
           aria-label="Thích bài viết"
+          aria-pressed={liked}
         >
           {liked ? <HeartFilled /> : <HeartOutlined />}
           <span>{displayLikes.toLocaleString("vi-VN")}</span>

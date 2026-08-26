@@ -1,0 +1,36 @@
+/* Section ngoài màn hình được trình duyệt bỏ qua layout/paint
+   -> giảm render spike khi load nhiều topic cùng lúc, cuộn mượt hơn */
+.section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+/* Hiệu ứng nhẹ khi topic mới được nối vào sau khi kéo xuống */
+.sectionEnter {
+  animation: section-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes section-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loadingRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
