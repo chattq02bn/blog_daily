@@ -30,12 +30,15 @@ export default function TopicSectionView({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
 
   const updateArrows = () => {
     const el = scrollerRef.current;
     if (!el) return;
     setCanPrev(el.scrollLeft > 0);
-    setCanNext(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+    const overflowing = el.scrollWidth > el.clientWidth + 1;
+    setCanNext(overflowing && el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+    setHasOverflow(overflowing);
   };
 
   useEffect(() => {
@@ -97,8 +100,7 @@ export default function TopicSectionView({
           {notes.map((note) => (
             <TopicCard key={note.id} note={note} featured={featured} />
           ))}
-          {/* Ô "Xem tất cả" luôn nằm cuối row */}
-          <SeeAllCard href={href} large={featured} />
+          {hasOverflow && <SeeAllCard href={href} large={featured} />}
         </div>
         <button
           type="button"

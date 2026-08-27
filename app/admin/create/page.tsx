@@ -22,7 +22,7 @@ import {
 import type { UploadFile } from "antd";
 import type { UploadChangeParam } from "antd/es/upload/interface";
 import type { Block } from "@blocknote/core";
-import AppLayout from "@/components/layout/AppLayout";
+import AppLayoutShell from "@/components/layout/AppLayoutShell";
 import { Editor, PreviewEditor } from "@/components/admin/DynamicEditor";
 import {
   useCreatePost,
@@ -189,7 +189,7 @@ function CreateNoteContent() {
   };
 
   return (
-    <AppLayout hideSidebar>
+    <AppLayoutShell hideSidebar>
       <div className={styles.wrap}>
         <Form
           form={form}
@@ -370,7 +370,7 @@ function CreateNoteContent() {
           </div>
         </article>
       </Modal>
-    </AppLayout>
+    </AppLayoutShell>
   );
 }
 

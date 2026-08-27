@@ -47,17 +47,17 @@ export default async function TopicDetailPage({ params }: PageProps) {
 
   const queryClient = getQueryClient();
 
-  if (isParent) {
-    await queryClient.prefetchQuery({
-      queryKey: qk.sectionsMulti(childrenSlugs),
-      queryFn: () => sectionsApi.byTopicSlugs(childrenSlugs),
-    });
-  } else {
-    await queryClient.prefetchQuery({
-      queryKey: qk.sections(slug),
-      queryFn: () => sectionsApi.byTopic(slug),
-    });
-  }
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: qk.sectionsInfinite(slug),
+    queryFn: ({ pageParam }) =>
+      sectionsApi.byTopicPaginated(slug, { page: pageParam, limit: 5 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: { meta?: { page: number; totalPages: number } }) => {
+      const meta = lastPage.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
 
   return (
     <AppLayout>

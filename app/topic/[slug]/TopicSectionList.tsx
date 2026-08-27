@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { RightOutlined } from "@ant-design/icons";
-import { useSections, useSectionsBySlugs } from "@/hooks/use-api";
-import TopicCard from "@/components/topic/TopicCard";
+import { Spin } from "antd";
+import { useSectionsInfinite } from "@/hooks/use-api";
+import { useInView } from "@/hooks/use-in-view";
 import TopicSectionView from "@/components/topic/TopicSectionView";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "./topic.module.scss";
@@ -13,17 +12,22 @@ const MAX_NOTES = 14;
 
 export default function TopicSectionList({
   slug,
-  childrenSlugs,
 }: {
   slug: string;
-  /** Có mặt = slug đang là mục cha → gom sections từ các mục con */
   childrenSlugs?: string[];
 }) {
-  const isParent = Boolean(childrenSlugs?.length);
-  const parentQuery = useSectionsBySlugs(childrenSlugs ?? []);
-  const singleQuery = useSections(slug);
-  const { data, isPending, isError } = isParent ? parentQuery : singleQuery;
   const router = useRouter();
+  const { sections, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useSectionsInfinite(slug, 5);
+
+  const { ref: sentinelRef } = useInView<HTMLDivElement>({
+    rootMargin: "400px",
+    onEnter: () => {
+      if (hasNextPage && !isFetchingNextPage) {
+        void fetchNextPage();
+      }
+    },
+  });
 
   if (isPending) {
     return (
@@ -38,13 +42,13 @@ export default function TopicSectionList({
     );
   }
 
-  if (isError || !data?.length) {
+  if (isError || sections.length === 0) {
     return (
       <p className={styles.count}>Không tải được nội dung chủ đề này.</p>
     );
   }
 
-  const totalNotes = data.reduce((sum, section) => sum + section.posts.length, 0);
+  const totalNotes = sections.reduce((sum, section) => sum + section.posts.length, 0);
 
   return (
     <>
@@ -62,7 +66,7 @@ export default function TopicSectionList({
         </button>
       </div>
 
-      {data.map((section, index) => {
+      {sections.map((section, index) => {
         const detailHref = `/topic/${slug}/${section.id}`;
 
         return (
@@ -77,6 +81,16 @@ export default function TopicSectionList({
           </section>
         );
       })}
+
+      <div ref={sentinelRef} aria-hidden="true" />
+      {isFetchingNextPage && (
+        <div className="flex justify-center py-6">
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
+            <Spin size="small" />
+            <span>Đang tải thêm chủ đề...</span>
+          </div>
+        </div>
+      )}
     </>
   );
 }

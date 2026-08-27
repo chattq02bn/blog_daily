@@ -164,6 +164,27 @@ export function useSections(topicSlug: string) {
   });
 }
 
+/* Infinite query cho sections theo topicSlug — phân trang */
+export function useSectionsInfinite(topicSlug: string, limit = 5) {
+  const query = useInfiniteQuery({
+    queryKey: [...qk.sectionsInfinite(topicSlug), limit] as const,
+    queryFn: ({ pageParam }) =>
+      sectionsApi.byTopicPaginated(topicSlug, { page: pageParam, limit }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+    enabled: Boolean(topicSlug),
+  });
+
+  return {
+    sections: query.data?.pages.flatMap((page) => page.data) ?? [],
+    ...query,
+  };
+}
+
 /* Sections của nhiều mục con một lúc (trang chủ đề khi click vào mục cha sidebar) */
 export function useSectionsBySlugs(slugs: string[]) {
   return useQuery({

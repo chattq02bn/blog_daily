@@ -1,6 +1,4 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import Navbar from "./Navbar";
-import Sidebar from "./Sidebar";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
 import {
@@ -8,6 +6,7 @@ import {
   SIDEBAR_NAV_PAGE_SIZE,
 } from "@/lib/sidebar-utils";
 import { sidebarApi, type SidebarPage } from "@/lib/api";
+import AppLayoutShell from "./AppLayoutShell";
 
 export default async function AppLayout({
   children,
@@ -18,7 +17,6 @@ export default async function AppLayout({
 }) {
   const queryClient = getQueryClient();
 
-  /* Prefetch trang đầu của sidebar nav để render SSR ngay, không skeleton */
   if (!hideSidebar) {
     await queryClient.prefetchInfiniteQuery({
       queryKey: qk.sidebarInfinite(SIDEBAR_NAV_PAGE_SIZE),
@@ -38,19 +36,10 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="isolate flex h-dvh flex-col">
-      <Navbar />
-      <div className="flex min-h-0 flex-1 lg:ml-4 lg:mt-2 mt-3">
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          {!hideSidebar && <Sidebar />}
-          <main
-            id="main-content"
-            className="min-h-0 flex-1 overflow-x-clip overflow-y-auto"
-          >
-            {children}
-          </main>
-        </HydrationBoundary>
-      </div>
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <AppLayoutShell hideSidebar={hideSidebar}>
+        {children}
+      </AppLayoutShell>
+    </HydrationBoundary>
   );
 }

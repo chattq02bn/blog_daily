@@ -140,13 +140,24 @@ export const sectionsApi = {
   async byTopic(topicSlug: string): Promise<ApiSection[]> {
     return unwrap(await api.get<Envelope<ApiSection[]>>(`/topics/${topicSlug}/sections`));
   },
-  /** Sections của nhiều chủ đề một lúc — dùng cho trang mục cha gom section của các mục con */
+  /** Sections của nhiều topicSlug một lúc — dùng cho trang mục cha gom section của các mục con */
   async byTopicSlugs(slugs: string[]): Promise<ApiSection[]> {
     return unwrap(
       await api.get<Envelope<ApiSection[]>>("/topics/sections", {
         params: { slugs: slugs.join(",") },
       })
     );
+  },
+  /** Phân trang sections theo topicSlug */
+  async byTopicPaginated(
+    topicSlug: string,
+    params: { page?: number; limit?: number } = {}
+  ): Promise<{ data: ApiSection[]; meta?: ApiMeta }> {
+    const res = await api.get<Envelope<ApiSection[]>>(
+      `/topics/${topicSlug}/sections/paginated`,
+      { params }
+    );
+    return { data: res.data.data, meta: res.data.meta };
   },
 };
 

@@ -30,7 +30,7 @@ function SidebarTopicSection({
   return (
     /* content-visibility + animation giúp cuộn mượt và topic mới hiện ra nhẹ nhàng */
     <section className={`${styles.section} ${index > 0 ? styles.sectionEnter : ""}`}>
-      <div className="px-5 sm:px-0">
+      <div className="px-5">
         {isPending ? (
           <>
             <div className="mb-4 h-8 w-56 animate-pulse rounded-lg bg-surface-quaternary" />
@@ -107,6 +107,7 @@ export default function HomeSections() {
 
   /* Đã hết data <=> BE không còn trang tiếp theo -> icon loading tự ẩn */
   const hasMoreTopics = Boolean(sidebarQuery.hasNextPage);
+  const isLoadingMore = sidebarQuery.isFetchingNextPage;
 
   /* Dọn timer khi rời trang */
   useEffect(() => {
@@ -164,7 +165,7 @@ export default function HomeSections() {
       {/* Icon loading toàn layout — chỉ gắn với việc phân trang sidebar,
           BE báo hết trang là tự ẩn, bất kể các section còn đang fetch bài hay lỗi */}
       <div ref={sentinelRef} aria-hidden="true" />
-      {(hasMoreTopics && sentinelInView) || spinnerVisible ? (
+      {(hasMoreTopics && sentinelInView) || isLoadingMore || spinnerVisible ? (
         <div className={styles.loadingRow}>
           <Spin size="small" />
           <span>Đang tải thêm chủ đề…</span>

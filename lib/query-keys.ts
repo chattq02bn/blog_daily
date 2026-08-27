@@ -8,6 +8,7 @@ export const qk = {
   post: (idOrSlug: string) => ["post", idOrSlug] as const,
   topics: () => ["topics"] as const,
   sections: (topicSlug: string) => ["sections", topicSlug] as const,
+  sectionsInfinite: (topicSlug: string) => ["sections", "infinite", topicSlug] as const,
   sectionsMulti: (slugs: string[]) => ["sections", "multi", [...slugs].sort().join(",")] as const,
   tags: () => ["tags"] as const,
   comments: (postIdOrSlug: string) => ["comments", postIdOrSlug] as const,
