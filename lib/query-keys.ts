@@ -1,6 +1,7 @@
 import type { ListPostsParams } from "@/lib/api";
 
 export const qk = {
+  searchPosts: (q: string) => ["posts", "search", q] as const,
   posts: (params?: ListPostsParams) => ["posts", params ?? {}] as const,
   postsInfinite: (params?: Omit<ListPostsParams, "page">) =>
     ["posts", "infinite", params ?? {}] as const,

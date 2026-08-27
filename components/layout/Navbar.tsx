@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Input, Button, Avatar, Popover } from "antd";
+import { Button, Avatar, Popover } from "antd";
 import { useAtomValue } from "jotai";
 import {
   SearchOutlined,
@@ -14,6 +14,7 @@ import {
   MoonOutlined,
 } from "@ant-design/icons";
 import NoteLogo from "./NoteLogo";
+import SearchPopover from "./SearchPopover";
 import SidebarDrawer from "./SidebarDrawer";
 import AdminSidebarDrawer from "../admin/AdminSidebarDrawer";
 import LoginModal from "./LoginModal";
@@ -38,23 +39,6 @@ export default function Navbar() {
     router.push("/");
   };
 
-  const searchInput = (
-    <Input
-      prefix={
-        <SearchOutlined style={{ color: "var(--color-text-clickable-icon)" }} />
-      }
-      placeholder="Tìm kiếm theo từ khóa hoặc tên người dùng"
-      variant="filled"
-      allowClear
-      style={{
-        borderRadius: 9999,
-        width: "100%",
-        height: 36,
-        backgroundColor: "var(--color-background-secondary)",
-      }}
-    />
-  );
-
   return (
     <header className={styles.navbar}>
       <div className={styles.inner}>
@@ -69,7 +53,7 @@ export default function Navbar() {
           />
           <NoteLogo />
         </div>
-        <div className={styles.search}>{searchInput}</div>
+        <div className={styles.search}><SearchPopover /></div>
         <div className={styles.actions}>
           <Button
             type="text"
@@ -147,7 +131,7 @@ export default function Navbar() {
         </div>
       </div>
       {mobileSearchOpen && (
-        <div className={styles.mobileSearch}>{searchInput}</div>
+        <div className={styles.mobileSearch}><SearchPopover /></div>
       )}
       {isAdmin ? (
         <AdminSidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
