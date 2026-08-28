@@ -13,8 +13,11 @@ import {
   hasCommenter,
 } from "@/lib/commenter";
 import { commentersApi } from "@/lib/api";
-import { useCreateComment } from "@/hooks/use-api";
+import { useCreateComment, useUpdateCommenterNickname } from "@/hooks/use-api";
+import { apiCommentToComment } from "@/lib/api/adapters";
 import styles from "./CommentForm.module.scss";
+
+type Flat = ReturnType<typeof apiCommentToComment>;
 
 interface CommentFormProps {
   noteId: string;
@@ -22,7 +25,7 @@ interface CommentFormProps {
   rootCommentId?: string;
   parentAuthor?: string;
   parentCommenterId?: number;
-  onSubmit: () => void;
+  onSubmit: (optimisticReply: Flat) => void;
   onCancel?: () => void;
   compact?: boolean;
   submitting?: boolean;
@@ -47,6 +50,7 @@ export default function CommentForm({
   const [nameDraft, setNameDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createComment = useCreateComment(noteId);
+  const updateNickname = useUpdateCommenterNickname();
   const { message } = App.useApp();
 
   const commenterName = getCommenterNickname() || "Người dùng";
@@ -91,7 +95,7 @@ export default function CommentForm({
     }
 
     try {
-      await createComment.mutateAsync({
+      const newComment = await createComment.mutateAsync({
         body: { content: trimmed, parentId },
         rootCommentId,
       });
@@ -99,7 +103,7 @@ export default function CommentForm({
       setContent("");
       setIsFocused(false);
       setShowEmoji(false);
-      onSubmit();
+      onSubmit(apiCommentToComment(newComment));
       if (onCancel) onCancel();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
@@ -129,8 +133,7 @@ export default function CommentForm({
     if (!trimmed || trimmed === commenterName) return;
     if (hasCommenter()) {
       try {
-        await commentersApi.updateNickname(trimmed);
-        setCommenterNickname(trimmed);
+        await updateNickname.mutateAsync(trimmed);
         message.success("Đã cập nhật tên hiển thị");
       } catch {
         message.error("Không đổi được tên");

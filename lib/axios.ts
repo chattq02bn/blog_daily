@@ -17,7 +17,7 @@ function isCommentMutation(config: InternalAxiosRequestConfig): boolean {
   const url = config.url ?? "";
   const method = (config.method ?? "").toUpperCase();
   return (
-    url.startsWith("/comments") &&
+    (url.startsWith("/comments") || url.startsWith("/commenters")) &&
     (method === "POST" || method === "PATCH" || method === "DELETE") &&
     !url.includes("/reactions")
   );

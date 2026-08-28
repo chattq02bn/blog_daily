@@ -20,6 +20,7 @@ interface CommentListProps {
 }
 
 type Flat = ReturnType<typeof apiCommentToComment>;
+export type { Flat };
 
 /* Infinite pagination có thể trả trùng phần ranh giới giữa 2 trang sau khi refetch -> phải lọc */
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
@@ -42,7 +43,7 @@ interface ThreadHandlers {
   noteId: string;
   replyingTo: ReplyingTo | null;
   submitting: boolean;
-  onReplySubmitted: () => void;
+  onReplySubmitted: (optimisticReply: Flat) => void;
   onCancelReply: () => void;
   onReply: (commentId: string, authorName: string, commenterId: number, rootCommentId: string) => void;
   onDelete: (comment: Flat) => Promise<void>;
@@ -54,29 +55,44 @@ interface ThreadHandlers {
 function RepliesSection({
   parent,
   handlers,
-  expandedIds,
+  optimisticReplies,
 }: {
   parent: Flat;
   handlers: ThreadHandlers;
-  expandedIds: Set<string>;
+  optimisticReplies: Flat[];
 }) {
   const [open, setOpen] = useState(false);
-  const shouldOpen = expandedIds.has(parent.id) || open;
   const count = parent.repliesCount ?? 0;
 
-  const query = useRepliesInfinite(shouldOpen ? parent.id : null);
-  const replies = useMemo(
-    () =>
-      dedupeById((query.data?.pages ?? []).flatMap((page) => page.data)).map(
-        apiCommentToComment
-      ),
-    [query.data]
-  );
+  const query = useRepliesInfinite(open ? parent.id : null);
+  const replies = useMemo(() => {
+    const queryReplies = (query.data?.pages ?? [])
+      .flatMap((page) => page.data)
+      .map(apiCommentToComment);
+    return dedupeById([...optimisticReplies, ...queryReplies]);
+  }, [query.data, optimisticReplies]);
 
-  if (!shouldOpen) {
-    if (count <= 0) return null;
+  const totalCount = count + optimisticReplies.length;
+
+  /* Collapsed: show inline optimistic replies + button */
+  if (!open) {
+    if (totalCount <= 0) return null;
     return (
       <div className={styles.replies}>
+        {optimisticReplies.map((reply) => (
+          <div key={reply.id} className={styles.replyWrapper}>
+            <Comment
+              comment={reply}
+              parentAuthor={undefined}
+              onReply={() => handlers.onReply(reply.id, reply.author, reply.commenterId, parent.id)}
+              onDelete={() => handlers.onDelete(reply)}
+              onSaveEdit={(content) => handlers.onSaveEdit(reply, content)}
+              onToggleLike={() => handlers.onToggleLike(reply)}
+              isLast={false}
+            />
+          </div>
+        ))}
+
         <button className={styles.showRepliesButton} onClick={() => setOpen(true)}>
           Xem {count.toLocaleString("vi-VN")} phản hồi
           <span className={styles.toggleIcon}>^</span>
@@ -85,6 +101,7 @@ function RepliesSection({
     );
   }
 
+  /* Expanded: full reply list from server + optimistic */
   return (
     <div className={styles.replies}>
       {replies.map((reply, index) => (
@@ -111,7 +128,7 @@ function RepliesSection({
                 rootCommentId={parent.id}
                 parentAuthor={reply.author}
                 parentCommenterId={reply.commenterId}
-                onSubmit={handlers.onReplySubmitted}
+                onSubmit={(optimisticReply) => handlers.onReplySubmitted(optimisticReply)}
                 onCancel={handlers.onCancelReply}
                 submitting={handlers.submitting}
                 compact
@@ -142,7 +159,7 @@ function RepliesSection({
 
 export default function CommentList({ noteId }: CommentListProps) {
   const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [optimisticRepliesMap, setOptimisticRepliesMap] = useState<Record<string, Flat[]>>({});
 
   const query = useCommentsInfinite(noteId);
   const parents = useMemo(
@@ -186,6 +203,14 @@ export default function CommentList({ noteId }: CommentListProps) {
     reactionMutation.mutate({ id: comment.id, emoji: "❤️" });
   };
 
+  const handleReplySubmitted = (rootCommentId: string, optimisticReply: Flat) => {
+    setOptimisticRepliesMap((prev) => ({
+      ...prev,
+      [rootCommentId]: [...(prev[rootCommentId] ?? []), optimisticReply],
+    }));
+    setReplyingTo(null);
+  };
+
   if (query.isPending && parents.length === 0) {
     return (
       <div className={styles.loading}>
@@ -220,12 +245,7 @@ export default function CommentList({ noteId }: CommentListProps) {
               noteId,
               replyingTo,
               submitting: createMutation.isPending,
-              onReplySubmitted: () => {
-                if (replyingTo) {
-                  setExpandedIds((prev) => new Set(prev).add(replyingTo.rootCommentId));
-                }
-                setReplyingTo(null);
-              },
+              onReplySubmitted: (optimisticReply) => handleReplySubmitted(parent.id, optimisticReply),
               onCancelReply: () => setReplyingTo(null),
               onReply: handleReply,
               onDelete: handleDelete,
@@ -251,7 +271,7 @@ export default function CommentList({ noteId }: CommentListProps) {
                       rootCommentId={parent.id}
                       parentAuthor={replyingTo.parentAuthor}
                       parentCommenterId={replyingTo.parentCommenterId}
-                      onSubmit={() => setReplyingTo(null)}
+                      onSubmit={(optimisticReply) => handleReplySubmitted(parent.id, optimisticReply)}
                       onCancel={handleCancelReply}
                       submitting={createMutation.isPending}
                       compact
@@ -259,7 +279,11 @@ export default function CommentList({ noteId }: CommentListProps) {
                   </div>
                 )}
 
-                <RepliesSection parent={parent} handlers={handlers} expandedIds={expandedIds} />
+                <RepliesSection
+                  parent={parent}
+                  handlers={handlers}
+                  optimisticReplies={optimisticRepliesMap[parent.id] ?? []}
+                />
               </div>
             );
           })

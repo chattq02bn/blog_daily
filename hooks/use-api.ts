@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 import {
   commentsApi,
+  commentersApi,
   postsApi,
   profileApi,
   sectionsApi,
@@ -284,7 +285,7 @@ export function useCommentsInfinite(noteId: string, limit = 10) {
 }
 
 /* Reply của một bình luận — cũng phân trang, chỉ load khi được mở */
-export function useRepliesInfinite(commentId: string | null, limit = 5) {
+export function useRepliesInfinite(commentId: string | null, limit = 10) {
   return useInfiniteQuery({
     queryKey: qk.repliesInfinite(commentId ?? "", limit),
     queryFn: ({ pageParam }) =>
@@ -304,53 +305,9 @@ export function useCreateComment(postIdOrSlug: string) {
   return useMutation({
     mutationFn: ({ body, rootCommentId }: { body: CommentWriteBody; rootCommentId?: string }) =>
       commentsApi.create(postIdOrSlug, body),
-    onSuccess: (newComment, variables) => {
+    onSuccess: (newComment) => {
       if (newComment.parentId) {
-        /* Reply — append vào cache replies của parent */
-        const key = qk.repliesInfinite(newComment.parentId);
-        qc.setQueryData(key, (old: { pages: { data: ApiComment[]; meta?: { page: number; limit: number; total: number; totalPages: number } }[] } | undefined) => {
-          const newReply = { ...newComment, repliesCount: 0 };
-          if (!old) {
-            return { pages: [{ data: [newReply], meta: { page: 1, limit: 5, total: 1, totalPages: 1 } }], pageParams: [1] };
-          }
-          const lastPage = old.pages[old.pages.length - 1];
-          if (!lastPage) return old;
-          const newTotal = (lastPage.meta?.total ?? 0) + 1;
-          return {
-            ...old,
-            pages: [
-              ...old.pages.slice(0, -1),
-              {
-                ...lastPage,
-                data: [...lastPage.data, newReply],
-                meta: { ...lastPage.meta, total: newTotal, totalPages: Math.ceil(newTotal / (lastPage.meta?.limit ?? 5)) },
-              },
-            ],
-          };
-        });
-
-        /* Nếu reply reply (parentId khác root) — invalidate root cache để refetch */
-        const rootId = variables.rootCommentId;
-        if (rootId && rootId !== newComment.parentId) {
-          void qc.invalidateQueries({ queryKey: qk.repliesInfinite(rootId) });
-        }
-
-        /* Tăng repliesCount trên parent comment */
-        const commentsKey = qk.commentsInfinite(postIdOrSlug);
-        qc.setQueryData(commentsKey, (old: { pages: { data: ApiComment[]; meta?: Record<string, number> }[] } | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              data: page.data.map((c) =>
-                c.id === newComment.parentId
-                  ? { ...c, repliesCount: ((c.repliesCount as number) ?? 0) + 1 }
-                  : c
-              ),
-            })),
-          };
-        });
+        /* Reply — optimistic replies handled by component state (optimisticRepliesMap) */
       } else {
         /* Bình luận gốc — prepend vào cache commentsInfinite */
         const key = qk.commentsInfinite(postIdOrSlug);
@@ -414,6 +371,42 @@ export function useToggleCommentReaction() {
       commentsApi.toggleReaction(id, emoji),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["comments"] });
+    },
+  });
+}
+
+export function useUpdateCommenterNickname() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (nickname: string) => commentersApi.updateNickname(nickname),
+    onSuccess: (updated, newNickname) => {
+      const commenterId = Number(localStorage.getItem("note_commenter_id"));
+      const oldNickname = localStorage.getItem("note_commenter_nickname");
+      if (!commenterId) return;
+
+      qc.setQueriesData(
+        { queryKey: ["comments"] },
+        (old: { pages: { data: ApiComment[] }[]; pageParams: unknown[] } | undefined) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((c) => {
+                const updated = c.commenterId === commenterId
+                  ? { ...c, author: newNickname }
+                  : c;
+                /* Cập nhật parentAuthor nếu tên cũ khớp */
+                return oldNickname && updated.parentAuthor === oldNickname
+                  ? { ...updated, parentAuthor: newNickname }
+                  : updated;
+              }),
+            })),
+          };
+        }
+      );
+
+      localStorage.setItem("note_commenter_nickname", newNickname);
     },
   });
 }
