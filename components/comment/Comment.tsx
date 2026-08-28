@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  MoreOutlined,
+  EllipsisOutlined,
   DeleteOutlined,
   EditOutlined,
   HeartOutlined,
@@ -40,11 +40,15 @@ export default function Comment({
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const heartCount = comment.emojis?.["❤️"] || 0;
   const liked = !!comment.userReactions?.["❤️"];
+  const myId = typeof window !== "undefined" ? Number(localStorage.getItem("note_commenter_id") || "0") : 0;
+  const isOwner = myId > 0 && myId === comment.commenterId;
 
   const handleEdit = () => {
+    setPopoverOpen(false);
     setEditing(true);
     setEditContent(comment.content);
   };
@@ -97,26 +101,6 @@ export default function Comment({
             {comment.isEdited && (
               <span className={styles.editedBadge}>Đã chỉnh sửa</span>
             )}
-            <Popover
-              content={
-                <div className={styles.popoverMenu}>
-                  <div className={styles.popoverItem} onClick={handleEdit}>
-                    <EditOutlined /> Chỉnh sửa
-                  </div>
-                  <div
-                    className={styles.popoverItem}
-                    onClick={() => setShowDeleteConfirm(true)}
-                  >
-                    <DeleteOutlined /> Xóa
-                  </div>
-                </div>
-              }
-              trigger="click"
-            >
-              <button className={styles.moreButton} aria-label="Tùy chọn">
-                <MoreOutlined />
-              </button>
-            </Popover>
           </div>
 
           {editing ? (
@@ -161,6 +145,30 @@ export default function Comment({
               >
                 <MessageOutlined />
               </button>
+            )}
+            {isOwner && (
+              <Popover
+                content={
+                  <div className={styles.popoverMenu}>
+                    <div className={styles.popoverItem} onClick={handleEdit}>
+                      <EditOutlined /> Chỉnh sửa
+                    </div>
+                    <div
+                      className={styles.popoverItem}
+                      onClick={() => { setPopoverOpen(false); setShowDeleteConfirm(true); }}
+                    >
+                      <DeleteOutlined /> Xóa
+                    </div>
+                  </div>
+                }
+                trigger="click"
+                open={popoverOpen}
+                onOpenChange={setPopoverOpen}
+              >
+                <button className={styles.actionButton} aria-label="Tùy chọn">
+                  <EllipsisOutlined />
+                </button>
+              </Popover>
             )}
           </div>
         </div>

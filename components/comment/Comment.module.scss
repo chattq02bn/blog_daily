@@ -66,31 +66,6 @@
   color: var(--color-text-tertiary);
 }
 
-.moreButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  color: var(--color-text-tertiary);
-  margin-left: auto;
-  opacity: 0;
-  transition: all 0.2s;
-
-  .comment:hover & {
-    opacity: 1;
-  }
-
-  &:hover {
-    background: var(--color-bg-hover);
-    color: var(--color-text-secondary);
-  }
-}
-
 .popoverMenu {
   padding: 4px 0;
 }
@@ -233,10 +208,4 @@
 .likeCount {
   font-size: 12px;
   font-weight: 600;
-}
-
-@media (max-width: 768px) {
-  .moreButton {
-    opacity: 1;
-  }
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import NoteActions from "@/components/note/NoteActions";
 import NoteTitleActions from "@/components/note/NoteTitleActions";
@@ -17,7 +16,7 @@ import { usePost, usePosts } from "@/hooks/use-api";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "./note.module.scss";
 
-function getRelatedNotes(currentNote: Note, allNotes: Note[], count = 2): Note[] {
+function getRelatedNotes(currentNote: Note, allNotes: Note[], count = 36): Note[] {
   return allNotes
     .filter((n) => n.id !== currentNote.id)
     .map((n) => ({
@@ -32,7 +31,7 @@ function getRelatedNotes(currentNote: Note, allNotes: Note[], count = 2): Note[]
 
 export default function NoteView({ id }: { id: string }) {
   const { data: post, isError } = usePost(id);
-  const { data: recentPosts } = usePosts({ status: "published", limit: 50 });
+  const { data: recentPosts } = usePosts({ status: "published", limit: 200 });
 
   if (isError) notFound();
 
@@ -118,13 +117,9 @@ export default function NoteView({ id }: { id: string }) {
 
             <div className={styles.hashtags}>
               {note.tags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/tag/${encodeURIComponent(tag)}`}
-                  className={styles.tag}
-                >
+                <span key={tag} className={styles.tag}>
                   #{tag}
-                </Link>
+                </span>
               ))}
             </div>
 

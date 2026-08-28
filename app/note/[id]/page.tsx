@@ -47,6 +47,10 @@ export default async function NotePage({ params }: PageProps) {
         return meta.page < meta.totalPages ? meta.page + 1 : undefined;
       },
     }),
+    queryClient.prefetchQuery({
+      queryKey: qk.posts({ status: "published", limit: 200 }),
+      queryFn: () => postsApi.list({ status: "published", limit: 200 }),
+    }),
   ]);
 
   return (

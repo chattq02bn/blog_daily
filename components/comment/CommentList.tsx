@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { message } from "antd";
+import { App } from "antd";
 import { apiCommentToComment } from "@/lib/api/adapters";
 import {
   useCommentsInfinite,
@@ -93,10 +93,10 @@ function RepliesSection({
           </div>
         ))}
 
-        <button className={styles.showRepliesButton} onClick={() => setOpen(true)}>
+        <span className={styles.showRepliesButton} onClick={() => setOpen(true)}>
           Xem {count.toLocaleString("vi-VN")} phản hồi
           <span className={styles.toggleIcon}>^</span>
-        </button>
+        </span>
       </div>
     );
   }
@@ -160,6 +160,7 @@ function RepliesSection({
 export default function CommentList({ noteId }: CommentListProps) {
   const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const [optimisticRepliesMap, setOptimisticRepliesMap] = useState<Record<string, Flat[]>>({});
+  const { message } = App.useApp();
 
   const query = useCommentsInfinite(noteId);
   const parents = useMemo(
