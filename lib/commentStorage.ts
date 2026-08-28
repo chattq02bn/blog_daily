@@ -20,8 +20,10 @@ export interface Comment {
   id: string;
   noteId: string;
   parentId: string | null;
+  commenterId: number;
   author: string;
   authorAvatar: string;
+  parentAuthor?: string;
   content: string;
   emojis: Record<CommentEmoji, number>;
   userReactions: Record<CommentEmoji, boolean>;
@@ -90,6 +92,7 @@ export function createComment(
     id: generateId(),
     noteId,
     parentId,
+    commenterId: 0,
     author,
     authorAvatar,
     content,
@@ -219,21 +222,22 @@ export function updateUser(name: string): boolean {
   return true;
 }
 
-export function getCurrentUser(): { name: string; avatar: string } {
+export function getCurrentUser(): { id: number | null; name: string; avatar: string } {
   if (typeof window === "undefined") {
-    return { name: "Người dùng", avatar: "https://picsum.photos/seed/user/96/96" };
+    return { id: null, name: "Người dùng", avatar: "https://picsum.photos/seed/user/96/96" };
   }
   try {
     const userStr = localStorage.getItem("note_user");
     if (userStr) {
       const user = JSON.parse(userStr);
       return {
+        id: user.id != null ? Number(user.id) : null,
         name: user.name || "Người dùng",
         avatar: user.avatar || "https://picsum.photos/seed/user/96/96",
       };
     }
   } catch {}
-  return { name: "Người dùng", avatar: "https://picsum.photos/seed/user/96/96" };
+  return { id: null, name: "Người dùng", avatar: "https://picsum.photos/seed/user/96/96" };
 }
 
 export { EMOJIS };

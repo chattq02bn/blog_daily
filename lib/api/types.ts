@@ -96,9 +96,9 @@ export interface ApiComment {
   id: string;
   noteId: string;
   parentId: string | null;
-  authorId: number | null;
+  commenterId: number;
   author: string;
-  authorAvatar: string | null;
+  parentAuthor?: string;
   content: string;
   isEdited: boolean;
   createdAt: string;

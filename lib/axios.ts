@@ -4,6 +4,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { ACCESS_TOKEN_KEY, clearAuth } from "@/lib/auth";
+import { getCommenterToken } from "@/lib/commenter";
 import { openLoginModal } from "@/lib/jotai/auth";
 
 const api: AxiosInstance = axios.create({
@@ -12,12 +13,29 @@ const api: AxiosInstance = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+function isCommentMutation(config: InternalAxiosRequestConfig): boolean {
+  const url = config.url ?? "";
+  const method = (config.method ?? "").toUpperCase();
+  return (
+    url.startsWith("/comments") &&
+    (method === "POST" || method === "PATCH" || method === "DELETE") &&
+    !url.includes("/reactions")
+  );
+}
+
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (isCommentMutation(config)) {
+        const commenterToken = getCommenterToken();
+        if (commenterToken) {
+          config.headers.Authorization = `Bearer ${commenterToken}`;
+        }
+      } else {
+        const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
     }
     return config;

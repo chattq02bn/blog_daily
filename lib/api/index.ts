@@ -183,8 +183,6 @@ export const tagsApi = {
 export interface CommentWriteBody {
   content: string;
   parentId?: string | null;
-  authorName?: string;
-  authorAvatar?: string;
 }
 
 export interface ListCommentsParams {
@@ -230,8 +228,8 @@ export const commentsApi = {
   async update(id: string, body: CommentWriteBody): Promise<ApiComment> {
     return unwrap(await api.patch<Envelope<ApiComment>>(`/comments/${id}`, body));
   },
-  async remove(id: string, authorName?: string): Promise<void> {
-    await api.delete(`/comments/${id}`, { data: authorName ? { authorName } : undefined });
+  async remove(id: string): Promise<void> {
+    await api.delete(`/comments/${id}`);
   },
   async toggleReaction(id: string, emoji: string): Promise<{ comment: ApiComment; active: boolean }> {
     return unwrap(
@@ -342,5 +340,26 @@ export const sidebarApi = {
 export const statsApi = {
   async visits(month?: string): Promise<ApiVisits> {
     return unwrap(await api.get<Envelope<ApiVisits>>("/stats/visits", { params: { month } }));
+  },
+};
+
+/* ===== Commenters ===== */
+
+export interface CreateCommenterResponse {
+  commenter: { id: number; nickname: string };
+  token: string;
+}
+
+export interface CommenterInfo {
+  id: number;
+  nickname: string;
+}
+
+export const commentersApi = {
+  async create(nickname: string): Promise<CreateCommenterResponse> {
+    return unwrap(await api.post<Envelope<CreateCommenterResponse>>("/commenters", { nickname }));
+  },
+  async updateNickname(nickname: string): Promise<CommenterInfo> {
+    return unwrap(await api.patch<Envelope<CommenterInfo>>("/commenters/me", { nickname }));
   },
 };

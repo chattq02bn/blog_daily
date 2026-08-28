@@ -3,16 +3,25 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { CloseOutlined, SendOutlined, SmileOutlined, EditOutlined } from "@ant-design/icons";
-import { Popover, message } from "antd";
+import { Popover, App } from "antd";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
-import { getCurrentUser, updateUser } from "@/lib/commentStorage";
-import { commentsApi } from "@/lib/api";
+import {
+  getCommenterNickname,
+  setCommenterToken,
+  setCommenterId,
+  setCommenterNickname,
+  hasCommenter,
+} from "@/lib/commenter";
+import { commentersApi } from "@/lib/api";
+import { useCreateComment } from "@/hooks/use-api";
 import styles from "./CommentForm.module.scss";
 
 interface CommentFormProps {
   noteId: string;
   parentId?: string | null;
+  rootCommentId?: string;
   parentAuthor?: string;
+  parentCommenterId?: number;
   onSubmit: () => void;
   onCancel?: () => void;
   compact?: boolean;
@@ -22,7 +31,9 @@ interface CommentFormProps {
 export default function CommentForm({
   noteId,
   parentId = null,
+  rootCommentId,
   parentAuthor,
+  parentCommenterId,
   onSubmit,
   onCancel,
   compact = false,
@@ -35,7 +46,14 @@ export default function CommentForm({
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const currentUser = getCurrentUser();
+  const createComment = useCreateComment(noteId);
+  const { message } = App.useApp();
+
+  const commenterName = getCommenterNickname() || "Người dùng";
+  const commenterId = typeof window !== "undefined"
+    ? Number(localStorage.getItem("note_commenter_id") || "0")
+    : 0;
+  const avatarUrl = `https://picsum.photos/seed/commenter-${commenterId || "guest"}/96/96`;
 
   useEffect(() => {
     if (parentId && textareaRef.current) {
@@ -59,12 +77,23 @@ export default function CommentForm({
     const trimmed = content.trim();
     if (!trimmed || submitting) return;
 
+    // Auto-create commenter if not exists
+    if (!hasCommenter()) {
+      try {
+        const result = await commentersApi.create(commenterName);
+        setCommenterToken(result.token);
+        setCommenterId(result.commenter.id);
+        setCommenterNickname(result.commenter.nickname);
+      } catch {
+        message.error("Không tạo được tài khoản bình luận");
+        return;
+      }
+    }
+
     try {
-      await commentsApi.create(noteId, {
-        content: trimmed,
-        parentId,
-        authorName: currentUser.name,
-        ...(currentUser.avatar.startsWith("http") ? {} : { authorAvatar: currentUser.avatar }),
+      await createComment.mutateAsync({
+        body: { content: trimmed, parentId },
+        rootCommentId,
       });
 
       setContent("");
@@ -90,16 +119,24 @@ export default function CommentForm({
   };
 
   const startEditName = () => {
-    setNameDraft(currentUser.name);
+    setNameDraft(commenterName);
     setEditingName(true);
   };
 
-  const saveName = () => {
+  const saveName = async () => {
     setEditingName(false);
     const trimmed = nameDraft.trim();
-    if (!trimmed || trimmed === currentUser.name) return;
-    if (updateUser(trimmed)) {
-      message.success("Đã cập nhật tên hiển thị");
+    if (!trimmed || trimmed === commenterName) return;
+    if (hasCommenter()) {
+      try {
+        await commentersApi.updateNickname(trimmed);
+        setCommenterNickname(trimmed);
+        message.success("Đã cập nhật tên hiển thị");
+      } catch {
+        message.error("Không đổi được tên");
+      }
+    } else {
+      setCommenterNickname(trimmed);
     }
   };
 
@@ -112,7 +149,7 @@ export default function CommentForm({
   const showForm = isFocused || content || parentId;
 
   const isSelfReply =
-    !!parentId && !!parentAuthor && parentAuthor === currentUser.name;
+    !!parentId && parentCommenterId != null && commenterId === parentCommenterId;
 
   return (
     <div className={`${styles.form} ${compact ? styles.compact : ""}`}>
@@ -137,10 +174,10 @@ export default function CommentForm({
               autoFocus
               onChange={(e) => setNameDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") saveName();
+                if (e.key === "Enter") void saveName();
                 if (e.key === "Escape") setEditingName(false);
               }}
-              onBlur={saveName}
+              onBlur={() => void saveName()}
             />
           ) : (
             <button
@@ -149,15 +186,15 @@ export default function CommentForm({
               onClick={startEditName}
               title="Bấm để đổi tên"
             >
-              {currentUser.name} <EditOutlined />
+              {commenterName} <EditOutlined />
             </button>
           )}
         </div>
       )}
       <div className={styles.inputRow}>
         <Image
-          src={currentUser.avatar}
-          alt={currentUser.name}
+          src={avatarUrl}
+          alt={commenterName}
           width={32}
           height={32}
           className={styles.avatar}

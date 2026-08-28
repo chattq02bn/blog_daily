@@ -19,7 +19,8 @@ import styles from "./Comment.module.scss";
 interface CommentProps {
   comment: CommentType;
   parentAuthor?: string;
-  onReply: (parentId: string, parentAuthor: string) => void;
+  parentCommenterId?: number;
+  onReply?: (parentId: string, parentAuthor: string, commenterId: number) => void;
   onDelete: () => void;
   onSaveEdit: (content: string) => void;
   onToggleLike: () => void;
@@ -29,6 +30,7 @@ interface CommentProps {
 export default function Comment({
   comment,
   parentAuthor,
+  parentCommenterId,
   onReply,
   onDelete,
   onSaveEdit,
@@ -84,9 +86,9 @@ export default function Comment({
         <div className={styles.commentBody}>
           <div className={styles.commentHeader}>
             <span className={styles.authorName}>{comment.author}</span>
-            {parentAuthor && (
+            {comment.parentAuthor && comment.parentAuthor !== comment.author && (
               <span className={styles.replyTo}>
-                <span className={styles.replyArrow}>→</span> {parentAuthor}
+                <span className={styles.replyArrow}>→</span> {comment.parentAuthor}
               </span>
             )}
             <time className={styles.commentTime} dateTime={comment.createdAt}>
@@ -151,13 +153,15 @@ export default function Comment({
                 <span className={styles.likeCount}>{heartCount}</span>
               )}
             </button>
-            <button
-              className={styles.actionButton}
-              onClick={() => onReply(comment.id, comment.author)}
-              aria-label="Trả lời"
-            >
-              <MessageOutlined />
-            </button>
+            {onReply && (
+              <button
+                className={styles.actionButton}
+                onClick={() => onReply(comment.id, comment.author, comment.commenterId)}
+                aria-label="Trả lời"
+              >
+                <MessageOutlined />
+              </button>
+            )}
           </div>
         </div>
       </div>

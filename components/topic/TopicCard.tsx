@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { RightOutlined, HeartOutlined, HeartFilled } from "@ant-design/icons";
+import { RightOutlined, HeartOutlined, HeartFilled, MessageOutlined } from "@ant-design/icons";
 import { useIsPostLiked } from "@/components/likes/LikesProvider";
 import { togglePostLiked } from "@/lib/post-likes";
 import type { Note } from "@/lib/view-models";
@@ -42,19 +42,6 @@ export default function TopicCard({
       >
         {note.title}
       </h3>
-      <div className="mt-3 flex items-center gap-2">
-        <Image
-          src={note.avatar}
-          alt={note.author}
-          width={24}
-          height={24}
-          className="size-6 shrink-0 rounded-full"
-          style={{ objectFit: "cover" }}
-        />
-        <span className="min-w-0 flex-1 truncate text-xs text-text-secondary">
-          {note.author}
-        </span>
-      </div>
       <div className={styles.likeRow}>
         <button
           type="button"
@@ -66,6 +53,10 @@ export default function TopicCard({
           {liked ? <HeartFilled /> : <HeartOutlined />}
           <span>{displayLikes.toLocaleString("vi-VN")}</span>
         </button>
+        <span className={styles.commentCount}>
+          <MessageOutlined />
+          <span>{note.comments.toLocaleString("vi-VN")}</span>
+        </span>
       </div>
     </Link>
   );

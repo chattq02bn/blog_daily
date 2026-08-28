@@ -103,7 +103,17 @@
 
 .likeRow {
   display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 10px;
+}
+
+.commentCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
 }
 
 .likeButton {

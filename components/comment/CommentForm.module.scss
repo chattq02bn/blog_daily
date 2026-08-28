@@ -66,15 +66,24 @@
   border: 1px dashed var(--color-border-default);
   border-radius: 999px;
   color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: var(--color-bg-hover);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
 }
+
+.nicknamePrompt {
+  padding: 12px;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.nicknameRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+//     color: var(--color-primary);
+//   }
+// }
 
 .nameInput {
   width: 180px;

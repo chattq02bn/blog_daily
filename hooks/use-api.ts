@@ -20,6 +20,7 @@ import {
   type CommentWriteBody,
   type ListPostsParams,
   type PostWriteBody,
+  type ApiComment,
 } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
@@ -301,10 +302,85 @@ export function useRepliesInfinite(commentId: string | null, limit = 5) {
 export function useCreateComment(postIdOrSlug: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CommentWriteBody) => commentsApi.create(postIdOrSlug, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["comments"] });
-      void qc.invalidateQueries({ queryKey: ["post", postIdOrSlug] });
+    mutationFn: ({ body, rootCommentId }: { body: CommentWriteBody; rootCommentId?: string }) =>
+      commentsApi.create(postIdOrSlug, body),
+    onSuccess: (newComment, variables) => {
+      if (newComment.parentId) {
+        /* Reply — append vào cache replies của parent */
+        const key = qk.repliesInfinite(newComment.parentId);
+        qc.setQueryData(key, (old: { pages: { data: ApiComment[]; meta?: { page: number; limit: number; total: number; totalPages: number } }[] } | undefined) => {
+          const newReply = { ...newComment, repliesCount: 0 };
+          if (!old) {
+            return { pages: [{ data: [newReply], meta: { page: 1, limit: 5, total: 1, totalPages: 1 } }], pageParams: [1] };
+          }
+          const lastPage = old.pages[old.pages.length - 1];
+          if (!lastPage) return old;
+          const newTotal = (lastPage.meta?.total ?? 0) + 1;
+          return {
+            ...old,
+            pages: [
+              ...old.pages.slice(0, -1),
+              {
+                ...lastPage,
+                data: [...lastPage.data, newReply],
+                meta: { ...lastPage.meta, total: newTotal, totalPages: Math.ceil(newTotal / (lastPage.meta?.limit ?? 5)) },
+              },
+            ],
+          };
+        });
+
+        /* Nếu reply reply (parentId khác root) — invalidate root cache để refetch */
+        const rootId = variables.rootCommentId;
+        if (rootId && rootId !== newComment.parentId) {
+          void qc.invalidateQueries({ queryKey: qk.repliesInfinite(rootId) });
+        }
+
+        /* Tăng repliesCount trên parent comment */
+        const commentsKey = qk.commentsInfinite(postIdOrSlug);
+        qc.setQueryData(commentsKey, (old: { pages: { data: ApiComment[]; meta?: Record<string, number> }[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((c) =>
+                c.id === newComment.parentId
+                  ? { ...c, repliesCount: ((c.repliesCount as number) ?? 0) + 1 }
+                  : c
+              ),
+            })),
+          };
+        });
+      } else {
+        /* Bình luận gốc — prepend vào cache commentsInfinite */
+        const key = qk.commentsInfinite(postIdOrSlug);
+        qc.setQueryData(key, (old: { pages: { data: ApiComment[]; meta?: { page: number; limit: number; total: number; totalPages: number } }[] } | undefined) => {
+          const newRoot = { ...newComment, repliesCount: 0 };
+          if (!old) {
+            return { pages: [{ data: [newRoot], meta: { page: 1, limit: 10, total: 1, totalPages: 1 } }], pageParams: [1] };
+          }
+          const firstPage = old.pages[0];
+          if (!firstPage) return old;
+          const newTotal = (firstPage.meta?.total ?? 0) + 1;
+          return {
+            ...old,
+            pages: [
+              {
+                ...firstPage,
+                data: [newRoot, ...firstPage.data],
+                meta: { ...firstPage.meta, total: newTotal, totalPages: Math.ceil(newTotal / (firstPage.meta?.limit ?? 10)) },
+              },
+              ...old.pages.slice(1),
+            ],
+          };
+        });
+      }
+
+      /* Tăng commentsCount trên post */
+      qc.setQueryData(qk.post(postIdOrSlug), (old: Record<string, unknown> | undefined) => {
+        if (!old) return old;
+        return { ...old, commentsCount: ((old.commentsCount as number) ?? 0) + 1 };
+      });
     },
   });
 }
@@ -323,8 +399,8 @@ export function useUpdateComment() {
 export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, authorName }: { id: string; authorName?: string }) =>
-      commentsApi.remove(id, authorName),
+    mutationFn: ({ id }: { id: string }) =>
+      commentsApi.remove(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["comments"] });
     },
