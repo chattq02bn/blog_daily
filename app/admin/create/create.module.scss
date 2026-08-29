@@ -257,6 +257,7 @@
     flex-direction: column;
     height: 100vh;
     border-radius: 0;
+    // background-color: #1F1F1F;
   }
 
   :global(.ant-modal-body) {
@@ -264,6 +265,7 @@
     min-height: 0;
     overflow-y: auto;
     padding: 0;
+    // background-color: #1F1F1F;
   }
 }
 
@@ -287,12 +289,33 @@
 }
 
 .previewEditor {
+  border-radius: 8px;
+  background: var(--color-surface-quaternary);
+
   :global(.bn-container) {
     padding: 0;
+    background: transparent;
   }
 
   :global(.bn-editor) {
     padding: 0;
     cursor: default;
+  }
+}
+
+/* Dark mode only */
+:global(html[data-theme="dark"]) {
+  .previewModal :global(.ant-modal-container) {
+    background-color: #1F1F1F !important;
+  }
+}
+
+:global(html[data-theme="light"]) {
+  .previewModal :global(.ant-modal-container) {
+    background-color: #FFF !important;
+  }
+
+  :global(.ant-modal-body) {
+    background-color: #FFF !important;
   }
 }

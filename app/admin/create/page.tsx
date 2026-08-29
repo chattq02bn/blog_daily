@@ -354,6 +354,7 @@ function CreateNoteContent() {
         title="Xem trước bài viết"
         footer={null}
         destroyOnHidden
+        className={styles.previewModal}
         style={{
           top: 10,
           paddingBottom: 0,
@@ -363,6 +364,7 @@ function CreateNoteContent() {
             height: "calc(100vh - 100px)",
             overflowY: "auto",
             padding: 0,
+            backgroundColor: "#1F1F1F",
           },
         }}
 
