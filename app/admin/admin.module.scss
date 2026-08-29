@@ -42,6 +42,42 @@
 
 .chartWrap {
   width: 100%;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+/* iPad/mobile: ẩn chart, hiện stat cards */
+@media (max-width: 1024px) {
+  .statsRow {
+    margin-bottom: 0;
+  }
+
+  :global(.ant-statistic) {
+    background-color: var(--color-background-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  :global(.ant-statistic-title) {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+  }
+
+  :global(.ant-statistic-content) {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  :global(.ant-statistic-content-suffix) {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-secondary);
+  }
 }
 
 .profileLeft {

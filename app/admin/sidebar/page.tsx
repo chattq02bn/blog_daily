@@ -224,6 +224,40 @@ export default function AdminSidebarPage() {
     indicator: HTMLElement | null;
   }>({ id: null, parentId: null, sourceRow: null, indicator: null });
 
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const scrollRaf = useRef<number>(0);
+  const scrollDir = useRef<-1 | 0 | 1>(0);
+
+  const EDGE_ZONE = 60;
+  const SCROLL_SPEED = 6;
+
+  const autoScroll = () => {
+    if (scrollDir.current === 0) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTop += scrollDir.current * SCROLL_SPEED;
+    scrollRaf.current = requestAnimationFrame(autoScroll);
+  };
+
+  const startAutoScroll = (dir: -1 | 1) => {
+    if (scrollDir.current === dir) return;
+    scrollDir.current = dir;
+    cancelAnimationFrame(scrollRaf.current);
+    scrollRaf.current = requestAnimationFrame(autoScroll);
+  };
+
+  const stopAutoScroll = () => {
+    scrollDir.current = 0;
+    cancelAnimationFrame(scrollRaf.current);
+  };
+
+  const handleWheel = (e: WheelEvent) => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    e.preventDefault();
+    el.scrollTop += e.deltaY;
+  };
+
   const levelOf = (id: string): string | null =>
     findParent(sortedRef.current, id)?.id ?? null;
 
@@ -239,6 +273,12 @@ export default function AdminSidebarPage() {
     row.removeAttribute("draggable");
     setIndicator(null);
     dragInfo.current = { id: null, parentId: null, sourceRow: null, indicator: null };
+  };
+
+  const cleanupDrag = () => {
+    stopAutoScroll();
+    scrollContainerRef.current?.removeEventListener("wheel", handleWheel);
+    scrollContainerRef.current = null;
   };
 
   const enableRowDrag = (e: React.MouseEvent) => {
@@ -258,6 +298,10 @@ export default function AdminSidebarPage() {
       e.currentTarget.classList.add(styles.dragging);
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", record.id);
+
+      const wrapper = document.querySelector(`.${styles.wrap}`);
+      scrollContainerRef.current = wrapper?.querySelector(".ant-table-body") as HTMLElement | null;
+      scrollContainerRef.current?.addEventListener("wheel", handleWheel, { passive: false });
     },
     onDragOver: (e) => {
       if (!dragInfo.current.id || dragInfo.current.id === record.id) return;
@@ -265,16 +309,33 @@ export default function AdminSidebarPage() {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       setIndicator(e.currentTarget);
+
+      const container = scrollContainerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        if (y < EDGE_ZONE) {
+          startAutoScroll(-1);
+        } else if (y > rect.height - EDGE_ZONE) {
+          startAutoScroll(1);
+        } else {
+          stopAutoScroll();
+        }
+      }
     },
     onDrop: (e) => {
       e.preventDefault();
+      cleanupDrag();
       const draggedId = dragInfo.current.id;
       if (draggedId && draggedId !== record.id) {
         setItems((prev) => reorderTree(sortTree(prev), draggedId, record.id));
       }
       endDrag(e.currentTarget);
     },
-    onDragEnd: (e) => endDrag(e.currentTarget),
+    onDragEnd: (e) => {
+      cleanupDrag();
+      endDrag(e.currentTarget);
+    },
   });
 
   const sorted = useMemo(() => sortTree(items), [items]);

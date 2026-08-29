@@ -8,6 +8,7 @@ import {
   TagsOutlined,
   TeamOutlined,
   HomeOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import styles from "./AdminSidebar.module.scss";
 
@@ -17,6 +18,7 @@ const menuItems = [
   { href: "/admin/posts", label: "Quản lý bài viết", icon: <FileTextOutlined /> },
   { href: "/admin/tags", label: "Quản lý tag", icon: <TagsOutlined /> },
   { href: "/admin/users", label: "Quản lý người dùng", icon: <TeamOutlined /> },
+  { href: "/admin/settings", label: "Cài đặt", icon: <SettingOutlined /> },
 ];
 
 interface AdminSidebarProps {

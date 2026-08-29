@@ -414,6 +414,19 @@ export default function Editor({
   const [deleteTop, setDeleteTop] = useState<number | null>(null);
   const editorWrapRef = useRef<HTMLDivElement>(null);
 
+  /* Khi value thay đổi từ bên ngoài (ví dụ: load xong bài viết),
+     cập nhật nội dung editor nếu khác với hiện tại */
+  const lastExternalValue = useRef<string>("");
+  useEffect(() => {
+    if (!value || !ready) return;
+    const incoming = JSON.stringify(value);
+    if (incoming === lastExternalValue.current) return;
+    lastExternalValue.current = incoming;
+    const current = JSON.stringify(editor.document);
+    if (incoming === current) return;
+    editor.replaceBlocks(editor.document, value as unknown as (typeof productCardSchema.PartialBlock)[]);
+  }, [value, ready, editor]);
+
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const update = () => setIsPhone(mq.matches);

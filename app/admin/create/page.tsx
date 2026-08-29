@@ -4,11 +4,11 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "lodash";
 import {
+  App,
   Breadcrumb,
   Button,
   Form,
   Input,
-  message,
   Modal,
   Select,
   Space,
@@ -53,6 +53,8 @@ function CreateNoteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const editId = searchParams.get("id");
+  const presetTopicId = searchParams.get("topicId");
+  const { message } = App.useApp();
 
   const topicsQuery = useTopics();
   const tagsQuery = useTags();
@@ -95,6 +97,16 @@ function CreateNoteContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ nạp một lần khi có dữ liệu
   }, [editId, postQuery.data]);
+
+  /* Pre-select topic từ URL khi tạo mới */
+  useEffect(() => {
+    if (isEdit || !presetTopicId || !topics.length) return;
+    const exists = topics.some((t) => t.id === presetTopicId);
+    if (exists) {
+      form.setFieldValue("topicIds", [presetTopicId]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi topics load
+  }, [presetTopicId, topics]);
 
   useEffect(() => () => handleChange.cancel(), [handleChange]);
 

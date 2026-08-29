@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Button, Input, Popconfirm, Table, Tag, Tooltip, message } from "antd";import {
+import { Button, Input, Popconfirm, Table, Tag, Tooltip, message } from "antd"; import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -173,11 +173,14 @@ export default function AdminPostsPage() {
           </div>
         </div>
         <Table
-          scroll={{ x: "max-content", y: "calc(100dvh - 330px)" }}
+          scroll={{ x: "max-content", y: "calc(100dvh - 300px)" }}
           rowKey="id"
           columns={columns}
           dataSource={filtered}
           pagination={{ pageSize: 8, showSizeChanger: false }}
+          onRow={(record) => ({
+            onDoubleClick: () => router.push(`/admin/create?id=${record.id}`),
+          })}
         />
       </div>
     </AdminLayout>

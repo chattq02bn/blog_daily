@@ -157,6 +157,15 @@ function TopicCreatePage() {
       ),
     },
     {
+      title: "Bài viết",
+      dataIndex: "postCount",
+      key: "postCount",
+      width: 100,
+      render: (postCount: number) => (
+        <span className={styles.postCount}>{postCount}</span>
+      ),
+    },
+    {
       title: "Thao tác",
       key: "actions",
       width: 130,
@@ -166,7 +175,7 @@ function TopicCreatePage() {
             <Button
               type="text"
               icon={<FileTextOutlined />}
-              onClick={() => router.push("/admin/create")}
+              onClick={() => router.push(`/admin/create?topicId=${record.id}`)}
               aria-label={`Tạo bài viết cho ${record.name}`}
             />
           </Tooltip>
