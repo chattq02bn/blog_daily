@@ -29,6 +29,11 @@
     outline: none;
   }
 
+  /* Link: màu xanh nước biển */
+  :global(.bn-editor) a {
+    color: #1677ff;
+  }
+
   /* Desktop: lề trái cho side menu mặc định (+, kéo thả) */
   @media (min-width: 768px) {
     :global(.bn-editor) {

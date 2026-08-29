@@ -125,6 +125,13 @@ function FormatControls({ editor }: { editor: EditorType }) {
   const activeColorHex = (prop: "textColor" | "backgroundColor") =>
     NOTE_COLORS.find((c) => c.name === effColor(prop))?.hex;
 
+  const isDarkColor = (hex: string) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+  };
+
   const setColor = (prop: "textColor" | "backgroundColor", name: NoteColorName) => {
     editor.focus();
     if (name === "default") {
@@ -243,7 +250,10 @@ function FormatControls({ editor }: { editor: EditorType }) {
             title="Màu nền"
             aria-label="Màu nền"
             className={styles.fmtBtn}
-            style={{ background: activeColorHex("backgroundColor") }}
+            style={{
+              background: activeColorHex("backgroundColor"),
+              color: isDarkColor(activeColorHex("backgroundColor") ?? "#ffffff") ? "#fff" : undefined,
+            }}
             onMouseDown={(e) => e.preventDefault()}
           >
             <BgColorsOutlined />

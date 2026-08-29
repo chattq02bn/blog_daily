@@ -324,6 +324,7 @@ function CreateNoteContent() {
             <div className={styles.metaCol}>
               <Form.Item
                 name="topicIds"
+                label="Topics"
                 rules={[
                   {
                     required: true,
@@ -343,6 +344,7 @@ function CreateNoteContent() {
               </Form.Item>
               <Form.Item
                 name="tagIds"
+                label="Tags"
                 rules={[
                   {
                     required: true,
