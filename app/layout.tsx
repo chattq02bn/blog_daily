@@ -4,6 +4,8 @@ import { App } from "antd";
 import ThemeProvider from "@/components/theme/ThemeProvider";
 import QueryProvider from "@/components/providers/QueryProvider";
 import JotaiProvider from "@/components/providers/JotaiProvider";
+import LikesProvider from "@/components/likes/LikesProvider";
+import { getInitialLikedIds } from "@/lib/post-likes.server";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
@@ -22,7 +24,9 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const initialLikedIds = await getInitialLikedIds();
+
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
@@ -40,7 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <App>
             <QueryProvider>
               <JotaiProvider>
-                <ThemeProvider>{children}</ThemeProvider>
+                <LikesProvider initialLikedIds={initialLikedIds}>
+                  <ThemeProvider>{children}</ThemeProvider>
+                </LikesProvider>
               </JotaiProvider>
             </QueryProvider>
           </App>
