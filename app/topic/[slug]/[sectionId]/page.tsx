@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
-import LikesProvider from "@/components/likes/LikesProvider";
 import SectionDetail from "./SectionDetail";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
-import { getInitialLikedIds } from "@/lib/post-likes.server";
 import { postsApi, type ApiSectionPostsResponse } from "@/lib/api";
 
 type PageProps = {
@@ -19,7 +17,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SectionDetailPage({ params }: PageProps) {
   const { slug, sectionId } = await params;
-  const initialLikedIds = await getInitialLikedIds();
   const queryClient = getQueryClient();
 
   await queryClient.prefetchInfiniteQuery({
@@ -37,9 +34,7 @@ export default async function SectionDetailPage({ params }: PageProps) {
   return (
     <AppLayout>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <LikesProvider initialLikedIds={initialLikedIds}>
-          <SectionDetail slug={slug} sectionId={sectionId} />
-        </LikesProvider>
+        <SectionDetail slug={slug} sectionId={sectionId} />
       </HydrationBoundary>
     </AppLayout>
   );

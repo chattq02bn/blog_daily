@@ -84,6 +84,11 @@ export interface PostAction {
   active: boolean;
 }
 
+export interface LikeState {
+  isLiked: boolean;
+  likeCount: number;
+}
+
 export const postsApi = {
   async list(params: ListPostsParams = {}): Promise<PostsPage> {
     const { topicIds, ...rest } = params;
@@ -116,6 +121,12 @@ export const postsApi = {
   },
   async toggleAction(id: string, action: "like" | "bookmark", active: boolean): Promise<PostAction> {
     return unwrap(await api.post<Envelope<PostAction>>(`/posts/${id}/${action}`, { active }));
+  },
+  async getLikeState(postId: string): Promise<LikeState> {
+    return unwrap(await api.get<Envelope<LikeState>>(`/posts/${postId}/like`));
+  },
+  async toggleLike(postId: string): Promise<LikeState> {
+    return unwrap(await api.post<Envelope<LikeState>>(`/posts/${postId}/like`));
   },
 };
 

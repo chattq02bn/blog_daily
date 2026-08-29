@@ -22,6 +22,8 @@ import {
   type ListPostsParams,
   type PostWriteBody,
   type ApiComment,
+  type ApiPost,
+  type PostsPage,
 } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
@@ -146,9 +148,56 @@ export function useDeletePost() {
 }
 
 export function useTogglePostAction() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, action, active }: { id: string; action: "like" | "bookmark"; active: boolean }) =>
       postsApi.toggleAction(id, action, active),
+    onMutate: async ({ id, action, active }) => {
+      const field = action === "like" ? "likes" : "bookmarks";
+      const delta = active ? 1 : -1;
+
+      // Update all cached queries that contain this post
+      const queryCache = qc.getQueryCache();
+      queryCache.getAll().forEach((query) => {
+        const key = query.queryKey;
+        if (typeof key[0] !== "string" || key[0] !== "post") return;
+
+        qc.setQueryData(key, (old: ApiPost | undefined) => {
+          if (!old || old.id !== id) return old;
+          return { ...old, [field]: Math.max(0, old[field] + delta) };
+        });
+      });
+
+      // Also update posts list/infinite caches
+      qc.setQueriesData(
+        { queryKey: ["posts"] },
+        (old: PostsPage | { pages: { data: ApiPost[] }[] } | undefined) => {
+          if (!old) return old;
+          if ("pages" in old) {
+            // Infinite query
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                data: page.data.map((p) =>
+                  p.id === id ? { ...p, [field]: Math.max(0, p[field] + delta) } : p
+                ),
+              })),
+            };
+          }
+          if ("data" in old) {
+            // Regular query
+            return {
+              ...old,
+              data: old.data.map((p) =>
+                p.id === id ? { ...p, [field]: Math.max(0, p[field] + delta) } : p
+              ),
+            };
+          }
+          return old;
+        }
+      );
+    },
   });
 }
 

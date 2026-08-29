@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
 import NoteView from "./NoteView";
-import LikesProvider from "@/components/likes/LikesProvider";
 import { commentsApi, postsApi, type CommentsPage } from "@/lib/api";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
-import { getInitialLikedIds } from "@/lib/post-likes.server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -26,11 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function NotePage({ params }: PageProps) {
   const { id } = await params;
   const queryClient = getQueryClient();
-  const initialLikedIds = await getInitialLikedIds();
 
-  // Prefetch trước: chi tiết bài viết + trang đầu của bình luận.
-  // Comments dùng useInfiniteQuery phía client nên phải prefetchInfiniteQuery
-  // (prefetchQuery thường sẽ cache thiếu cấu trúc pages -> lỗi .length khi hydrate).
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: qk.post(id),
@@ -47,18 +41,12 @@ export default async function NotePage({ params }: PageProps) {
         return meta.page < meta.totalPages ? meta.page + 1 : undefined;
       },
     }),
-    queryClient.prefetchQuery({
-      queryKey: qk.posts({ status: "published", limit: 200 }),
-      queryFn: () => postsApi.list({ status: "published", limit: 200 }),
-    }),
   ]);
 
   return (
     <AppLayout hideSidebar>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <LikesProvider initialLikedIds={initialLikedIds}>
-          <NoteView id={id} />
-        </LikesProvider>
+        <NoteView id={id} />
       </HydrationBoundary>
     </AppLayout>
   );

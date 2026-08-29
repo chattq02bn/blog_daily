@@ -6,6 +6,7 @@ export const qk = {
   postsInfinite: (params?: Omit<ListPostsParams, "page">) =>
     ["posts", "infinite", params ?? {}] as const,
   post: (idOrSlug: string) => ["post", idOrSlug] as const,
+  postLike: (postId: string) => ["postLike", postId] as const,
   topics: () => ["topics"] as const,
   sections: (topicSlug: string) => ["sections", topicSlug] as const,
   sectionsInfinite: (topicSlug: string) => ["sections", "infinite", topicSlug] as const,

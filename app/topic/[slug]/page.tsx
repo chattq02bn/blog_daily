@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
-import LikesProvider from "@/components/likes/LikesProvider";
 import TopicHeader from "@/components/topic/TopicHeader";
 import TopicSectionList from "./TopicSectionList";
 import styles from "./topic.module.scss";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
-import { getInitialLikedIds } from "@/lib/post-likes.server";
 import { sectionsApi, sidebarApi, type ApiSidebarItem } from "@/lib/api";
 
 type PageProps = {
@@ -37,7 +35,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TopicDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const initialLikedIds = await getInitialLikedIds();
 
   const sidebarItem = await getSidebarItem(slug);
   const isParent = Boolean(sidebarItem && sidebarItem.children.length > 0);
@@ -73,12 +70,7 @@ export default async function TopicDetailPage({ params }: PageProps) {
         )}
 
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <LikesProvider initialLikedIds={initialLikedIds}>
-            <TopicSectionList
-              slug={slug}
-              childrenSlugs={isParent ? childrenSlugs : undefined}
-            />
-          </LikesProvider>
+          <TopicSectionList slug={slug} childrenSlugs={isParent ? childrenSlugs : undefined} />
         </HydrationBoundary>
       </div>
     </AppLayout>

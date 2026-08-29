@@ -11,6 +11,7 @@ const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
   timeout: 15000,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 function isCommentMutation(config: InternalAxiosRequestConfig): boolean {
@@ -23,10 +24,18 @@ function isCommentMutation(config: InternalAxiosRequestConfig): boolean {
   );
 }
 
+function needsCommenterToken(config: InternalAxiosRequestConfig): boolean {
+  const url = config.url ?? "";
+  const method = (config.method ?? "").toUpperCase();
+  if (isCommentMutation(config)) return true;
+  if (url.startsWith("/posts/liked") && method === "GET") return true;
+  return false;
+}
+
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
-      if (isCommentMutation(config)) {
+      if (needsCommenterToken(config)) {
         const commenterToken = getCommenterToken();
         if (commenterToken) {
           config.headers.Authorization = `Bearer ${commenterToken}`;

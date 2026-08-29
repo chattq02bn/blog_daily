@@ -1,12 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { RightOutlined, HeartOutlined, HeartFilled, MessageOutlined } from "@ant-design/icons";
-import { useIsPostLiked } from "@/components/likes/LikesProvider";
-import { togglePostLiked } from "@/lib/post-likes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { postsApi, type LikeState } from "@/lib/api";
+import { qk } from "@/lib/query-keys";
 import type { Note } from "@/lib/view-models";
 import styles from "./TopicCard.module.scss";
+
+const LS_KEY = "note_liked_posts";
+
+function readLikedSet(): Set<string> {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? new Set(parsed) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function writeLikedSet(ids: Set<string>): void {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify([...ids]));
+  } catch {}
+}
 
 export default function TopicCard({
   note,
@@ -15,14 +36,57 @@ export default function TopicCard({
   note: Note;
   featured?: boolean;
 }) {
-  const liked = useIsPostLiked(note.id);
+  const qc = useQueryClient();
+  const [localLiked, setLocalLiked] = useState(false);
 
-  const displayLikes = note.likes + (liked ? 1 : 0);
+  useEffect(() => {
+    setLocalLiked(readLikedSet().has(note.id));
+  }, [note.id]);
+
+  const { data } = useQuery({
+    queryKey: qk.postLike(note.id),
+    queryFn: () => postsApi.getLikeState(note.id),
+    staleTime: 30_000,
+  });
+
+  const mutation = useMutation({
+    mutationFn: () => postsApi.toggleLike(note.id),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: qk.postLike(note.id) });
+      const previous = qc.getQueryData<LikeState>(qk.postLike(note.id));
+      qc.setQueryData<LikeState>(qk.postLike(note.id), (old) => {
+        if (!old) return { isLiked: true, likeCount: 1 };
+        return { isLiked: !old.isLiked, likeCount: old.likeCount + (!old.isLiked ? 1 : -1) };
+      });
+      return { previous };
+    },
+    onSuccess: (result) => {
+      qc.setQueryData<LikeState>(qk.postLike(note.id), result);
+      const ids = readLikedSet();
+      if (result.isLiked) ids.add(note.id);
+      else ids.delete(note.id);
+      writeLikedSet(ids);
+      setLocalLiked(result.isLiked);
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData<LikeState>(qk.postLike(note.id), context.previous);
+      const ids = readLikedSet();
+      ids.delete(note.id);
+      writeLikedSet(ids);
+      setLocalLiked(false);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: qk.postLike(note.id) });
+    },
+  });
+
+  const isLiked = data?.isLiked ?? localLiked;
+  const displayLikes = data?.likeCount ?? note.likes;
 
   const toggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    togglePostLiked(note.id);
+    if (!mutation.isPending) mutation.mutate();
   };
 
   return (
@@ -45,12 +109,12 @@ export default function TopicCard({
       <div className={styles.likeRow}>
         <button
           type="button"
-          className={`${styles.likeButton} ${liked ? styles.liked : ""}`}
+          className={`${styles.likeButton} ${isLiked ? styles.liked : ""}`}
           onClick={toggleLike}
           aria-label="Thích bài viết"
-          aria-pressed={liked}
+          aria-pressed={isLiked}
         >
-          {liked ? <HeartFilled /> : <HeartOutlined />}
+          {isLiked ? <HeartFilled /> : <HeartOutlined />}
           <span>{displayLikes.toLocaleString("vi-VN")}</span>
         </button>
         <span className={styles.commentCount}>
