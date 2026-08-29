@@ -12,3 +12,8 @@ export const PreviewEditor = dynamic(() => import("./PreviewEditor"), {
   ssr: false,
   loading: () => <EditorLoading />,
 });
+
+export const MobileEditorToolbar = dynamic(
+  () => import("./MobileEditorToolbar"),
+  { ssr: false }
+);

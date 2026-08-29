@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "lodash";
 import {
@@ -21,9 +21,14 @@ import {
 } from "@ant-design/icons";
 import type { UploadFile } from "antd";
 import type { UploadChangeParam } from "antd/es/upload/interface";
-import type { Block } from "@blocknote/core";
+import type { Block, BlockNoteEditor } from "@blocknote/core";
+import { insertOrUpdateBlockForSlashMenu } from "@blocknote/core/extensions";
+import {
+  getDefaultReactSlashMenuItems,
+} from "@blocknote/react";
 import AppLayoutShell from "@/components/layout/AppLayoutShell";
-import { Editor, PreviewEditor } from "@/components/admin/DynamicEditor";
+import { Editor, PreviewEditor, MobileEditorToolbar } from "@/components/admin/DynamicEditor";
+import { productCardSchema } from "@/components/admin/productCard";
 import {
   useCreatePost,
   usePost,
@@ -200,8 +205,72 @@ function CreateNoteContent() {
     }
   };
 
+  /* Editor instance cho mobile toolbar */
+  type EditorType = BlockNoteEditor<
+    typeof productCardSchema.blockSchema,
+    typeof productCardSchema.inlineContentSchema,
+    typeof productCardSchema.styleSchema
+  >;
+  const [editorInstance, setEditorInstance] = useState<EditorType | null>(null);
+
+  const handleEditorReady = useCallback((editor: EditorType) => {
+    setEditorInstance(editor);
+  }, []);
+
+  /* Slash menu items cho mobile toolbar */
+  const slashMenuItems = useMemo(() => {
+    if (!editorInstance) return [];
+    const items = getDefaultReactSlashMenuItems(editorInstance);
+    const productCard = {
+      title: "Card sản phẩm",
+      subtext: "Thêm Card giới thiệu sản phẩm",
+      icon: (
+        <div style={{ fontSize: "16px" }}>🛍️</div>
+      ),
+      onItemClick: () => {
+        insertOrUpdateBlockForSlashMenu(editorInstance, {
+          type: "productCard",
+          props: {
+            title: "Tên sản phẩm",
+            description: "Mô tả ngắn gọn về sản phẩm",
+            imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+            buttonText: "Mua ngay",
+            buttonUrl: "#",
+          },
+        });
+      },
+    };
+    const tableIndex = items.findIndex((i) => i.title === "Table");
+    if (tableIndex !== -1) items.splice(tableIndex + 1, 0, productCard);
+    else items.push(productCard);
+    return items;
+  }, [editorInstance]);
+
+  /* Mobile toolbar element */
+  const mobileToolbar = useMemo(() => {
+    if (!editorInstance) return null;
+    return (
+      <MobileEditorToolbar
+        editor={editorInstance}
+        slashMenuItems={slashMenuItems.map((item) => (
+          <button
+            key={item.title}
+            type="button"
+            className="!px-2 flex items-center justify-center w-9 h-9 border border-[var(--color-border-default)] rounded-lg bg-[var(--color-background-primary)] text-[var(--color-text-primary)] text-sm cursor-pointer active:scale-95"
+            title={item.title}
+            aria-label={item.title}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => item.onItemClick()}
+          >
+            {item.icon}
+          </button>
+        ))}
+      />
+    );
+  }, [editorInstance, slashMenuItems]);
+
   return (
-    <AppLayoutShell hideSidebar>
+    <AppLayoutShell hideSidebar mobileToolbar={mobileToolbar}>
       <div className={styles.wrap}>
         <Form
           form={form}
@@ -248,7 +317,7 @@ function CreateNoteContent() {
                   },
                 ]}
               >
-                <Editor onChange={handleChange} />
+                <Editor onChange={handleChange} onEditorReady={handleEditorReady} />
               </Form.Item>
             </div>
 

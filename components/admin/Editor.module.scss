@@ -16,12 +16,9 @@
 
   /* Card sản phẩm: tắt hoàn toàn viền/overlay xanh khi bấm chọn block */
   :global([data-content-type="productCard"].ProseMirror-selectednode)::after,
-  :global([data-content-type="productCard"].ProseMirror-selectednode)
-    > *::after,
-  :global(.ProseMirror-selectednode > [data-content-type="productCard"])
-    > *::after,
-  :global(.ProseMirror-selectednode > .bn-block-content)
-    > [data-content-type="productCard"]::after {
+  :global([data-content-type="productCard"].ProseMirror-selectednode)>*::after,
+  :global(.ProseMirror-selectednode > [data-content-type="productCard"])>*::after,
+  :global(.ProseMirror-selectednode > .bn-block-content)>[data-content-type="productCard"]::after {
     content: none;
     background: none;
     box-shadow: none;
@@ -58,6 +55,7 @@
 }
 
 @media (max-width: 767px) {
+
   /* Menu thả xuống ("/" slash menu, drag handle...) gói gọn trong màn hình */
   :global(.bn-menu-dropdown),
   :global(.bn-suggestion-menu),
@@ -84,6 +82,11 @@
   display: flex;
   gap: 8px;
   margin-bottom: 14px;
+
+  /* Mobile toolbar: hiển thị inline, không xuống dòng */
+  .mobileToolbar & {
+    display: contents;
+  }
 }
 
 .fmtBtn {
@@ -91,7 +94,8 @@
   align-items: center;
   justify-content: center;
   width: 46px;
-  height: 40px;
+  height: 36px;
+  padding: 0px 10px;
   border: 1px solid var(--color-border-default);
   border-radius: 10px;
   background: var(--color-background-primary);
@@ -214,6 +218,65 @@
   &:active {
     transform: scale(0.94);
   }
+}
+
+/* Mobile: toolbar scrollable thay cho FAB + Drawer */
+.mobileToolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--color-surface-normal);
+  border-bottom: 1px solid var(--color-border-default);
+  padding: 10px 8px;
+  margin-top: 2px;
+}
+
+.mobileToolbarScroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.mobileToolbarItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.94);
+    background: var(--color-bg-hover);
+  }
+}
+
+.mobileToolbarIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.mobileToolbarDivider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 24px;
+  background: var(--color-border-default);
+  margin: 0 4px;
 }
 
 .sheetGrid {
