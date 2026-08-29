@@ -8,7 +8,7 @@
 
 .inner {
   display: grid;
-  grid-template-columns: 1fr minmax(0, 640px) 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
   height: 48px;
@@ -16,15 +16,6 @@
 
   @media (min-width: 769px) {
     height: 64px;
-  }
-
-  /* Mobile: search bị ẩn (display:none) nhưng grid track vẫn chiếm chỗ,
-     khiến .actions đè lên logo và chặn click -> dùng flex cho gọn */
-  @media (max-width: 768px) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
   }
 }
 
@@ -44,6 +35,8 @@
 
 .search {
   min-width: 0;
+  width: 100%;
+  max-width: 480px;
 
   @media (max-width: 768px) {
     display: none;
