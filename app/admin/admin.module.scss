@@ -7,6 +7,10 @@
 
 .card {
   width: 100%;
+
+  :global(.ant-card-head) {
+    background-color: var(--color-background-secondary);
+  }
 }
 
 .header {

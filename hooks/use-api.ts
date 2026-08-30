@@ -40,8 +40,8 @@ export const queryFns = {
   posts: (params: ListPostsParams) => () => postsApi.list(params),
   post: (idOrSlug: string) => () => postsApi.get(idOrSlug),
   sections: (topicSlug: string) => () => sectionsApi.byTopic(topicSlug),
-  topics: () => topicsApi.list(),
-  tags: () => tagsApi.list(),
+  topics: (params?: { page?: number; limit?: number; q?: string }) => () => topicsApi.list(params),
+  tags: (params?: { page?: number; limit?: number; q?: string }) => () => tagsApi.list(params),
   comments: (postIdOrSlug: string) => () => commentsApi.listByPost(postIdOrSlug),
   users: (params: { page?: number; limit?: number; q?: string; role?: "USER" | "ADMIN" }) =>
     () => usersApi.list(params),
@@ -210,8 +210,8 @@ export function useTogglePostAction() {
 
 /* ===== Topics & sections ===== */
 
-export function useTopics() {
-  return useQuery({ queryKey: qk.topics(), queryFn: topicsApi.list });
+export function useTopics(params?: { page?: number; limit?: number; q?: string }) {
+  return useQuery({ queryKey: qk.topics(params), queryFn: () => topicsApi.list(params) });
 }
 
 export function useSections(topicSlug: string) {
@@ -258,8 +258,8 @@ export function useCreateTopic() {
   return useMutation({
     mutationFn: (body: { name: string; description?: string }) => topicsApi.create(body),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.topics() });
-      void qc.invalidateQueries({ queryKey: qk.sidebar() });
+      void qc.invalidateQueries({ queryKey: ["topics"] });
+      void qc.invalidateQueries({ queryKey: ["sidebar"] });
     },
   });
 }
@@ -270,8 +270,8 @@ export function useUpdateTopic() {
     mutationFn: ({ id, body }: { id: string; body: { name?: string; description?: string } }) =>
       topicsApi.update(id, body),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.topics() });
-      void qc.invalidateQueries({ queryKey: qk.sidebar() });
+      void qc.invalidateQueries({ queryKey: ["topics"] });
+      void qc.invalidateQueries({ queryKey: ["sidebar"] });
     },
   });
 }
@@ -281,8 +281,8 @@ export function useDeleteTopic() {
   return useMutation({
     mutationFn: (id: string) => topicsApi.remove(id),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.topics() });
-      void qc.invalidateQueries({ queryKey: qk.sidebar() });
+      void qc.invalidateQueries({ queryKey: ["topics"] });
+      void qc.invalidateQueries({ queryKey: ["sidebar"] });
       void qc.invalidateQueries({ queryKey: ["posts"] });
     },
   });
@@ -290,12 +290,12 @@ export function useDeleteTopic() {
 
 /* ===== Tags ===== */
 
-export function useTags() {
-  return useQuery({ queryKey: qk.tags(), queryFn: tagsApi.list });
+export function useTags(params?: { page?: number; limit?: number; q?: string }) {
+  return useQuery({ queryKey: qk.tags(params), queryFn: () => tagsApi.list(params) });
 }
 
 function invalidateTagDependents(qc: QueryClient) {
-  void qc.invalidateQueries({ queryKey: qk.tags() });
+  void qc.invalidateQueries({ queryKey: ["tags"] });
   void qc.invalidateQueries({ queryKey: ["posts"] });
 }
 
@@ -584,8 +584,13 @@ export function useUpdateSocialLinks() {
 
 /* ===== Sidebar ===== */
 
-export function useSidebar() {
-  return useQuery({ queryKey: qk.sidebar(), queryFn: sidebarApi.get });
+export function useSidebar(params?: { q?: string }) {
+  return useQuery({
+    queryKey: qk.sidebar(params),
+    queryFn: () => sidebarApi.get(params),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 }
 
 /* Topic ở trang chủ — phân trang theo mục gốc qua BE, "kéo xuống" nạp mục tiếp theo */
@@ -640,8 +645,8 @@ export function useReplaceSidebar() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (items: unknown[]) => sidebarApi.replace(items),
-    onSuccess: (items) => {
-      qc.setQueryData(qk.sidebar(), items);
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["sidebar"] });
     },
   });
 }

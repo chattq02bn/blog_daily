@@ -15,6 +15,7 @@ export interface ApiAuthor {
   name: string | null;
   email: string;
   avatar?: string | null;
+  description?: string | null;
 }
 
 export interface ApiPost {
@@ -36,6 +37,7 @@ export interface ApiPost {
   author: ApiAuthor | null;
   authorAvatar: string | null;
   authorName: string;
+  authorDescription: string | null;
   date: string;
   createdAt: string;
   updatedAt: string;

@@ -67,7 +67,7 @@ export default function NoteView({ id }: { id: string }) {
               <div className={styles.profileBody}>
                 <div className={styles.profileName}>{note.author}</div>
                 <div className={styles.profileDescription}>
-                  {note.excerpt || note.body?.[0]}
+                  {note.authorDescription || note.excerpt || note.body?.[0]}
                 </div>
                 <SocialLinks />
               </div>

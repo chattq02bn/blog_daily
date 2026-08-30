@@ -37,6 +37,7 @@ export function postToNote(post: ApiPost): Note {
     avatar:
       post.authorAvatar ||
       `https://picsum.photos/seed/${encodeURIComponent(post.authorName)}-avatar/96/96`,
+    authorDescription: post.authorDescription ?? null,
     likes: post.likes,
     comments: post.commentsCount,
     bookmark: post.bookmarks,

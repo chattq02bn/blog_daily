@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   App,
   Button,
@@ -15,34 +15,47 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
-  SearchOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from "@/hooks/use-api";
+import SearchInput from "@/components/admin/SearchInput";
+import {
+  useCreateTag,
+  useDeleteTag,
+  useTags,
+  useUpdateTag,
+} from "@/hooks/use-api";
 import type { ApiTag } from "@/lib/api";
 import styles from "./tags.module.scss";
 
+const PAGE_SIZE = 20;
+
 export default function AdminTagsPage() {
   const { message } = App.useApp();
+
   const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ApiTag | null>(null);
+
   const [form] = Form.useForm<{ name: string }>();
 
-  const tagsQuery = useTags();
+  const tagsQuery = useTags({
+    page,
+    limit: PAGE_SIZE,
+    q: keyword || undefined,
+  });
+
   const createMutation = useCreateTag();
   const updateMutation = useUpdateTag();
   const deleteMutation = useDeleteTag();
 
-  const tags: ApiTag[] = useMemo(() => tagsQuery.data ?? [], [tagsQuery.data]);
+  const tags = tagsQuery.data?.data ?? [];
+  const meta = tagsQuery.data?.meta;
 
-  const filtered = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
-    if (!kw) return tags;
-    return tags.filter(
-      (t) => t.name.toLowerCase().includes(kw) || t.id.toLowerCase().includes(kw)
-    );
-  }, [tags, keyword]);
+  const handleSearch = useCallback((value: string) => {
+    setKeyword(value);
+    setPage(1);
+  }, []);
 
   const openCreate = () => {
     setEditing(null);
@@ -58,6 +71,7 @@ export default function AdminTagsPage() {
     try {
       const values = await form.validateFields();
       const name = values.name.trim();
+
       if (editing) {
         await updateMutation.mutateAsync({ id: editing.id, name });
         message.success("Đã cập nhật tag");
@@ -65,6 +79,7 @@ export default function AdminTagsPage() {
         await createMutation.mutateAsync(name);
         message.success("Đã thêm tag");
       }
+
       setModalOpen(false);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "errorFields" in err) return;
@@ -132,13 +147,11 @@ export default function AdminTagsPage() {
       <div className={styles.wrap}>
         <div className={styles.header}>
           <h1 className={styles.heading}>Quản lý tag</h1>
+
           <div className={styles.headerActions}>
-            <Input
-              prefix={<SearchOutlined style={{ color: "var(--color-text-clickable-icon)" }} />}
-              placeholder="Lọc theo tên hoặc ID"
-              allowClear
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+            <SearchInput
+              placeholder="Lọc theo tên"
+              onSearch={handleSearch}
               className={styles.search}
             />
             <Button
@@ -151,14 +164,23 @@ export default function AdminTagsPage() {
             </Button>
           </div>
         </div>
+
         <Table
           scroll={{ x: "max-content", y: "calc(100dvh - 300px)" }}
           rowKey="id"
           columns={columns}
-          dataSource={filtered}
-          pagination={{ pageSize: 8, showSizeChanger: false }}
+          dataSource={tags}
+          loading={tagsQuery.isLoading || tagsQuery.isFetching}
+          pagination={{
+            current: page,
+            pageSize: PAGE_SIZE,
+            total: meta?.total ?? 0,
+            showSizeChanger: false,
+            onChange: (p) => setPage(p),
+          }}
         />
       </div>
+
       <Modal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}

@@ -37,6 +37,7 @@ import {
   useUpdatePost,
 } from "@/hooks/use-api";
 import type { PostWriteBody } from "@/lib/api";
+import { uploadApi } from "@/lib/api";
 import styles from "./create.module.scss";
 
 /* Nội dung được tính là có dữ liệu nếu tồn tại block chữ không rỗng
@@ -66,9 +67,10 @@ function CreateNoteContent() {
   const postQuery = usePost(editId ?? "");
   const createMutation = useCreatePost();
   const updateMutation = useUpdatePost();
+  const [savingAction, setSavingAction] = useState<"draft" | "publish" | null>(null);
 
-  const topics = topicsQuery.data ?? [];
-  const tags = tagsQuery.data ?? [];
+  const topics = topicsQuery.data?.data ?? [];
+  const tags = tagsQuery.data?.data ?? [];
 
   const [form] = Form.useForm();
   const handleChange = useMemo(
@@ -103,6 +105,14 @@ function CreateNoteContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ nạp một lần khi có dữ liệu
   }, [editId, postQuery.data]);
 
+  /* Khi chuyển từ chỉnh sửa sang tạo mới (xóa id) → clear form */
+  useEffect(() => {
+    if (!editId) {
+      form.resetFields();
+      setCover("");
+    }
+  }, [editId, form]);
+
   /* Pre-select topic từ URL khi tạo mới */
   useEffect(() => {
     if (isEdit || !presetTopicId || !topics.length) return;
@@ -123,20 +133,24 @@ function CreateNoteContent() {
     setPreviewOpen(true);
   };
 
-  const onUpload = (info: UploadChangeParam<UploadFile>) => {
+  const [uploading, setUploading] = useState(false);
+
+  const onUpload = async (info: UploadChangeParam<UploadFile>) => {
     const file = info.fileList[0]?.originFileObj;
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      message.error("Ảnh bìa tối đa 2MB");
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Ảnh bìa tối đa 5MB");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setCover(String(reader.result));
-    reader.readAsDataURL(file);
-  };
-
-  const applyCoverUrl = () => {
-    if (coverUrl.trim()) setCover(coverUrl.trim());
+    setUploading(true);
+    try {
+      const result = await uploadApi.uploadFile(file as File);
+      setCover(result.url);
+    } catch {
+      message.error("Tải ảnh bìa thất bại");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const savePost = (
@@ -157,6 +171,9 @@ function CreateNoteContent() {
       };
       if (!body.title) return;
 
+      setSavingAction(status === "draft" ? "draft" : "publish");
+      const onSettled = () => setSavingAction(null);
+
       if (editId && updateMutation) {
         updateMutation.mutate(
           { id: editId, body },
@@ -168,6 +185,7 @@ function CreateNoteContent() {
               if (navigateBack) router.push("/admin/posts");
             },
             onError: () => message.error("Lưu bài viết thất bại"),
+            onSettled,
           },
         );
       } else {
@@ -177,6 +195,7 @@ function CreateNoteContent() {
             if (navigateBack) router.push("/admin/posts");
           },
           onError: () => message.error("Tạo bài viết thất bại"),
+          onSettled,
         });
       }
     };
@@ -372,12 +391,15 @@ function CreateNoteContent() {
                   beforeUpload={() => false}
                   onChange={onUpload}
                 >
-                  <Button icon={<UploadOutlined />}>Tải ảnh bìa lên</Button>
+                  <Button icon={<UploadOutlined />} loading={uploading}>Tải ảnh bìa lên</Button>
                 </Upload>
                 <Input
                   value={coverUrl}
-                  onChange={(e) => setCoverUrl(e.target.value)}
-                  onPressEnter={applyCoverUrl}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCoverUrl(val);
+                    if (val.trim()) setCover(val.trim());
+                  }}
                   placeholder="...hoặc dán link ảnh"
                   variant="borderless"
                   className={styles.coverInput}
@@ -402,13 +424,13 @@ function CreateNoteContent() {
             <Button size="large" icon={<EyeOutlined />} onClick={openPreview}>
               Xem trước
             </Button>
-            <Button size="large" loading={createMutation.isPending || updateMutation.isPending} onClick={saveDraft}>
+            <Button size="large" loading={savingAction === "draft"} onClick={saveDraft}>
               Lưu nháp
             </Button>
             <Button
               type="primary"
               size="large"
-              loading={createMutation.isPending || updateMutation.isPending}
+              loading={savingAction === "publish"}
               className="note-btn-primary"
               onClick={publish}
             >

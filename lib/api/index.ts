@@ -134,8 +134,9 @@ export const postsApi = {
 /* ===== Topics & sections ===== */
 
 export const topicsApi = {
-  async list(): Promise<ApiTopic[]> {
-    return unwrap(await api.get<Envelope<ApiTopic[]>>("/topics"));
+  async list(params?: { page?: number; limit?: number; q?: string }): Promise<{ data: ApiTopic[]; meta?: ApiMeta }> {
+    const res = await api.get<Envelope<ApiTopic[]>>("/topics", { params });
+    return { data: res.data.data, meta: res.data.meta };
   },
   async create(body: { name: string; description?: string }): Promise<ApiTopic> {
     return unwrap(await api.post<Envelope<ApiTopic>>("/topics", body));
@@ -176,8 +177,9 @@ export const sectionsApi = {
 /* ===== Tags ===== */
 
 export const tagsApi = {
-  async list(): Promise<ApiTag[]> {
-    return unwrap(await api.get<Envelope<ApiTag[]>>("/tags"));
+  async list(params?: { page?: number; limit?: number; q?: string }): Promise<{ data: ApiTag[]; meta?: ApiMeta }> {
+    const res = await api.get<Envelope<ApiTag[]>>("/tags", { params });
+    return { data: res.data.data, meta: res.data.meta };
   },
   async create(name: string): Promise<ApiTag> {
     return unwrap(await api.post<Envelope<ApiTag>>("/tags", { name }));
@@ -359,8 +361,8 @@ export interface ListSidebarChildrenParams {
 
 export const sidebarApi = {
   /** Toàn cây sidebar (mục gốc + con lồng nhau) — dùng cho admin & trang chủ đề */
-  async get(): Promise<ApiSidebarItem[]> {
-    return unwrap(await api.get<Envelope<ApiSidebarItem[]>>("/sidebar"));
+  async get(params?: { q?: string }): Promise<ApiSidebarItem[]> {
+    return unwrap(await api.get<Envelope<ApiSidebarItem[]>>("/sidebar", { params }));
   },
   /** Phân trang theo mục gốc (mỗi gốc chỉ kèm ~10 con đầu) — dùng cho trang chủ */
   async list(params: ListSidebarParams): Promise<SidebarPage> {

@@ -15,6 +15,7 @@ export type Note = {
   cover: string;
   author: string;
   avatar: string;
+  authorDescription: string | null;
   likes: number;
   comments: number;
   bookmark: number;
