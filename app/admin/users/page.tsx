@@ -83,46 +83,38 @@ export default function AdminUsersPage() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
-    form.validateFields().then((values) => {
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
       if (editing) {
-        updateMutation.mutate(
-          {
-            id: editing.id,
-            body: {
-              name: values.name,
-              email: values.email,
-              role: editing.role === "admin" ? "ADMIN" : (values.role.toUpperCase() as "USER" | "ADMIN"),
-            },
-          },
-          {
-            onSuccess: () => message.success("Đã cập nhật người dùng"),
-            onError: () => message.error("Cập nhật thất bại"),
-          }
-        );
-      } else {
-        const tempPassword = `Note${Math.random().toString(36).slice(2, 10)}!1`;
-        createMutation.mutate(
-          {
+        await updateMutation.mutateAsync({
+          id: editing.id,
+          body: {
             name: values.name,
             email: values.email,
-            password: tempPassword,
-            role: values.role.toUpperCase() as "USER" | "ADMIN",
+            role: editing.role === "admin" ? "ADMIN" : (values.role.toUpperCase() as "USER" | "ADMIN"),
           },
-          {
-            onSuccess: (data) => {
-              if (data.mailStatus === "sent") {
-                message.success("Đã thêm người dùng và gửi mail thành công");
-              } else {
-                message.warning("Đã thêm người dùng nhưng gửi mail thất bại");
-              }
-            },
-            onError: () => message.error("Thêm người dùng thất bại (email có thể đã tồn tại)"),
-          }
-        );
+        });
+        message.success("Đã cập nhật người dùng");
+      } else {
+        const tempPassword = `Note${Math.random().toString(36).slice(2, 10)}!1`;
+        const data = await createMutation.mutateAsync({
+          name: values.name,
+          email: values.email,
+          password: tempPassword,
+          role: values.role.toUpperCase() as "USER" | "ADMIN",
+        });
+        if (data.mailStatus === "sent") {
+          message.success("Đã thêm người dùng và gửi mail thành công");
+        } else {
+          message.warning("Đã thêm người dùng nhưng gửi mail thất bại");
+        }
       }
       setModalOpen(false);
-    });
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "errorFields" in err) return;
+      message.error("Thao tác thất bại");
+    }
   };
 
   const handleDelete = (user: ApiUser) => {
@@ -169,6 +161,7 @@ export default function AdminUsersPage() {
       title: "Email",
       dataIndex: "email",
       key: "email",
+
     },
     {
       title: "Role",
@@ -185,7 +178,7 @@ export default function AdminUsersPage() {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      width: 100,
+      width: 150,
       render: (status: string, record: ApiUser) => (
         <Switch
           checked={status === "active"}
@@ -199,10 +192,10 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: "Mail",
+      title: "Trạng thái Mail",
       dataIndex: "mailStatus",
       key: "mailStatus",
-      width: 120,
+      width: 150,
       render: (mailStatus: string, record: ApiUser) => {
         if (mailStatus === "sent") {
           return <Tag color="success">Đã gửi</Tag>;
@@ -311,6 +304,7 @@ export default function AdminUsersPage() {
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        confirmLoading={createMutation.isPending || updateMutation.isPending}
         okText={editing ? "Lưu thay đổi" : "Thêm người dùng"}
         cancelText="Hủy"
         title={editing ? "Sửa người dùng" : "Thêm người dùng mới"}

@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import {
+  App,
   Button,
   Form,
   Input,
-  message,
   Modal,
   Popconfirm,
   Table,
@@ -23,6 +23,7 @@ import type { ApiTag } from "@/lib/api";
 import styles from "./tags.module.scss";
 
 export default function AdminTagsPage() {
+  const { message } = App.useApp();
   const [keyword, setKeyword] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ApiTag | null>(null);
@@ -53,25 +54,22 @@ export default function AdminTagsPage() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
-    form.validateFields().then((values) => {
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
       const name = values.name.trim();
       if (editing) {
-        updateMutation.mutate(
-          { id: editing.id, name },
-          {
-            onSuccess: () => message.success("Đã cập nhật tag"),
-            onError: () => message.error("Cập nhật tag thất bại"),
-          }
-        );
+        await updateMutation.mutateAsync({ id: editing.id, name });
+        message.success("Đã cập nhật tag");
       } else {
-        createMutation.mutate(name, {
-          onSuccess: () => message.success("Đã thêm tag"),
-          onError: () => message.error("Thêm tag thất bại"),
-        });
+        await createMutation.mutateAsync(name);
+        message.success("Đã thêm tag");
       }
       setModalOpen(false);
-    });
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "errorFields" in err) return;
+      message.error("Thao tác thất bại");
+    }
   };
 
   const handleDelete = (tag: ApiTag) => {
@@ -165,6 +163,7 @@ export default function AdminTagsPage() {
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        confirmLoading={createMutation.isPending || updateMutation.isPending}
         okText={editing ? "Lưu thay đổi" : "Thêm tag"}
         cancelText="Hủy"
         title={editing ? "Sửa tag" : "Thêm tag mới"}

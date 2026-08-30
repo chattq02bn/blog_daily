@@ -88,6 +88,7 @@ export interface ApiSidebarItem {
   description: string | null;
   idx: number;
   topicIds: string[];
+  postCount: number;
   /** Số mục con trực tiếp — dùng cho nút lazy-load */
   childrenCount?: number;
   /**

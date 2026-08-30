@@ -644,6 +644,18 @@ export function useReplaceSidebar() {
   });
 }
 
+export function useCreateSidebarItem() {
+  return useMutation({
+    mutationFn: (body: {
+      name: string;
+      slug: string;
+      description?: string;
+      topicIds?: string[];
+      parentId?: string;
+    }) => sidebarApi.create(body),
+  });
+}
+
 /* ===== Stats ===== */
 
 export function useVisits(month?: string) {

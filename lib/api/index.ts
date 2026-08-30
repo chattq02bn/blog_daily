@@ -381,6 +381,15 @@ export const sidebarApi = {
   async replace(items: unknown[]): Promise<ApiSidebarItem[]> {
     return unwrap(await api.put<Envelope<ApiSidebarItem[]>>("/sidebar", { items }));
   },
+  async create(body: {
+    name: string;
+    slug: string;
+    description?: string;
+    topicIds?: string[];
+    parentId?: string;
+  }): Promise<ApiSidebarItem> {
+    return unwrap(await api.post<Envelope<ApiSidebarItem>>("/sidebar", body));
+  },
 };
 
 /* ===== Stats ===== */

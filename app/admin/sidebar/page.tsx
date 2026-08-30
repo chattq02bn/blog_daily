@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  App,
   Button,
   Form,
   Input,
-  message,
   Modal,
   Popconfirm,
   Select,
@@ -23,7 +23,7 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useReplaceSidebar, useSidebar, useTopics } from "@/hooks/use-api";
+import { useCreateSidebarItem, useReplaceSidebar, useSidebar } from "@/hooks/use-api";
 import type { ApiSidebarItem } from "@/lib/api";
 import styles from "./sidebar.module.scss";
 
@@ -38,8 +38,7 @@ interface SidebarItem {
   children?: SidebarItem[];
 }
 
-function apiToItem(item: ApiSidebarItem, topicPostCount: Record<string, number>): SidebarItem {
-  const postCount = item.topicIds.reduce((sum, tid) => sum + (topicPostCount[tid] ?? 0), 0);
+function apiToItem(item: ApiSidebarItem): SidebarItem {
   return {
     id: item.id,
     name: item.name,
@@ -47,9 +46,9 @@ function apiToItem(item: ApiSidebarItem, topicPostCount: Record<string, number>)
     description: item.description ?? undefined,
     idx: item.idx,
     topicIds: item.topicIds,
-    postCount,
+    postCount: item.postCount ?? 0,
     children: item.children.length
-      ? item.children.map((child) => apiToItem(child, topicPostCount))
+      ? item.children.map((child) => apiToItem(child))
       : undefined,
   };
 }
@@ -164,6 +163,7 @@ function DragRow({ children, ...rest }: React.HTMLAttributes<HTMLTableRowElement
 }
 
 export default function AdminSidebarPage() {
+  const { message } = App.useApp();
   const router = useRouter();
   const [items, setItems] = useState<SidebarItem[]>([]);
   const [keyword, setKeyword] = useState("");
@@ -177,32 +177,33 @@ export default function AdminSidebarPage() {
   }>();
 
   const sidebarQuery = useSidebar();
-  const topicsQuery = useTopics();
+  const createMutation = useCreateSidebarItem();
   const replaceMutation = useReplaceSidebar();
 
-  /* postCount tính từ số bài của topic gắn với mục */
-  const topicPostCount = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const topic of topicsQuery.data ?? []) {
-      map[topic.id] = topic.postCount;
-    }
-    return map;
-  }, [topicsQuery.data]);
-
-  /* Nạp dữ liệu từ API vào state lần đầu */
+  /* Nap du lieu tu API vao state lan dau */
   const hydratedRef = useRef(false);
   useEffect(() => {
     if (hydratedRef.current || !sidebarQuery.data) return;
     hydratedRef.current = true;
-    setItems(sidebarQuery.data.map((item) => apiToItem(item, topicPostCount)));
-  }, [sidebarQuery.data, topicPostCount]);
+    setItems(sidebarQuery.data.map((item) => apiToItem(item)));
+  }, [sidebarQuery.data]);
 
   /* Tự lưu lên server (debounce) sau mỗi thay đổi cục bộ */
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dirtyRef = useRef(false);
+  const hydratedSaveRef = useRef(false);
+  const skipSaveRef = useRef(false);
   useEffect(() => {
     if (!hydratedRef.current) return;
-    dirtyRef.current = true;
+    /* Bo qua lan hydrate dau tien — chi save khi user thuc su thay doi */
+    if (!hydratedSaveRef.current) {
+      hydratedSaveRef.current = true;
+      return;
+    }
+    /* Bo qua khi create thanh cong — da push item vao state, khong can PUT */
+    if (skipSaveRef.current) {
+      skipSaveRef.current = false;
+      return;
+    }
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       replaceMutation.mutate(
@@ -212,7 +213,7 @@ export default function AdminSidebarPage() {
         }
       );
     }, 600);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi items đổi
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chi chay khi items doi
   }, [items]);
 
   /* Trạng thái kéo thả lưu trong ref — không setState trong dragover để tránh lag */
@@ -391,8 +392,9 @@ export default function AdminSidebarPage() {
     router.push(`/admin/sidebar/topic/${item.id}?name=${encodeURIComponent(item.name)}`);
   };
 
-  const handleSubmit = () => {
-    form.validateFields().then((values) => {
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
       const { name, description, parentId } = values;
       if (editing) {
         const updated: SidebarItem = {
@@ -401,24 +403,41 @@ export default function AdminSidebarPage() {
           slug: editing.slug || slugify(name.trim()),
           description: description?.trim() || undefined,
         };
-        const rest = removeItem(sorted, editing.id);
-        setItems(insertItem(rest, updated, parentId));
-        console.log("update sidebar item:", updated, "parent:", parentId);
+        const replaceInTree = (list: SidebarItem[]): SidebarItem[] =>
+          list.map((item) => {
+            if (item.id === editing.id) return { ...updated, idx: item.idx, children: item.children };
+            if (item.children) return { ...item, children: replaceInTree(item.children) };
+            return item;
+          });
+        setItems(replaceInTree(items));
+        message.success("Đã cập nhật mục sidebar");
+        setModalOpen(false);
       } else {
-        const created: SidebarItem = {
-          id: `s_${Date.now().toString(36)}`,
+        const slug = slugify(name.trim());
+        const data = await createMutation.mutateAsync({
           name: name.trim(),
-          slug: slugify(name.trim()),
-          postCount: 0,
-          topicIds: [],
+          slug,
           description: description?.trim() || undefined,
-          idx: 0,
+          parentId,
+        });
+        const created: SidebarItem = {
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
+          description: data.description ?? undefined,
+          postCount: data.postCount ?? 0,
+          topicIds: data.topicIds,
+          idx: data.idx,
         };
+        skipSaveRef.current = true;
         setItems(insertItem(items, created, parentId));
-        console.log("create sidebar item:", created, "parent:", parentId);
+        message.success("Đã tạo mục sidebar");
+        setModalOpen(false);
       }
-      setModalOpen(false);
-    });
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "errorFields" in err) return;
+      message.error("Thao tác thất bại");
+    }
   };
 
   const handleDelete = (item: SidebarItem) => {
@@ -594,6 +613,7 @@ export default function AdminSidebarPage() {
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        confirmLoading={createMutation.isPending}
         okText={editing ? "Lưu thay đổi" : "Thêm mục"}
         cancelText="Hủy"
         title={editing ? "Sửa mục sidebar" : "Thêm mục sidebar"}

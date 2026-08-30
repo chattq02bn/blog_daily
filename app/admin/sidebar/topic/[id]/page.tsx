@@ -90,35 +90,30 @@ function TopicCreatePage() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
-    form.validateFields().then((values) => {
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
       const data = {
         name: values.name.trim(),
         description: values.description?.trim() ?? "",
       };
       if (editing) {
-        updateMutation.mutate(
-          { id: editing.id, body: data },
-          {
-            onSuccess: () => messageApi.success("Đã cập nhật topic"),
-            onError: () => messageApi.error("Cập nhật topic thất bại"),
-          }
-        );
+        await updateMutation.mutateAsync({ id: editing.id, body: data });
+        messageApi.success("Đã cập nhật topic");
       } else {
-        createMutation.mutate(data, {
-          onSuccess: async (created) => {
-            messageApi.success("Đã thêm topic");
-            try {
-              await refreshSidebarItem(created.id);
-            } catch {
-              messageApi.warning("Đã tạo topic nhưng chưa gắn được vào mục sidebar");
-            }
-          },
-          onError: () => messageApi.error("Thêm topic thất bại"),
-        });
+        const created = await createMutation.mutateAsync(data);
+        messageApi.success("Đã thêm topic");
+        try {
+          await refreshSidebarItem(created.id);
+        } catch {
+          messageApi.warning("Đã tạo topic nhưng chưa gắn được vào mục sidebar");
+        }
       }
       setModalOpen(false);
-    });
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "errorFields" in err) return;
+      messageApi.error("Thao tác thất bại");
+    }
   };
 
   const handleDelete = (topic: ApiTopic) => {
@@ -250,6 +245,7 @@ function TopicCreatePage() {
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        confirmLoading={createMutation.isPending || updateMutation.isPending}
         okText={editing ? "Lưu thay đổi" : "Thêm topic"}
         cancelText="Hủy"
         title={editing ? "Sửa topic" : "Thêm topic mới"}

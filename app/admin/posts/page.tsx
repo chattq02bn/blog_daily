@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Button, Input, Popconfirm, Table, Tag, Tooltip, message } from "antd"; import {
+import { Button, Input, Popconfirm, Table, Tag, Tooltip, App } from "antd"; import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -23,6 +23,7 @@ const statusMeta: Record<"draft" | "published", { label: string; color: string }
 };
 
 export default function AdminPostsPage() {
+  const { message } = App.useApp();
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
 
