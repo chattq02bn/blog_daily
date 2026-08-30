@@ -45,6 +45,9 @@ export const authApi = {
   async me(): Promise<ApiAuthUser> {
     return unwrap(await api.get<Envelope<ApiAuthUser>>("/auth/me"));
   },
+  async forgotPassword(email: string): Promise<void> {
+    await api.post<Envelope<void>>("/auth/forgot-password", { email });
+  },
 };
 
 /* ===== Posts ===== */

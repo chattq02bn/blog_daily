@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Avatar, Popover } from "antd";
 import { useAtomValue } from "jotai";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   SearchOutlined,
   MenuOutlined,
@@ -19,6 +20,7 @@ import SidebarDrawer from "./SidebarDrawer";
 import AdminSidebarDrawer from "../admin/AdminSidebarDrawer";
 import LoginModal from "./LoginModal";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { useProfile } from "@/hooks/use-api";
 import { clearAuth } from "@/lib/auth";
 import { isAuthedAtom, openLoginModal } from "@/lib/jotai/auth";
 import styles from "./Navbar.module.scss";
@@ -26,15 +28,19 @@ import styles from "./Navbar.module.scss";
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const qc = useQueryClient();
   const isAdmin = pathname.startsWith("/admin");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const isAuthed = useAtomValue(isAuthedAtom);
   const { theme, toggleTheme } = useTheme();
+  const { data: profile } = useProfile();
 
   const handleLogout = () => {
     clearAuth();
+    qc.clear();
+    localStorage.clear();
     setPopoverOpen(false);
     router.push("/");
   };
@@ -124,6 +130,7 @@ export default function Navbar() {
           >
             <Avatar
               size={32}
+              src={profile?.avatar || undefined}
               icon={<UserOutlined />}
               className={styles.avatar}
             />

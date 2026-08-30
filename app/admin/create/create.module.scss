@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   width: 100%;
   padding: 10px 24px 0;
 
@@ -140,6 +141,7 @@
 }
 
 .coverPreview {
+  position: relative;
   width: 100%;
   aspect-ratio: 1280 / 670;
   border-radius: 12px;
@@ -155,6 +157,30 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+}
+
+.coverRemove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  line-height: 1;
+
+  &:hover {
+    background: rgba(220, 38, 38, 0.85);
   }
 }
 
@@ -198,6 +224,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
 
   :global(.ant-form-item) {
     margin-bottom: 0;
@@ -212,17 +239,18 @@
   position: sticky;
   bottom: 0;
   z-index: 20;
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin: 16px -24px 0;
+  margin: 0 -24px 0;
   padding: 12px 24px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
   background: var(--color-surface-normal);
   border-top: 1px solid var(--color-border-default);
 
   @media (max-width: 768px) {
-    margin: 12px -12px 0;
+    margin: 0 -12px 0;
     padding: 10px 12px;
     padding-bottom: max(10px, env(safe-area-inset-bottom));
     justify-content: stretch;
@@ -249,7 +277,7 @@
 
   /* iPad Pro portrait */
   @media (min-width: 769px) and (max-width: 1180px) {
-    margin: 12px -16px 0;
+    margin: 0 -16px 0;
     padding: 10px 16px;
   }
 }

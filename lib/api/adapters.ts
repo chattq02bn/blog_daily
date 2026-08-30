@@ -31,12 +31,10 @@ export function postToNote(post: ApiPost): Note {
     title: post.title,
     excerpt: post.excerpt ?? "",
     cover:
-      post.cover ||
-      `https://picsum.photos/seed/${encodeURIComponent(post.id)}/1280/670`,
+      post.cover ?? "",
     author: post.authorName,
     avatar:
-      post.authorAvatar ||
-      `https://picsum.photos/seed/${encodeURIComponent(post.authorName)}-avatar/96/96`,
+      post.authorAvatar ?? "",
     authorDescription: post.authorDescription ?? null,
     likes: post.likes,
     comments: post.commentsCount,
@@ -90,7 +88,7 @@ export function apiCommentToComment(apiComment: ApiComment): Comment {
     parentId: apiComment.parentId,
     commenterId: apiComment.commenterId,
     author: apiComment.author,
-    authorAvatar: `https://picsum.photos/seed/commenter-${apiComment.commenterId}/96/96`,
+    authorAvatar: "",
     parentAuthor: apiComment.parentAuthor,
     content: apiComment.content,
     emojis,

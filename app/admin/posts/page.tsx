@@ -18,6 +18,7 @@ import {
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
 import SearchInput from "@/components/admin/SearchInput";
+import NoImage from "@/components/ui/NoImage";
 import {
   useDeletePost,
   usePosts,
@@ -84,16 +85,21 @@ export default function AdminPostsPage() {
         dataIndex: "cover",
         key: "cover",
         width: 110,
-        render: (cover: string | null, record: ApiPost) => (
-          <Image
-            src={cover || `https://picsum.photos/seed/${record.id}/360/220`}
-            alt={record.title}
-            width={72}
-            height={45}
-            className={styles.thumb}
-            unoptimized
-          />
-        ),
+        render: (cover: string | null, record: ApiPost) =>
+          cover ? (
+            <Image
+              src={cover}
+              alt={record.title}
+              width={72}
+              height={45}
+              className={styles.thumb}
+              unoptimized
+            />
+          ) : (
+            <div style={{ width: 72, height: 45, borderRadius: 6, overflow: "hidden" }}>
+              <NoImage />
+            </div>
+          ),
       },
       {
         title: "Tiêu đề",

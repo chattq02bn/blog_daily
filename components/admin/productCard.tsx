@@ -2,16 +2,8 @@
 
 import { createReactBlockSpec } from "@blocknote/react";
 import { BlockNoteSchema } from "@blocknote/core";
+import { uploadApi } from "@/lib/api";
 import styles from "./productCard.module.scss";
-
-/* Đọc file ảnh thành data URL để nhúng thẳng vào props */
-const fileToDataUrl = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 
 export const ProductBlock = createReactBlockSpec(
   {
@@ -19,7 +11,7 @@ export const ProductBlock = createReactBlockSpec(
 
     propSchema: {
       title: {
-        default: "Tên sản phẩm",
+        default: "",
       },
 
       description: {
@@ -31,11 +23,11 @@ export const ProductBlock = createReactBlockSpec(
       },
 
       buttonText: {
-        default: "Mua ngay",
+        default: "",
       },
 
       buttonUrl: {
-        default: "#",
+        default: "",
       },
     },
 
@@ -82,10 +74,10 @@ export const ProductBlock = createReactBlockSpec(
           const file: File | undefined | null = input.files?.[0];
           if (!file) return;
           try {
-            const url = await fileToDataUrl(file);
-            updateProp("imageUrl", url);
+            const result = await uploadApi.uploadFile(file);
+            updateProp("imageUrl", result.url);
           } catch {
-            /* bỏ qua lỗi đọc file */
+            /* bỏ qua lỗi upload */
           }
         };
 
@@ -137,7 +129,7 @@ export const ProductBlock = createReactBlockSpec(
             {/* NHÓM DƯỚI: NÚT MUA — luôn nằm cuối cột, giãn cách với nhóm trên */}
 
             <div className={styles.infoBottom}>
-              {readOnly && buttonUrl && buttonUrl !== "#" ? (
+              {readOnly && buttonUrl ? (
                 <a
                   className={styles.btn}
                   href={buttonUrl}
@@ -175,10 +167,8 @@ export const ProductBlock = createReactBlockSpec(
                   <input
                     className={styles.tiny}
                     style={{ width: "100%" }}
-                    value={buttonUrl === "#" ? "" : buttonUrl}
-                    onChange={(e) =>
-                      updateProp("buttonUrl", e.target.value || "#")
-                    }
+                    value={buttonUrl}
+                    onChange={(e) => updateProp("buttonUrl", e.target.value)}
                     placeholder="Gán link cho nút mua hàng..."
                   />
 

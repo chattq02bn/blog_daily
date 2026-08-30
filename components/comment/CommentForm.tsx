@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { CloseOutlined, SendOutlined, SmileOutlined, EditOutlined } from "@ant-design/icons";
+import { CloseOutlined, SendOutlined, SmileOutlined, EditOutlined, UserOutlined } from "@ant-design/icons";
 import { Popover, App } from "antd";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import {
@@ -57,7 +57,7 @@ export default function CommentForm({
   const commenterId = typeof window !== "undefined"
     ? Number(localStorage.getItem("note_commenter_id") || "0")
     : 0;
-  const avatarUrl = `https://picsum.photos/seed/commenter-${commenterId || "guest"}/96/96`;
+  const avatarUrl = "";
 
   useEffect(() => {
     if (parentId && textareaRef.current) {
@@ -195,14 +195,20 @@ export default function CommentForm({
         </div>
       )}
       <div className={styles.inputRow}>
-        <Image
-          src={avatarUrl}
-          alt={commenterName}
-          width={32}
-          height={32}
-          className={styles.avatar}
-          unoptimized
-        />
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt={commenterName}
+            width={32}
+            height={32}
+            className={styles.avatar}
+            unoptimized
+          />
+        ) : (
+          <div className={styles.avatar}>
+            <UserOutlined />
+          </div>
+        )}
         <div className={styles.inputContainer}>
           {showForm ? (
             <form onSubmit={(e) => void handleSubmit(e)}>

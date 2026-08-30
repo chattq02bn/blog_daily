@@ -204,7 +204,7 @@ export function updateUser(name: string): boolean {
   let user: { name?: string; avatar?: string } = {};
   try {
     user = userStr ? JSON.parse(userStr) : {};
-  } catch {}
+  } catch { }
 
   const oldName = user.name || "Người dùng";
   user.name = trimmed;
@@ -233,11 +233,11 @@ export function getCurrentUser(): { id: number | null; name: string; avatar: str
       return {
         id: user.id != null ? Number(user.id) : null,
         name: user.name || "Người dùng",
-        avatar: user.avatar || "https://picsum.photos/seed/user/96/96",
+        avatar: user.avatar ?? "",
       };
     }
-  } catch {}
-  return { id: null, name: "Người dùng", avatar: "https://picsum.photos/seed/user/96/96" };
+  } catch { }
+  return { id: null, name: "Người dùng", avatar: "" };
 }
 
 export { EMOJIS };

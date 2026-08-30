@@ -11,6 +11,7 @@ import {
 } from "@/components/ClientComponents";
 import SocialLinks from "@/components/note/SocialLinks";
 import BackButton from "@/components/note/BackButton";
+import NoImage from "@/components/ui/NoImage";
 import type { Note } from "@/lib/view-models";
 import { usePost, usePosts } from "@/hooks/use-api";
 import { postToNote } from "@/lib/api/adapters";
@@ -50,6 +51,8 @@ export default function NoteView({ id }: { id: string }) {
     ? getRelatedNotes(note, recentPosts.data.map(postToNote))
     : [];
 
+
+  console.log("note", note);
   return (
     <div className={styles.article}>
       <div className={styles.articleInner}>
@@ -77,15 +80,20 @@ export default function NoteView({ id }: { id: string }) {
 
           <div className={styles.content}>
             <figure className={styles.eyecatch}>
-              <Image
-                src={note.cover}
-                alt={note.title}
-                fill
-                sizes="(max-width: 900px) 100vw, 700px"
-                priority
-                style={{ borderRadius: 8 }}
-                unoptimized
-              />
+              {note.cover ? (
+                <Image
+                  src={note.cover}
+                  alt={note.title}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 700px"
+                  priority
+                  style={{ borderRadius: 8 }}
+                  unoptimized
+                />
+              ) : (
+                <NoImage className={styles.eyecatch} />
+              )}
+
             </figure>
 
             <header className={styles.header}>

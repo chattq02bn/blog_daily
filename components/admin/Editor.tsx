@@ -22,6 +22,7 @@ import { useEditorReady } from "./useEditorReady";
 import { DeleteOutlined } from "@ant-design/icons";
 import type { Block, BlockNoteEditor } from "@blocknote/core";
 import { productCardSchema } from "./productCard";
+import { uploadApi } from "@/lib/api";
 import styles from "./Editor.module.scss";
 
 type EditorType = BlockNoteEditor<
@@ -67,17 +68,15 @@ export const productCardMenuItem = (
       type: "productCard",
 
       props: {
-        title: "Tên sản phẩm",
+        title: "",
 
-        description:
-          "Mô tả ngắn gọn về sản phẩm — chỉ hiển thị tối đa 3 dòng.",
+        description: "",
 
-        imageUrl:
-          "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+        imageUrl: "",
 
-        buttonText: "Mua ngay",
+        buttonText: "",
 
-        buttonUrl: "#",
+        buttonUrl: "",
       },
     });
   },
@@ -101,6 +100,10 @@ export default function Editor({
         ? (value as unknown as (typeof productCardSchema.PartialBlock)[])
         : undefined,
     placeholders: { default: "Viết nội dung bài viết..." },
+    uploadFile: async (file: File) => {
+      const result = await uploadApi.uploadFile(file);
+      return result.url;
+    },
   });
 
   /* Báo cho parent biết editor đã sẵn sàng */

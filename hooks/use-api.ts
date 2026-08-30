@@ -539,6 +539,7 @@ export function useProfile() {
     queryFn: profileApi.get,
     enabled: typeof window !== "undefined" && Boolean(localStorage.getItem("note_access_token")),
     retry: false,
+    staleTime: 30 * 24 * 60 * 60 * 1000,
   });
 }
 

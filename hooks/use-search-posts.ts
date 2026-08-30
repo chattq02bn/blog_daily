@@ -19,9 +19,7 @@ function mapPost(post: ApiPost): SearchResult {
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt ?? "",
-    cover:
-      post.cover ||
-      `https://picsum.photos/seed/${encodeURIComponent(post.id)}/400/240`,
+    cover: post.cover ?? "",
   };
 }
 

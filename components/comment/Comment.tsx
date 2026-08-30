@@ -9,8 +9,10 @@ import {
   HeartOutlined,
   HeartFilled,
   MessageOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { Popover, Modal } from "antd";
+import NoImage from "@/components/ui/NoImage";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import type { Comment as CommentType } from "@/lib/commentStorage";
@@ -79,14 +81,20 @@ export default function Comment({
   return (
     <div className={`${styles.comment} ${isLast ? styles.last : ""}`}>
       <div className={styles.commentMain}>
-        <Image
-          src={comment.authorAvatar}
-          alt={comment.author}
-          width={36}
-          height={36}
-          className={styles.avatar}
-          unoptimized
-        />
+        {comment.authorAvatar ? (
+          <Image
+            src={comment.authorAvatar}
+            alt={comment.author}
+            width={36}
+            height={36}
+            className={styles.avatar}
+            unoptimized
+          />
+        ) : (
+          <div className={styles.avatar}>
+            <UserOutlined />
+          </div>
+        )}
         <div className={styles.commentBody}>
           <div className={styles.commentHeader}>
             <span className={styles.authorName}>{comment.author}</span>

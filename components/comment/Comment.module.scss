@@ -24,6 +24,12 @@
   flex-shrink: 0;
   object-fit: cover;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-quaternary, #f0f0f0);
+  color: var(--color-text-tertiary, #bbb);
+  font-size: 16px;
 }
 
 .commentBody {

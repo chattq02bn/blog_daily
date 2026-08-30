@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Input, Spin } from "antd";
 import { FaSearch, FaFileAlt, FaClock, FaTimes } from "react-icons/fa";
 import { useSearchPosts } from "@/hooks/use-search-posts";
+import NoImage from "@/components/ui/NoImage";
 import styles from "./SearchPopover.module.scss";
 
 const HISTORY_KEY = "search_history";
@@ -161,14 +162,20 @@ export default function SearchPopover() {
                     }}
                     tabIndex={-1}
                   >
-                    <Image
-                      src={post.cover}
-                      alt=""
-                      width={72}
-                      height={48}
-                      className={styles.resultCover}
-                      loading="lazy"
-                    />
+                    {post.cover ? (
+                      <Image
+                        src={post.cover}
+                        alt=""
+                        width={72}
+                        height={48}
+                        className={styles.resultCover}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className={styles.resultCover}>
+                        <NoImage />
+                      </div>
+                    )}
                     <div className={styles.resultInfo}>
                       <div className={styles.resultTitle}>
                         {highlightMatch(post.title, query)}

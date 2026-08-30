@@ -15,6 +15,7 @@ import {
   Upload,
 } from "antd";
 import {
+  DeleteOutlined,
   UploadOutlined,
   EyeOutlined,
   RollbackOutlined,
@@ -81,6 +82,7 @@ function CreateNoteContent() {
     [form],
   );
   const [cover, setCover] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverUrl, setCoverUrl] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
   const [previewBlocks, setPreviewBlocks] = useState<Block[]>([]);
@@ -109,9 +111,20 @@ function CreateNoteContent() {
   useEffect(() => {
     if (!editId) {
       form.resetFields();
+      if (cover.startsWith("blob:")) URL.revokeObjectURL(cover);
       setCover("");
+      setCoverFile(null);
     }
   }, [editId, form]);
+
+  /* Cleanup blob URL on unmount */
+  const coverRef = useRef(cover);
+  coverRef.current = cover;
+  useEffect(() => {
+    return () => {
+      if (coverRef.current.startsWith("blob:")) URL.revokeObjectURL(coverRef.current);
+    };
+  }, []);
 
   /* Pre-select topic từ URL khi tạo mới */
   useEffect(() => {
@@ -135,22 +148,16 @@ function CreateNoteContent() {
 
   const [uploading, setUploading] = useState(false);
 
-  const onUpload = async (info: UploadChangeParam<UploadFile>) => {
+  const onUpload = (info: UploadChangeParam<UploadFile>) => {
     const file = info.fileList[0]?.originFileObj;
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       message.error("Ảnh bìa tối đa 5MB");
       return;
     }
-    setUploading(true);
-    try {
-      const result = await uploadApi.uploadFile(file as File);
-      setCover(result.url);
-    } catch {
-      message.error("Tải ảnh bìa thất bại");
-    } finally {
-      setUploading(false);
-    }
+    setCoverFile(file as File);
+    setCover(URL.createObjectURL(file as File));
+    setCoverUrl("");
   };
 
   const savePost = (
@@ -159,19 +166,39 @@ function CreateNoteContent() {
     status: "draft" | "published",
   ) => {
     handleChange.flush();
-    const persist = (values: { title: string; topicIds: string[]; tagIds: string[] }) => {
+    const persist = async (values: { title: string; topicIds: string[]; tagIds: string[] }) => {
+      setSavingAction(status === "draft" ? "draft" : "publish");
       const all = form.getFieldsValue(true);
+
+      /* Upload ảnh bìa nếu có file chưa upload */
+      let coverRemote: string | null = coverUrl.trim() || null;
+      if (coverFile) {
+        setUploading(true);
+        try {
+          const result = await uploadApi.uploadFile(coverFile);
+          coverRemote = result.url;
+        } catch {
+          message.error("Tải ảnh bìa thất bại");
+          setUploading(false);
+          setSavingAction(null);
+          return;
+        }
+        setUploading(false);
+      }
+
       const body: PostWriteBody & { title: string } = {
         title: values.title?.trim() ?? "",
         topicIds: values.topicIds ?? [],
         tagIds: values.tagIds ?? [],
         bodyBlocks: (all.body ?? []) as Record<string, unknown>[],
         status,
-        cover: cover || null,
+        cover: coverRemote,
       };
-      if (!body.title) return;
+      if (!body.title) {
+        setSavingAction(null);
+        return;
+      }
 
-      setSavingAction(status === "draft" ? "draft" : "publish");
       const onSettled = () => setSavingAction(null);
 
       if (editId && updateMutation) {
@@ -398,7 +425,11 @@ function CreateNoteContent() {
                   onChange={(e) => {
                     const val = e.target.value;
                     setCoverUrl(val);
-                    if (val.trim()) setCover(val.trim());
+                    if (val.trim()) {
+                      if (cover.startsWith("blob:")) URL.revokeObjectURL(cover);
+                      setCover(val.trim());
+                      setCoverFile(null);
+                    }
                   }}
                   placeholder="...hoặc dán link ảnh"
                   variant="borderless"
@@ -407,8 +438,23 @@ function CreateNoteContent() {
               </div>
               <div className={styles.coverPreview}>
                 {cover ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={cover} alt="Ảnh bìa" />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={cover} alt="Ảnh bìa" />
+                    <button
+                      type="button"
+                      className={styles.coverRemove}
+                      onClick={() => {
+                        if (cover.startsWith("blob:")) URL.revokeObjectURL(cover);
+                        setCover("");
+                        setCoverFile(null);
+                        setCoverUrl("");
+                      }}
+                      title="Xóa ảnh bìa"
+                    >
+                      <DeleteOutlined />
+                    </button>
+                  </>
                 ) : (
                   <span className={styles.coverPlaceholder}>
                     Ảnh bìa bài viết

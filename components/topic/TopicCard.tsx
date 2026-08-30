@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { postsApi } from "@/lib/api";
 import { setPostLiked } from "@/lib/post-likes";
 import { useIsPostLiked } from "@/components/likes/LikesProvider";
+import NoImage from "@/components/ui/NoImage";
 import type { Note } from "@/lib/view-models";
 import styles from "./TopicCard.module.scss";
 
@@ -44,12 +45,16 @@ export default function TopicCard({
   return (
     <Link href={`/note/${note.id}`} className={featured ? styles.featured : styles.card}>
       <div className={styles.cover}>
-        <Image
-          src={note.cover}
-          alt={note.title}
-          fill
-          sizes="(max-width: 640px) 16rem, 22rem"
-        />
+        {note.cover ? (
+          <Image
+            src={note.cover}
+            alt={note.title}
+            fill
+            sizes="(max-width: 640px) 16rem, 22rem"
+          />
+        ) : (
+          <NoImage />
+        )}
       </div>
       <h3
         className={`mt-3 line-clamp-2 font-bold text-text-primary ${

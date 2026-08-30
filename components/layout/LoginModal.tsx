@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Form, Input, Modal, message } from "antd";
-import { LockOutlined, MailOutlined, UserOutlined } from "@ant-design/icons";
+import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { useAtomValue } from "jotai";
+import { useQueryClient } from "@tanstack/react-query";
 import { saveApiSession } from "@/lib/auth";
 import { authApi } from "@/lib/api";
+import { qk } from "@/lib/query-keys";
 import {
   closeLoginModal,
   loginModalAtom,
@@ -13,9 +16,11 @@ import {
 } from "@/lib/jotai/auth";
 import styles from "./LoginModal.module.scss";
 
-type Mode = "login" | "register" | "forgot";
+type Mode = "login" | "forgot";
 
 export default function LoginModal() {
+  const router = useRouter();
+  const qc = useQueryClient();
   const open = useAtomValue(loginModalAtom);
   const notice = useAtomValue(loginModalNoticeAtom);
   const [mode, setMode] = useState<Mode>("login");
@@ -33,8 +38,10 @@ export default function LoginModal() {
     try {
       const session = await authApi.login(values);
       saveApiSession(session);
+      await qc.invalidateQueries({ queryKey: qk.profile() });
       messageApi.success("Đăng nhập thành công!");
       handleClose();
+      router.push("/admin/create");
     } catch (error) {
       setLoading(false);
       const data = (error as { response?: { data?: { message?: string } } }).response?.data;
@@ -42,24 +49,18 @@ export default function LoginModal() {
     }
   };
 
-  const onRegister = async (values: { name: string; email: string; password: string }) => {
+  const onForgot = async (values: { email: string }) => {
     setLoading(true);
     try {
-      await authApi.register(values);
-      // Đăng ký xong tự đăng nhập luôn
-      const session = await authApi.login({ email: values.email, password: values.password });
-      saveApiSession(session);
-      messageApi.success("Tạo tài khoản thành công!");
-      handleClose();
+      await authApi.forgotPassword(values.email);
+      messageApi.success("Mật khẩu mới đã được gửi đến email của bạn.");
+      setMode("login");
     } catch (error) {
-      setLoading(false);
       const data = (error as { response?: { data?: { message?: string } } }).response?.data;
-      messageApi.error(data?.message ?? "Không thể tạo tài khoản. Thử lại nhé!");
+      messageApi.error(data?.message ?? "Không thể gửi yêu cầu. Thử lại sau!");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const onForgot = (values: { email: string }) => {
-    console.log("forgot:", values);
   };
 
   const loginForm = (
@@ -91,49 +92,10 @@ export default function LoginModal() {
     </Form>
   );
 
-  const registerForm = (
-    <Form layout="vertical" onFinish={onRegister} requiredMark={false}>
-      <Form.Item
-        name="name"
-        label="Tên"
-        rules={[{ required: true, message: "Nhập tên của bạn" }]}
-      >
-        <Input prefix={<UserOutlined />} placeholder="Nguyễn Văn A" size="large" />
-      </Form.Item>
-      <Form.Item
-        name="email"
-        label="Email"
-        rules={[{ required: true, message: "Nhập email của bạn" }]}
-      >
-        <Input prefix={<MailOutlined />} placeholder="you@example.com" size="large" />
-      </Form.Item>
-      <Form.Item
-        name="password"
-        label="Mật khẩu"
-        rules={[
-          { required: true, message: "Nhập mật khẩu của bạn" },
-          { min: 8, message: "Mật khẩu tối thiểu 8 ký tự" },
-        ]}
-      >
-        <Input.Password prefix={<LockOutlined />} placeholder="••••••••" size="large" />
-      </Form.Item>
-      <Button
-        type="primary"
-        htmlType="submit"
-        block
-        size="large"
-        loading={loading}
-        className="note-btn-primary"
-      >
-        Tạo tài khoản
-      </Button>
-    </Form>
-  );
-
   const forgotForm = (
     <Form layout="vertical" onFinish={onForgot} requiredMark={false}>
       <p className={styles.description}>
-        Nhập email của bạn, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.
+        Nhập email của bạn, chúng tôi sẽ gửi mật khẩu mới qua email.
       </p>
       <Form.Item
         name="email"
@@ -142,8 +104,8 @@ export default function LoginModal() {
       >
         <Input prefix={<MailOutlined />} placeholder="you@example.com" size="large" />
       </Form.Item>
-      <Button type="primary" htmlType="submit" block size="large" className="note-btn-primary">
-        Gửi liên kết đặt lại
+      <Button type="primary" htmlType="submit" block size="large" loading={loading} className="note-btn-primary">
+        Gửi mật khẩu mới
       </Button>
     </Form>
   );
@@ -163,21 +125,11 @@ export default function LoginModal() {
         <p className={styles.sub}>Đăng nhập để chia sẻ câu chuyện của bạn.</p>
       </div>
       {notice && <p className={styles.description}>{notice}</p>}
-      {mode === "login" ? loginForm : mode === "register" ? registerForm : forgotForm}
+      {mode === "login" ? loginForm : forgotForm}
       <div className={styles.footerLinks}>
         {mode === "login" && (
-          <>
-            <button type="button" className={styles.link} onClick={() => setMode("register")}>
-              Chưa có tài khoản? Đăng ký
-            </button>
-            <button type="button" className={styles.link} onClick={() => setMode("forgot")}>
-              Quên mật khẩu?
-            </button>
-          </>
-        )}
-        {mode === "register" && (
-          <button type="button" className={styles.link} onClick={() => setMode("login")}>
-            Đã có tài khoản? Đăng nhập
+          <button type="button" className={styles.link} onClick={() => setMode("forgot")}>
+            Quên mật khẩu?
           </button>
         )}
         {mode === "forgot" && (
