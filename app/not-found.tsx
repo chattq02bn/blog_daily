@@ -7,17 +7,10 @@ export default function NotFound() {
       <div style={root}>
         <div style={illustration}>
           <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Circle background */}
             <circle cx="100" cy="100" r="90" fill="var(--color-surface-quaternary)" />
-
-            {/* Magnifying glass */}
             <circle cx="88" cy="88" r="36" stroke="var(--color-text-tertiary)" strokeWidth="4" fill="none" />
             <line x1="114" y1="114" x2="148" y2="148" stroke="var(--color-text-tertiary)" strokeWidth="6" strokeLinecap="round" />
-
-            {/* Question mark inside magnifying glass */}
             <text x="88" y="98" textAnchor="middle" fill="var(--color-text-tertiary)" fontSize="40" fontWeight="700" fontFamily="var(--font-display)">?</text>
-
-            {/* Small decorative dots */}
             <circle cx="40" cy="50" r="4" fill="var(--color-text-tertiary)" opacity="0.3" />
             <circle cx="160" cy="60" r="3" fill="var(--color-text-tertiary)" opacity="0.25" />
             <circle cx="50" cy="150" r="3.5" fill="var(--color-text-tertiary)" opacity="0.2" />
@@ -27,11 +20,6 @@ export default function NotFound() {
 
         <h1 style={code}>404</h1>
         <p style={title}>Trang không tồn tại</p>
-        <p style={desc}>
-          Có vẻ trang bạn tìm đã bị di chuyển hoặc không còn nữa.
-          <br />
-          Hãy quay về trang chủ để tiếp tục khám phá nhé!
-        </p>
 
         <Link href="/" style={btn}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -50,9 +38,10 @@ const root: React.CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
-  minHeight: "80vh",
-  padding: "60px 24px",
+  height: "100%",
+  padding: "0 24px",
   textAlign: "center",
+  overflow: "hidden",
 };
 
 const illustration: React.CSSProperties = {
@@ -75,15 +64,7 @@ const title: React.CSSProperties = {
   fontSize: "clamp(1.1rem, 3vw, 1.4rem)",
   fontWeight: 600,
   color: "var(--color-text-primary)",
-  margin: "12px 0 8px",
-};
-
-const desc: React.CSSProperties = {
-  fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
-  color: "var(--color-text-secondary)",
-  lineHeight: 1.7,
-  maxWidth: 380,
-  margin: "0 0 36px",
+  margin: "12px 0 32px",
 };
 
 const btn: React.CSSProperties = {

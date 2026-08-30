@@ -10,18 +10,12 @@ export default function WelcomeHero() {
         </svg>
       </div>
 
-      <h1 style={title}>Chào mừng bạn đến với</h1>
+      <h1 style={title}>Chào mừng bạn đến với Note</h1>
       <p style={subtitle}>
         Nơi chia sẻ kiến thức, trải nghiệm và những dòng suy nghĩ mỗi ngày.
         <br />
         Hãy bắt đầu khám phá nhé!
       </p>
-
-      <div style={badges}>
-        <Badge icon={<BookIcon />} label="Chủ đề" />
-        <Badge icon={<PenIcon />} label="Bài viết" />
-        <Badge icon={<CommunityIcon />} label="Cộng đồng" />
-      </div>
     </div>
   );
 }
@@ -35,41 +29,13 @@ function Badge({ icon, label }: { icon: ReactNode; label: string }) {
   );
 }
 
-function BookIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-  );
-}
 
-function PenIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-    </svg>
-  );
-}
-
-function CommunityIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
 
 const root: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
-  minHeight: "70vh",
   padding: "60px 24px",
   textAlign: "center",
 };
@@ -97,7 +63,6 @@ const subtitle: React.CSSProperties = {
   fontSize: "clamp(0.9rem, 2vw, 1.05rem)",
   color: "var(--color-text-secondary)",
   lineHeight: 1.7,
-  maxWidth: 420,
   margin: "0 0 36px",
 };
 

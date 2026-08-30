@@ -229,6 +229,10 @@
   :global(.ant-form-item) {
     margin-bottom: 0;
   }
+
+  @media (max-width: 940px) {
+    margin-bottom: 44px !important;
+  }
 }
 
 .metaSelect {
