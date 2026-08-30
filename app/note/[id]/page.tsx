@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import AppLayout from "@/components/layout/AppLayout";
 import NoteView from "./NoteView";
-import { commentsApi, postsApi, type CommentsPage } from "@/lib/api";
+import { commentsApi, postsApi, socialLinksApi, type CommentsPage } from "@/lib/api";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
 
@@ -40,6 +40,10 @@ export default async function NotePage({ params }: PageProps) {
         if (!meta) return undefined;
         return meta.page < meta.totalPages ? meta.page + 1 : undefined;
       },
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ["social-links", "active"],
+      queryFn: socialLinksApi.getActive,
     }),
   ]);
 

@@ -214,30 +214,43 @@
 .snsIcons {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .snsIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border: 1px solid var(--color-border-default);
-  border-radius: 50%;
+  border-radius: 10px;
   color: var(--color-text-secondary);
   font-size: 16px;
   cursor: pointer;
   transition: all 0.25s var(--easeInOutExpo);
+  background: var(--color-background-primary);
 
   &:hover {
-    background: var(--color-surface-primary);
-    border-color: var(--color-surface-primary);
-    color: var(--color-text-invert);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 14px rgba(8, 19, 26, 0.16);
+    background: var(--sns-color, var(--color-surface-primary));
+    border-color: var(--sns-color, var(--color-surface-primary));
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(8, 19, 26, 0.12);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 }
+
+.snsIcon_youtube:hover { --sns-color: #FF0000; }
+.snsIcon_instagram:hover { --sns-color: #E4405F; }
+.snsIcon_tiktok:hover { --sns-color: #000000; }
+.snsIcon_facebook:hover { --sns-color: #1877F2; }
+.snsIcon_x:hover { --sns-color: #000000; }
 
 .footerLinks {
   display: flex;

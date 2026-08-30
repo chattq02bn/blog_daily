@@ -10,7 +10,6 @@ export default function NoteLogo() {
 
   return (
     <Link href="/" className={styles.logo} aria-label={logoName}>
-      <span className={styles.mark}>{logoName.charAt(0).toLowerCase() || "n"}</span>
       <span className={styles.word}>{logoName}</span>
     </Link>
   );

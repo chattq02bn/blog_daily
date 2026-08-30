@@ -1,7 +1,7 @@
 import type { ApiSidebarItem } from "@/lib/api";
 
 /* Số mục gốc mỗi lần kéo xuống load thêm (BE phân trang /sidebar?page&limit) */
-export const HOME_SIDEBAR_PAGE_LIMIT = 4;
+export const HOME_SIDEBAR_PAGE_LIMIT = 3;
 /* Số chủ đề hiển thị mỗi lần cuộn xuống load thêm */
 export const HOME_TOPICS_PER_SCROLL = 2;
 /* Sidebar nav: số mục cha nạp lần đầu / mỗi lần cuộn sát đáy */

@@ -115,6 +115,7 @@
   letter-spacing: -0.02em;
   margin-top: 30px;
   margin-bottom: 15px;
+  color: var(--color-text-primary);
 
   @media (min-width: 769px) {
     font-size: 32px;
@@ -236,6 +237,7 @@
 .profileName {
   font-size: 16px;
   font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 .profileDescription {
@@ -274,9 +276,9 @@
   transition: all 0.2s;
 
   &:hover {
-    background: var(--color-surface-primary);
-    border-color: var(--color-surface-primary);
-    color: var(--color-text-invert);
+    background: var(--sns-color, var(--color-surface-primary));
+    border-color: var(--sns-color, var(--color-surface-primary));
+    color: #fff;
     transform: translateY(-2px);
   }
 }

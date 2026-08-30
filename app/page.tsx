@@ -4,7 +4,7 @@ import HomeSections from "@/components/topic/HomeSections";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
 import { flattenTopics, HOME_SIDEBAR_PAGE_LIMIT, HOME_TOPICS_PER_SCROLL, sectionPostsParams } from "@/lib/sidebar-utils";
-import { postsApi, sidebarApi, type SidebarPage } from "@/lib/api";
+import { postsApi, sidebarApi, socialLinksApi, type SidebarPage } from "@/lib/api";
 
 export default async function Home() {
   const queryClient = getQueryClient();
@@ -33,6 +33,10 @@ export default async function Home() {
         queryKey: qk.posts(params),
         queryFn: () => postsApi.list(params),
       });
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ["social-links", "active"],
+      queryFn: socialLinksApi.getActive,
     }),
   ]);
 

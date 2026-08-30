@@ -47,6 +47,7 @@ export default function TopicSectionList({
       <p className={styles.count}>Không tải được nội dung chủ đề này.</p>
     );
   }
+  console.log("sections", sections);
 
   const totalNotes = sections.reduce((sum, section) => sum + section.posts.length, 0);
 

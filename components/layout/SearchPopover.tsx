@@ -5,12 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Input, Spin } from "antd";
-import {
-  SearchOutlined,
-  FileTextOutlined,
-  ClockCircleOutlined,
-  CloseOutlined,
-} from "@ant-design/icons";
+import { FaSearch, FaFileAlt, FaClock, FaTimes } from "react-icons/fa";
 import { useSearchPosts } from "@/hooks/use-search-posts";
 import styles from "./SearchPopover.module.scss";
 
@@ -128,7 +123,7 @@ export default function SearchPopover() {
     <div className={styles.wrapper} ref={wrapperRef}>
       <Input
         ref={inputRef as never}
-        prefix={<SearchOutlined style={{ color: "var(--color-text-clickable-icon)" }} />}
+        prefix={<FaSearch style={{ color: "var(--color-text-clickable-icon)" }} />}
         placeholder="Tìm kiếm bài viết..."
         variant="filled"
         allowClear
@@ -190,7 +185,7 @@ export default function SearchPopover() {
             </>
           ) : showNoResults ? (
             <div className={styles.noResults}>
-              <FileTextOutlined style={{ fontSize: 24, marginBottom: 8, display: "block" }} />
+              <FaFileAlt style={{ fontSize: 24, marginBottom: 8, display: "block" }} />
               Không tìm thấy bài viết nào với từ khóa &ldquo;{query}&rdquo;
             </div>
           ) : showHistory ? (
@@ -203,7 +198,7 @@ export default function SearchPopover() {
                     className={styles.historyItem}
                     onClick={() => handleSelectHistory(q)}
                   >
-                    <ClockCircleOutlined className={styles.historyIcon} />
+                    <FaClock className={styles.historyIcon} />
                     <span className={styles.historyText}>{q}</span>
                     <button
                       type="button"
@@ -213,7 +208,7 @@ export default function SearchPopover() {
                         deleteHistory(q);
                       }}
                     >
-                      <CloseOutlined />
+                      <FaTimes />
                     </button>
                   </div>
                 ))}

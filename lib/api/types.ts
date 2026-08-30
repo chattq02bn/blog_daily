@@ -120,7 +120,7 @@ export interface ApiUser {
   logoName: string | null;
   description: string | null;
   postsCount: number;
-  commentsCount: number;
+  reactionsCount: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -301,6 +301,35 @@ export const profileApi = {
   }): Promise<ApiUser> {
     return unwrap(await api.patch<Envelope<ApiUser>>("/users/me", body));
   },
+  async changePassword(body: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<void> {
+    await api.put<Envelope<void>>("/users/me/password", body);
+  },
+};
+
+/* ===== Social Links ===== */
+
+export type SocialPlatform = "youtube" | "instagram" | "tiktok" | "facebook" | "x";
+
+export interface ApiSocialLink {
+  platform: SocialPlatform;
+  url: string;
+  isActive: boolean;
+  idx: number;
+}
+
+export const socialLinksApi = {
+  async getActive(): Promise<ApiSocialLink[]> {
+    return unwrap(await api.get<Envelope<ApiSocialLink[]>>("/social-links/active"));
+  },
+  async getAll(): Promise<ApiSocialLink[]> {
+    return unwrap(await api.get<Envelope<ApiSocialLink[]>>("/social-links"));
+  },
+  async update(links: { platform: SocialPlatform; url: string }[]): Promise<ApiSocialLink[]> {
+    return unwrap(await api.put<Envelope<ApiSocialLink[]>>("/social-links", { links }));
+  },
 };
 
 export interface ListSidebarParams {

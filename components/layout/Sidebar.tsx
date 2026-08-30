@@ -2,15 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  RightOutlined,
-  XOutlined,
-  InstagramOutlined,
-  FacebookFilled,
-} from "@ant-design/icons";
+import { RightOutlined, LinkOutlined } from "@ant-design/icons";
+import { FaFacebookF, FaYoutube, FaInstagram } from "react-icons/fa";
+import { FaXTwitter, FaTiktok } from "react-icons/fa6";
 import { Spin } from "antd";
 import { useInView } from "@/hooks/use-in-view";
-import { useSidebarChildren, useSidebarTopicsInfinite } from "@/hooks/use-api";
+import { useActiveSocialLinks, useSidebarChildren, useSidebarTopicsInfinite } from "@/hooks/use-api";
 import {
   SIDEBAR_CHILDREN_LIMIT,
   SIDEBAR_NAV_PAGE_SIZE,
@@ -163,38 +160,54 @@ function TopicList({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function SnsIconMap({ platform, url }: { platform: string; url: string }) {
+  const iconMap: Record<string, React.ReactNode> = {
+    youtube: <FaYoutube />,
+    instagram: <FaInstagram />,
+    tiktok: <FaTiktok />,
+    facebook: <FaFacebookF />,
+    x: <FaXTwitter />,
+  };
+  const labelMap: Record<string, string> = {
+    youtube: "YouTube",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    facebook: "Facebook",
+    x: "X (Twitter)",
+  };
+  const colorMap: Record<string, string> = {
+    youtube: "#FF0000",
+    instagram: "#E4405F",
+    tiktok: "#000000",
+    facebook: "#1877F2",
+    x: "#000000",
+  };
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${styles.snsIcon} ${styles[`snsIcon_${platform}`] || ""}`}
+      aria-label={labelMap[platform] ?? platform}
+      style={{ "--sns-color": colorMap[platform] } as React.CSSProperties}
+    >
+      {iconMap[platform] ?? <LinkOutlined />}
+    </a>
+  );
+}
+
 function SnsBox() {
+  const { data: links = [] } = useActiveSocialLinks();
+
+  if (links.length === 0) return null;
+
   return (
     <div className={styles.snsBox}>
       <p>Mạng xã hội chính thức của note</p>
       <div className={styles.snsIcons}>
-        <a
-          href="https://x.com/note_PR"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.snsIcon}
-          aria-label="x(Twitter)"
-        >
-          <XOutlined />
-        </a>
-        <a
-          href="https://www.instagram.com/note_ig_official"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.snsIcon}
-          aria-label="instagram"
-        >
-          <InstagramOutlined />
-        </a>
-        <a
-          href="https://www.facebook.com/note.poc"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.snsIcon}
-          aria-label="facebook"
-        >
-          <FacebookFilled />
-        </a>
+        {links.map((link) => (
+          <SnsIconMap key={link.platform} platform={link.platform} url={link.url} />
+        ))}
       </div>
     </div>
   );

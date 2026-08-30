@@ -14,6 +14,7 @@ import {
   profileApi,
   sectionsApi,
   sidebarApi,
+  socialLinksApi,
   statsApi,
   tagsApi,
   topicsApi,
@@ -23,7 +24,9 @@ import {
   type PostWriteBody,
   type ApiComment,
   type ApiPost,
+  type ApiSocialLink,
   type PostsPage,
+  type SocialPlatform,
 } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
@@ -527,6 +530,30 @@ export function useUpdateProfile() {
       qc.setQueryData(qk.profile(), profile);
       void qc.invalidateQueries({ queryKey: ["users"] });
     },
+  });
+}
+
+/* ===== Social Links ===== */
+
+export function useActiveSocialLinks() {
+  return useQuery({
+    queryKey: ["social-links", "active"],
+    queryFn: socialLinksApi.getActive,
+  });
+}
+
+export function useSocialLinks() {
+  return useQuery({
+    queryKey: ["social-links"],
+    queryFn: socialLinksApi.getAll,
+  });
+}
+
+export function useUpdateSocialLinks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (links: { platform: SocialPlatform; url: string }[]) =>
+      socialLinksApi.update(links),
   });
 }
 
