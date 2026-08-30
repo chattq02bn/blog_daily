@@ -9,6 +9,7 @@ import type {
   ApiSidebarItem,
   ApiTag,
   ApiTopic,
+  ApiTopicInfo,
   ApiUser,
   ApiVisits,
 } from "./types";
@@ -18,7 +19,7 @@ export * from "./types";
 
 /* ===== Envelope helpers ===== */
 
-type Envelope<T> = { success: boolean; message?: string; data: T; meta?: ApiMeta };
+type Envelope<T, Extra = {}> = { success: boolean; message?: string; data: T; meta?: ApiMeta } & Extra;
 
 function unwrap<T>(payload: { data: { data: T } }): T {
   return payload.data.data;
@@ -163,12 +164,12 @@ export const sectionsApi = {
   async byTopicPaginated(
     topicSlug: string,
     params: { page?: number; limit?: number } = {}
-  ): Promise<{ data: ApiSection[]; meta?: ApiMeta }> {
-    const res = await api.get<Envelope<ApiSection[]>>(
+  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo }> {
+    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo }>>(
       `/topics/${topicSlug}/sections/paginated`,
       { params }
     );
-    return { data: res.data.data, meta: res.data.meta };
+    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic };
   },
 };
 

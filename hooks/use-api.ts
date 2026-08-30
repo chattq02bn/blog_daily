@@ -235,6 +235,7 @@ export function useSectionsInfinite(topicSlug: string, limit = 5) {
 
   return {
     sections: query.data?.pages.flatMap((page) => page.data) ?? [],
+    topic: query.data?.pages[0]?.topic,
     ...query,
   };
 }

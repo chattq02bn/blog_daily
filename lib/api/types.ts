@@ -5,6 +5,11 @@ export interface ApiMeta {
   totalPages: number;
 }
 
+export interface ApiTopicInfo {
+  name: string;
+  description: string;
+}
+
 export interface ApiAuthor {
   id: number;
   name: string | null;

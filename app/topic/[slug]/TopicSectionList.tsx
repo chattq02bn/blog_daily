@@ -7,6 +7,7 @@ import { useInView } from "@/hooks/use-in-view";
 import TopicSectionView from "@/components/topic/TopicSectionView";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "./topic.module.scss";
+import TopicHeader from "@/components/topic/TopicHeader";
 
 const MAX_NOTES = 14;
 
@@ -17,7 +18,7 @@ export default function TopicSectionList({
   childrenSlugs?: string[];
 }) {
   const router = useRouter();
-  const { sections, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
+  const { sections, topic, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSectionsInfinite(slug, 5);
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
@@ -47,12 +48,20 @@ export default function TopicSectionList({
       <p className={styles.count}>Không tải được nội dung chủ đề này.</p>
     );
   }
-  console.log("sections", sections);
 
   const totalNotes = sections.reduce((sum, section) => sum + section.posts.length, 0);
 
   return (
     <>
+      {topic && (
+        <TopicHeader
+          topic={{
+            name: topic.name,
+            description: topic.description ?? "",
+          }}
+          href={"/"}
+        />
+      )}
       <p className={styles.count}>
         {totalNotes.toLocaleString("vi-VN")} bài viết · cập nhật hàng ngày
       </p>

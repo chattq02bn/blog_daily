@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
@@ -13,12 +14,17 @@ export default function AppLayoutShell({
   hideSidebar?: boolean;
   mobileToolbar?: ReactNode;
 }) {
+  const pathname = usePathname();
+  const hideNavbar = pathname === "/admin/create";
+
   return (
     <div className="isolate flex h-dvh flex-col">
       {/* Desktop: Navbar bình thường. Mobile: ẩn Navbar, dùng mobileToolbar từ Editor */}
-      <div className="hidden max-lg:hidden lg:block">
-        <Navbar />
-      </div>
+      {!hideNavbar && (
+        <div>
+          <Navbar />
+        </div>
+      )}
       {mobileToolbar && (
         <div className="lg:hidden">
           {mobileToolbar}
