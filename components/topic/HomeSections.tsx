@@ -6,6 +6,7 @@ import { useInView } from "@/hooks/use-in-view";
 import { useMainScrollMemory } from "@/hooks/use-main-scroll-memory";
 import { usePosts, useSidebarTopicsInfinite } from "@/hooks/use-api";
 import TopicSectionView from "@/components/topic/TopicSectionView";
+import WelcomeHero from "@/components/ui/WelcomeHero";
 import { postToNote } from "@/lib/api/adapters";
 import {
   flattenTopics,
@@ -149,11 +150,7 @@ export default function HomeSections() {
   }
 
   if (sections.length === 0) {
-    return (
-      <div className="mx-auto min-h-screen px-5 pt-10 text-text-secondary">
-        Chưa có chủ đề nào được gắn vào sidebar.
-      </div>
-    );
+    return <WelcomeHero />;
   }
 
   return (
