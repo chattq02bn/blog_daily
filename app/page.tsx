@@ -43,7 +43,7 @@ export default async function Home() {
   return (
     <AppLayout>
       <h1 className="sr-only">Chủ đề</h1>
-      <div className="mx-auto min-h-screen pb-4 sm:pb-6">
+      <div className="mx-auto pb-4 sm:pb-6">
         <HydrationBoundary state={dehydrate(queryClient)}>
           <HomeSections />
         </HydrationBoundary>

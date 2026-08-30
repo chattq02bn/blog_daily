@@ -51,8 +51,6 @@ export default function NoteView({ id }: { id: string }) {
     ? getRelatedNotes(note, recentPosts.data.map(postToNote))
     : [];
 
-
-  console.log("note", note);
   return (
     <div className={styles.article}>
       <div className={styles.articleInner}>
