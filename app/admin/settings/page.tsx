@@ -32,8 +32,10 @@ import {
   useUpdateSocialLinks,
   useMailConfig,
   useUpdateMailConfig,
+  useUploadConfig,
+  useUpdateUploadConfig,
 } from "@/hooks/use-api";
-import { profileApi, type SocialPlatform } from "@/lib/api";
+import { profileApi, uploadApi, type SocialPlatform, type ApiUploadConfig } from "@/lib/api";
 import styles from "../admin.module.scss";
 
 export default function AdminSettingsPage() {
@@ -48,9 +50,13 @@ export default function AdminSettingsPage() {
   const [passwordForm] = Form.useForm();
   const [socialForm] = Form.useForm();
   const [mailForm] = Form.useForm();
+  const [cloudinaryForm] = Form.useForm();
+  const [megaForm] = Form.useForm();
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [changingPassword, setChangingPassword] = useState(false);
   const [savingMail, setSavingMail] = useState(false);
+  const [savingCloudinary, setSavingCloudinary] = useState(false);
+  const [savingMega, setSavingMega] = useState(false);
 
   const profileQuery = useProfile();
   const updateProfileMutation = useUpdateProfile();
@@ -58,6 +64,8 @@ export default function AdminSettingsPage() {
   const updateSocialLinksMutation = useUpdateSocialLinks();
   const mailConfigQuery = useMailConfig();
   const updateMailConfigMutation = useUpdateMailConfig();
+  const uploadConfigQuery = useUploadConfig();
+  const updateUploadConfigMutation = useUpdateUploadConfig();
 
   /* Nạp hồ sơ vào form */
   useEffect(() => {
@@ -91,24 +99,27 @@ export default function AdminSettingsPage() {
     mailForm.setFieldsValue({ email: config.email, password: config.password });
   }, [mailConfigQuery.data, mailForm]);
 
-  const handleAvatarChange = (file: File) => {
+  /* Nạp cấu hình upload vào form */
+  useEffect(() => {
+    const config = uploadConfigQuery.data;
+    if (!config) return;
+    cloudinaryForm.setFieldsValue(config.cloudinary);
+    megaForm.setFieldsValue(config.mega);
+  }, [uploadConfigQuery.data, cloudinaryForm, megaForm]);
+
+  const handleAvatarChange = async (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
       message.error("Ảnh tối đa 2MB");
       return false;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = String(reader.result);
-      setAvatar(base64);
-      updateProfileMutation.mutate(
-        { avatar: base64 },
-        {
-          onSuccess: () => message.success("Đã cập nhật avatar"),
-          onError: () => message.error("Cập nhật avatar thất bại"),
-        }
-      );
-    };
-    reader.readAsDataURL(file);
+    try {
+      const result = await uploadApi.uploadFile(file);
+      setAvatar(result.url);
+      await updateProfileMutation.mutateAsync({ avatar: result.url });
+      message.success("Đã cập nhật avatar");
+    } catch {
+      message.error("Upload avatar thất bại");
+    }
     return false;
   };
 
@@ -186,6 +197,48 @@ export default function AdminSettingsPage() {
       onSuccess: () => message.success("Đã cập nhật mạng xã hội"),
       onError: () => message.error("Cập nhật mạng xã hội thất bại"),
     });
+  };
+
+  const handleSaveCloudinary = async (values: {
+    cloudName: string;
+    apiKey: string;
+    apiSecret: string;
+    folder: string;
+  }) => {
+    setSavingCloudinary(true);
+    try {
+      const current = uploadConfigQuery.data;
+      await updateUploadConfigMutation.mutateAsync({
+        cloudinary: {
+          cloudName: values.cloudName.trim(),
+          apiKey: values.apiKey.trim(),
+          apiSecret: values.apiSecret.trim(),
+          folder: values.folder.trim() || "blog",
+        },
+        mega: current?.mega ?? { email: "", password: "" },
+      });
+      message.success("Đã lưu cấu hình Cloudinary");
+    } catch {
+      message.error("Lưu cấu hình Cloudinary thất bại");
+    } finally {
+      setSavingCloudinary(false);
+    }
+  };
+
+  const handleSaveMega = async (values: { email: string; password: string }) => {
+    setSavingMega(true);
+    try {
+      const current = uploadConfigQuery.data;
+      await updateUploadConfigMutation.mutateAsync({
+        cloudinary: current?.cloudinary ?? { cloudName: "", apiKey: "", apiSecret: "", folder: "blog" },
+        mega: { email: values.email.trim(), password: values.password },
+      });
+      message.success("Đã lưu cấu hình Mega");
+    } catch {
+      message.error("Lưu cấu hình Mega thất bại");
+    } finally {
+      setSavingMega(false);
+    }
   };
 
   return (
@@ -363,6 +416,92 @@ export default function AdminSettingsPage() {
                   htmlType="submit"
                   icon={<SaveOutlined />}
                   loading={savingMail}
+                  className="note-btn-primary"
+                >
+                  Lưu cấu hình
+                </Button>
+              </Form>
+            </Card>
+          </Col>
+        </Row>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Card title="Cloudinary (ảnh & video)" className={styles.card}>
+              <Form
+                form={cloudinaryForm}
+                layout="vertical"
+                onFinish={handleSaveCloudinary}
+              >
+                <Form.Item
+                  name="cloudName"
+                  label="Cloud Name"
+                  rules={[{ required: true, message: "Nhập Cloud Name" }]}
+                >
+                  <Input placeholder="VD: dkqyptupf" />
+                </Form.Item>
+                <Form.Item
+                  name="apiKey"
+                  label="API Key"
+                  rules={[{ required: true, message: "Nhập API Key" }]}
+                >
+                  <Input placeholder="VD: 923633263214567" />
+                </Form.Item>
+                <Form.Item
+                  name="apiSecret"
+                  label="API Secret"
+                  rules={[{ required: true, message: "Nhập API Secret" }]}
+                >
+                  <Input.Password placeholder="Nhập API Secret" />
+                </Form.Item>
+                <Form.Item
+                  name="folder"
+                  label="Folder"
+                  initialValue="blog"
+                >
+                  <Input placeholder="VD: blog" />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={savingCloudinary}
+                  className="note-btn-primary"
+                >
+                  Lưu cấu hình
+                </Button>
+              </Form>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card title="Mega (tệp tin khác)" className={styles.card}>
+              <Form
+                form={megaForm}
+                layout="vertical"
+                onFinish={handleSaveMega}
+              >
+                <Form.Item
+                  name="email"
+                  label="Email Mega"
+                  rules={[
+                    { required: true, message: "Nhập email Mega" },
+                    { type: "email", message: "Email không hợp lệ" },
+                  ]}
+                >
+                  <Input placeholder="VD: account@mega.nz" />
+                </Form.Item>
+                <Form.Item
+                  name="password"
+                  label="Mật khẩu Mega"
+                  rules={[{ required: true, message: "Nhập mật khẩu Mega" }]}
+                >
+                  <Input.Password placeholder="Nhập mật khẩu Mega" />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={savingMega}
                   className="note-btn-primary"
                 >
                   Lưu cấu hình

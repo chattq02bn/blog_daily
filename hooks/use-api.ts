@@ -19,6 +19,7 @@ import {
   statsApi,
   tagsApi,
   topicsApi,
+  uploadApi,
   usersApi,
   type CommentWriteBody,
   type ListPostsParams,
@@ -27,6 +28,7 @@ import {
   type ApiMailConfig,
   type ApiPost,
   type ApiSocialLink,
+  type ApiUploadConfig,
   type PostsPage,
   type SocialPlatform,
 } from "@/lib/api";
@@ -677,6 +679,25 @@ export function useUpdateMailConfig() {
     mutationFn: (body: ApiMailConfig) => mailApi.updateConfig(body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.mailConfig() });
+    },
+  });
+}
+
+/* ===== Upload Config ===== */
+
+export function useUploadConfig() {
+  return useQuery({
+    queryKey: qk.uploadConfig(),
+    queryFn: () => uploadApi.getConfig(),
+  });
+}
+
+export function useUpdateUploadConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ApiUploadConfig) => uploadApi.updateConfig(body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.uploadConfig() });
     },
   });
 }

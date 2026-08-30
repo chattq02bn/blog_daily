@@ -24,4 +24,5 @@ export const qk = {
   sidebarInfinite: (limit = 3) => ["sidebar", "infinite", limit] as const,
   visits: (month?: string) => ["visits", month ?? "current"] as const,
   mailConfig: () => ["mailConfig"] as const,
+  uploadConfig: () => ["uploadConfig"] as const,
 };

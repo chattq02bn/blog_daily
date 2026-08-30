@@ -436,3 +436,35 @@ export const mailApi = {
     return unwrap(await api.put<Envelope<ApiMailConfig>>("/mail", body));
   },
 };
+
+/* ===== Upload Config ===== */
+
+export interface ApiUploadConfig {
+  cloudinary: { cloudName: string; apiKey: string; apiSecret: string; folder: string };
+  mega: { email: string; password: string };
+}
+
+export interface ApiUploadResult {
+  url: string;
+  bytes: number;
+  format: string;
+  originalFilename: string;
+}
+
+export const uploadApi = {
+  async getConfig(): Promise<ApiUploadConfig> {
+    return unwrap(await api.get<Envelope<ApiUploadConfig>>("/upload/config"));
+  },
+  async updateConfig(body: ApiUploadConfig): Promise<ApiUploadConfig> {
+    return unwrap(await api.put<Envelope<ApiUploadConfig>>("/upload/config", body));
+  },
+  async uploadFile(file: File): Promise<ApiUploadResult> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return unwrap(
+      await api.post<Envelope<ApiUploadResult>>("/upload/file", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+    );
+  },
+};
