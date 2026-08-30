@@ -149,7 +149,7 @@ export default function HomeSections() {
     );
   }
 
-  if (sections.length === 0) {
+  if (sections.length !== 0) {
     return <WelcomeHero />;
   }
 
