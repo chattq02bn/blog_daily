@@ -9,6 +9,7 @@ import type {
   ApiSidebarItem,
   ApiTag,
   ApiTopic,
+  ApiTopicInfo,
   ApiUser,
   ApiVisits,
 } from "./types";
@@ -18,7 +19,7 @@ export * from "./types";
 
 /* ===== Envelope helpers ===== */
 
-type Envelope<T> = { success: boolean; message?: string; data: T; meta?: ApiMeta };
+type Envelope<T, Extra = {}> = { success: boolean; message?: string; data: T; meta?: ApiMeta } & Extra;
 
 function unwrap<T>(payload: { data: { data: T } }): T {
   return payload.data.data;
@@ -163,12 +164,12 @@ export const sectionsApi = {
   async byTopicPaginated(
     topicSlug: string,
     params: { page?: number; limit?: number } = {}
-  ): Promise<{ data: ApiSection[]; meta?: ApiMeta }> {
-    const res = await api.get<Envelope<ApiSection[]>>(
+  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo }> {
+    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo }>>(
       `/topics/${topicSlug}/sections/paginated`,
       { params }
     );
-    return { data: res.data.data, meta: res.data.meta };
+    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic };
   },
 };
 
@@ -287,6 +288,13 @@ export const usersApi = {
   async remove(id: string): Promise<void> {
     await api.delete(`/users/${id}`);
   },
+  async toggleStatus(id: string): Promise<void> {
+    await api.patch(`/users/${id}/toggle-status`);
+  },
+  async resendMail(id: string): Promise<{ success: boolean; email: string; error?: string }> {
+    const res = await api.post<Envelope<{ success: boolean; email: string; error?: string }>>(`/users/${id}/resend-mail`);
+    return res.data.data;
+  },
 };
 
 export const profileApi = {
@@ -401,5 +409,21 @@ export const commentersApi = {
   },
   async updateNickname(nickname: string): Promise<CommenterInfo> {
     return unwrap(await api.patch<Envelope<CommenterInfo>>("/commenters/me", { nickname }));
+  },
+};
+
+/* ===== Mail Config ===== */
+
+export interface ApiMailConfig {
+  email: string;
+  password: string;
+}
+
+export const mailApi = {
+  async getConfig(): Promise<ApiMailConfig> {
+    return unwrap(await api.get<Envelope<ApiMailConfig>>("/mail"));
+  },
+  async updateConfig(body: ApiMailConfig): Promise<ApiMailConfig> {
+    return unwrap(await api.put<Envelope<ApiMailConfig>>("/mail", body));
   },
 };

@@ -5,6 +5,11 @@ export interface ApiMeta {
   totalPages: number;
 }
 
+export interface ApiTopicInfo {
+  name: string;
+  description: string;
+}
+
 export interface ApiAuthor {
   id: number;
   name: string | null;
@@ -110,12 +115,17 @@ export interface ApiComment {
 }
 
 export type ApiUserRole = "admin" | "user";
+export type ApiUserStatus = "active" | "inactive";
+export type ApiMailStatus = "pending" | "sent" | "failed";
 
 export interface ApiUser {
   id: string;
   email: string;
   name: string | null;
   role: ApiUserRole;
+  status: ApiUserStatus;
+  mailStatus: ApiMailStatus;
+  mailError: string | null;
   avatar: string | null;
   logoName: string | null;
   description: string | null;

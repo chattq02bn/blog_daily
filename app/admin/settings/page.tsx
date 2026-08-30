@@ -18,6 +18,7 @@ import {
   UploadOutlined,
   UserOutlined,
   LockOutlined,
+  MailOutlined,
   YoutubeOutlined,
   InstagramOutlined,
   FacebookOutlined,
@@ -29,6 +30,8 @@ import {
   useUpdateProfile,
   useSocialLinks,
   useUpdateSocialLinks,
+  useMailConfig,
+  useUpdateMailConfig,
 } from "@/hooks/use-api";
 import { profileApi, type SocialPlatform } from "@/lib/api";
 import styles from "../admin.module.scss";
@@ -44,13 +47,17 @@ export default function AdminSettingsPage() {
   }>();
   const [passwordForm] = Form.useForm();
   const [socialForm] = Form.useForm();
+  const [mailForm] = Form.useForm();
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [savingMail, setSavingMail] = useState(false);
 
   const profileQuery = useProfile();
   const updateProfileMutation = useUpdateProfile();
   const socialLinksQuery = useSocialLinks();
   const updateSocialLinksMutation = useUpdateSocialLinks();
+  const mailConfigQuery = useMailConfig();
+  const updateMailConfigMutation = useUpdateMailConfig();
 
   /* Nạp hồ sơ vào form */
   useEffect(() => {
@@ -76,6 +83,13 @@ export default function AdminSettingsPage() {
     }
     socialForm.setFieldsValue(values);
   }, [socialLinksQuery.data, socialForm]);
+
+  /* Nạp cấu hình mail vào form */
+  useEffect(() => {
+    const config = mailConfigQuery.data;
+    if (!config) return;
+    mailForm.setFieldsValue({ email: config.email, password: config.password });
+  }, [mailConfigQuery.data, mailForm]);
 
   const handleAvatarChange = (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
@@ -140,6 +154,24 @@ export default function AdminSettingsPage() {
       message.error(apiErr.response?.data?.message || "Đổi mật khẩu thất bại");
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleSaveMailConfig = async (values: {
+    email: string;
+    password: string;
+  }) => {
+    setSavingMail(true);
+    try {
+      await updateMailConfigMutation.mutateAsync({
+        email: values.email.trim(),
+        password: values.password,
+      });
+      message.success("Đã lưu cấu hình mail");
+    } catch {
+      message.error("Lưu cấu hình mail thất bại");
+    } finally {
+      setSavingMail(false);
     }
   };
 
@@ -248,7 +280,7 @@ export default function AdminSettingsPage() {
         </Row>
 
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={12}>
             <Card title="Đổi mật khẩu" className={styles.card}>
               <Form
                 form={passwordForm}
@@ -298,6 +330,42 @@ export default function AdminSettingsPage() {
                   className="note-btn-primary"
                 >
                   Đổi mật khẩu
+                </Button>
+              </Form>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card title="Cấu hình mail" className={styles.card}>
+              <Form
+                form={mailForm}
+                layout="vertical"
+                onFinish={handleSaveMailConfig}
+              >
+                <Form.Item
+                  name="email"
+                  label="Email gửi mail"
+                  rules={[
+                    { required: true, message: "Nhập email" },
+                    { type: "email", message: "Email không hợp lệ" },
+                  ]}
+                >
+                  <Input placeholder="VD: note@gmail.com" prefix={<MailOutlined />} />
+                </Form.Item>
+                <Form.Item
+                  name="password"
+                  label="Mật khẩu ứng dụng"
+                  rules={[{ required: true, message: "Nhập mật khẩu ứng dụng" }]}
+                >
+                  <Input.Password placeholder="Mật khẩu ứng dụng Gmail (App Password)" />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={savingMail}
+                  className="note-btn-primary"
+                >
+                  Lưu cấu hình
                 </Button>
               </Form>
             </Card>

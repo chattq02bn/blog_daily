@@ -10,6 +10,7 @@ import {
 import {
   commentsApi,
   commentersApi,
+  mailApi,
   postsApi,
   profileApi,
   sectionsApi,
@@ -23,6 +24,7 @@ import {
   type ListPostsParams,
   type PostWriteBody,
   type ApiComment,
+  type ApiMailConfig,
   type ApiPost,
   type ApiSocialLink,
   type PostsPage,
@@ -235,6 +237,7 @@ export function useSectionsInfinite(topicSlug: string, limit = 5) {
 
   return {
     sections: query.data?.pages.flatMap((page) => page.data) ?? [],
+    topic: query.data?.pages[0]?.topic,
     ...query,
   };
 }
@@ -506,6 +509,26 @@ export function useDeleteUser() {
   });
 }
 
+export function useToggleUserStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => usersApi.toggleStatus(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useResendMail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => usersApi.resendMail(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
 /* ===== Profile ===== */
 
 export function useProfile() {
@@ -625,4 +648,23 @@ export function useReplaceSidebar() {
 
 export function useVisits(month?: string) {
   return useQuery({ queryKey: qk.visits(month), queryFn: () => statsApi.visits(month) });
+}
+
+/* ===== Mail Config ===== */
+
+export function useMailConfig() {
+  return useQuery({
+    queryKey: qk.mailConfig(),
+    queryFn: () => mailApi.getConfig(),
+  });
+}
+
+export function useUpdateMailConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ApiMailConfig) => mailApi.updateConfig(body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.mailConfig() });
+    },
+  });
 }

@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import {
+  App,
   Button,
   Form,
   Input,
-  message,
   Modal,
   Popconfirm,
   Select,
+  Switch,
   Table,
   Tag,
   Tooltip,
@@ -16,13 +17,18 @@ import {
 import {
   DeleteOutlined,
   EditOutlined,
+  InfoCircleOutlined,
+  MailOutlined,
   PlusOutlined,
+  ReloadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
   useCreateUser,
   useDeleteUser,
+  useResendMail,
+  useToggleUserStatus,
   useUpdateUser,
   useUsers,
 } from "@/hooks/use-api";
@@ -35,10 +41,13 @@ const roleOptions = [
 ];
 
 export default function AdminUsersPage() {
+  const { message } = App.useApp();
   const [keyword, setKeyword] = useState("");
   const [roleFilter, setRoleFilter] = useState<ApiUserRole | undefined>(undefined);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ApiUser | null>(null);
+  const [mailErrorUser, setMailErrorUser] = useState<ApiUser | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [form] = Form.useForm<{ name: string; email: string; role: ApiUserRole }>();
 
   const usersQuery = useUsers({ limit: 100 });
@@ -47,6 +56,8 @@ export default function AdminUsersPage() {
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
   const deleteMutation = useDeleteUser();
+  const toggleStatusMutation = useToggleUserStatus();
+  const resendMailMutation = useResendMail();
 
   /* Lọc hiển thị làm client-side cho mượt (dữ liệu đã tải sẵn) */
   const filtered = useMemo(() => {
@@ -90,7 +101,6 @@ export default function AdminUsersPage() {
           }
         );
       } else {
-        // Mật khẩu tạm thời sinh ngẫu nhiên — người dùng đổi sau
         const tempPassword = `Note${Math.random().toString(36).slice(2, 10)}!1`;
         createMutation.mutate(
           {
@@ -100,7 +110,13 @@ export default function AdminUsersPage() {
             role: values.role.toUpperCase() as "USER" | "ADMIN",
           },
           {
-            onSuccess: () => message.success("Đã thêm người dùng"),
+            onSuccess: (data) => {
+              if (data.mailStatus === "sent") {
+                message.success("Đã thêm người dùng và gửi mail thành công");
+              } else {
+                message.warning("Đã thêm người dùng nhưng gửi mail thất bại");
+              }
+            },
             onError: () => message.error("Thêm người dùng thất bại (email có thể đã tồn tại)"),
           }
         );
@@ -111,19 +127,38 @@ export default function AdminUsersPage() {
 
   const handleDelete = (user: ApiUser) => {
     deleteMutation.mutate(user.id, {
-      onSuccess: () => message.success(`Đã xóa "${user.name ?? user.email}"`),
-      onError: () => message.error("Xóa người dùng thất bại"),
+      onSuccess: () => message.success(`Đã vô hiệu hóa "${user.name ?? user.email}"`),
+      onError: () => message.error("Vô hiệu hóa thất bại"),
+    });
+  };
+
+  const handleToggleStatus = (user: ApiUser) => {
+    toggleStatusMutation.mutate(user.id, {
+      onSuccess: () => {
+        const newStatus = user.status === "active" ? "inactive" : "active";
+        message.success(`Đã ${newStatus === "active" ? "kích hoạt" : "vô hiệu hóa"} "${user.name ?? user.email}"`);
+      },
+      onError: () => message.error("Thay đổi trạng thái thất bại"),
+    });
+  };
+
+  const handleResendMail = (user: ApiUser) => {
+    setResendingId(user.id);
+    resendMailMutation.mutate(user.id, {
+      onSuccess: (result) => {
+        if (result.success) {
+          message.success(`Đã gửi lại mail đến ${result.email}`);
+          setMailErrorUser(null);
+        } else {
+          message.error(result.error || "Gửi mail thất bại");
+        }
+      },
+      onError: () => message.error("Gửi mail thất bại"),
+      onSettled: () => setResendingId(null),
     });
   };
 
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 120,
-      render: (id: string) => <span className={styles.userId}>{id}</span>,
-    },
     {
       title: "Tên",
       dataIndex: "name",
@@ -139,12 +174,54 @@ export default function AdminUsersPage() {
       title: "Role",
       dataIndex: "role",
       key: "role",
-      width: 110,
+      width: 100,
       render: (role: ApiUserRole) => (
         <Tag color={role === "admin" ? "red" : "default"} className={styles.roleTag}>
           {role === "admin" ? "Admin" : "User"}
         </Tag>
       ),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status: string, record: ApiUser) => (
+        <Switch
+          checked={status === "active"}
+          size="small"
+          disabled={record.role === "admin"}
+          loading={toggleStatusMutation.isPending}
+          onChange={() => handleToggleStatus(record)}
+          checkedChildren="Active"
+          unCheckedChildren="Inactive"
+        />
+      ),
+    },
+    {
+      title: "Mail",
+      dataIndex: "mailStatus",
+      key: "mailStatus",
+      width: 120,
+      render: (mailStatus: string, record: ApiUser) => {
+        if (mailStatus === "sent") {
+          return <Tag color="success">Đã gửi</Tag>;
+        }
+        if (mailStatus === "failed") {
+          return (
+            <Tooltip title="Xem lỗi">
+              <Tag
+                color="error"
+                className={styles.mailErrorTag}
+                onClick={() => setMailErrorUser(record)}
+              >
+                Lỗi <InfoCircleOutlined />
+              </Tag>
+            </Tooltip>
+          );
+        }
+        return <Tag color="processing">Đang gửi</Tag>;
+      },
     },
     {
       title: "Thao tác",
@@ -160,20 +237,29 @@ export default function AdminUsersPage() {
               aria-label={`Sửa ${record.name ?? record.email}`}
             />
           </Tooltip>
+          <Tooltip title="Gửi lại mail">
+            <Button
+              type="text"
+              icon={<ReloadOutlined />}
+              onClick={() => handleResendMail(record)}
+              loading={resendingId === record.id}
+              aria-label="Gửi lại mail"
+            />
+          </Tooltip>
           {record.role === "admin" ? (
-            <Tooltip title="Không thể xóa Admin">
+            <Tooltip title="Không thể vô hiệu hóa Admin">
               <Button type="text" danger disabled icon={<DeleteOutlined />} aria-label="Xóa" />
             </Tooltip>
           ) : (
             <Popconfirm
-              title="Xóa người dùng"
-              description={`Bạn có chắc muốn xóa "${record.name ?? record.email}"?`}
-              okText="Xóa"
+              title="Vô hiệu hóa người dùng"
+              description={`Bạn có chắc muốn vô hiệu hóa "${record.name ?? record.email}"?`}
+              okText="Vô hiệu hóa"
               cancelText="Hủy"
               okButtonProps={{ danger: true }}
               onConfirm={() => handleDelete(record)}
             >
-              <Button type="text" danger icon={<DeleteOutlined />} aria-label={`Xóa ${record.name}`} />
+              <Button type="text" danger icon={<DeleteOutlined />} aria-label="Xóa" />
             </Popconfirm>
           )}
         </div>
@@ -275,6 +361,31 @@ export default function AdminUsersPage() {
             <p className={styles.hint}>Role của tài khoản Admin không thể thay đổi.</p>
           )}
         </Form>
+      </Modal>
+      <Modal
+        open={!!mailErrorUser}
+        onCancel={() => setMailErrorUser(null)}
+        footer={null}
+        title="Chi tiết lỗi gửi mail"
+      >
+        <div style={{ marginBottom: 12 }}>
+          <strong>Email:</strong> {mailErrorUser?.email}
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <strong>Lỗi:</strong>{" "}
+          <span style={{ color: "#ef4444" }}>{mailErrorUser?.mailError || "Không có thông tin lỗi"}</span>
+        </div>
+        <Button
+          type="primary"
+          icon={<MailOutlined />}
+          loading={resendingId === mailErrorUser?.id}
+          onClick={() => {
+            if (mailErrorUser) handleResendMail(mailErrorUser);
+          }}
+          className="note-btn-primary"
+        >
+          Gửi lại mail
+        </Button>
       </Modal>
     </AdminLayout>
   );
