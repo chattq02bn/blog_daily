@@ -265,6 +265,12 @@ export const commentsApi = {
     });
     return res.data.data.name;
   },
+  async checkName(postId: string, name: string): Promise<boolean> {
+    const res = await api.get<Envelope<{ used: boolean }>>("/comments/check-name", {
+      params: { postId, name },
+    });
+    return res.data.data.used;
+  },
 };
 
 /* ===== Users & profile (admin) ===== */

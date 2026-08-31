@@ -171,10 +171,22 @@ export default function CommentForm({
   };
 
   const saveName = async () => {
-    setEditingName(false);
     const trimmed = nameDraft.trim();
-    if (!trimmed || trimmed === commenterName) return;
-    setCommenterNickname(trimmed);
+    if (!trimmed || trimmed === commenterName) {
+      setEditingName(false);
+      return;
+    }
+    try {
+      const used = await commentsApi.checkName(noteId, trimmed);
+      if (used) {
+        message.warning("Tên này đã được sử dụng trong bài viết");
+        return;
+      }
+      setCommenterNickname(trimmed);
+      setEditingName(false);
+    } catch {
+      message.error("Không kiểm tra được tên");
+    }
   };
 
   const handleCancel = () => {
