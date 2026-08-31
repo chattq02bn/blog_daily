@@ -1,21 +1,5 @@
 "use client";
 
-export type CommentEmoji =
-  | "👍"
-  | "❤️"
-  | "😂"
-  | "😮"
-  | "😢"
-  | "😡"
-  | "👏"
-  | "🙏";
-
-export interface CommentEmojiCount {
-  emoji: CommentEmoji;
-  count: number;
-  hasReacted: boolean;
-}
-
 export interface Comment {
   id: string;
   noteId: string;
@@ -26,8 +10,7 @@ export interface Comment {
   isAuthor: boolean;
   parentAuthor?: string;
   content: string;
-  emojis: Record<CommentEmoji, number>;
-  userReactions: Record<CommentEmoji, boolean>;
+  likes: number;
   createdAt: string;
   updatedAt: string;
   isEdited: boolean;
@@ -41,7 +24,6 @@ export interface CommentFormData {
 }
 
 const STORAGE_KEY = "note_comments";
-const EMOJIS: CommentEmoji[] = ["👍", "❤️", "😂", "😮", "😢", "😡", "👏", "🙏"];
 
 function generateId(): string {
   return `cmt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -82,13 +64,6 @@ export function createComment(
   const allComments = getStoredComments();
   const now = new Date().toISOString();
 
-  const initialEmojis: Record<CommentEmoji, number> = {} as Record<CommentEmoji, number>;
-  const initialUserReactions: Record<CommentEmoji, boolean> = {} as Record<CommentEmoji, boolean>;
-  EMOJIS.forEach((emoji) => {
-    initialEmojis[emoji] = 0;
-    initialUserReactions[emoji] = false;
-  });
-
   const newComment: Comment = {
     id: generateId(),
     noteId,
@@ -98,8 +73,7 @@ export function createComment(
     authorAvatar,
     isAuthor: false,
     content,
-    emojis: initialEmojis,
-    userReactions: initialUserReactions,
+    likes: 0,
     createdAt: now,
     updatedAt: now,
     isEdited: false,
@@ -143,34 +117,6 @@ export function deleteComment(commentId: string): boolean {
   allComments.splice(index, 1);
   saveComments(allComments);
   return true;
-}
-
-export function toggleEmojiReaction(
-  commentId: string,
-  emoji: CommentEmoji
-): Comment | undefined {
-  const allComments = getStoredComments();
-  const index = allComments.findIndex((c) => c.id === commentId);
-  if (index === -1) return undefined;
-
-  const comment = allComments[index];
-  const hasReacted = comment.userReactions[emoji];
-
-  comment.emojis[emoji] = hasReacted
-    ? Math.max(0, comment.emojis[emoji] - 1)
-    : comment.emojis[emoji] + 1;
-  comment.userReactions[emoji] = !hasReacted;
-
-  saveComments(allComments);
-  return comment;
-}
-
-export function getCommentEmojiCounts(comment: Comment): CommentEmojiCount[] {
-  return EMOJIS.map((emoji) => ({
-    emoji,
-    count: comment.emojis[emoji] || 0,
-    hasReacted: comment.userReactions[emoji] || false,
-  }));
 }
 
 export function getCommentsWithHierarchy(noteId: string): {
@@ -240,46 +186,4 @@ export function getCurrentUser(): { id: number | null; name: string; avatar: str
     }
   } catch { }
   return { id: null, name: "Người dùng", avatar: "" };
-}
-
-export { EMOJIS };
-
-const ANON_LIKES_KEY = "note_anon_likes";
-
-export function getAnonLikes(): Record<string, string[]> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(ANON_LIKES_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-export function toggleAnonLike(commentId: string, emoji: string): boolean {
-  if (typeof window === "undefined") return false;
-  const likes = getAnonLikes();
-  const key = `${commentId}:${emoji}`;
-  const arr = likes[key] || [];
-  const idx = arr.indexOf(emoji);
-  let active: boolean;
-  if (idx >= 0) {
-    arr.splice(idx, 1);
-    active = false;
-  } else {
-    arr.push(emoji);
-    active = true;
-  }
-  if (arr.length > 0) {
-    likes[key] = arr;
-  } else {
-    delete likes[key];
-  }
-  localStorage.setItem(ANON_LIKES_KEY, JSON.stringify(likes));
-  return active;
-}
-
-export function hasAnonLike(commentId: string, emoji: string): boolean {
-  const likes = getAnonLikes();
-  const key = `${commentId}:${emoji}`;
-  return (likes[key]?.length ?? 0) > 0;
 }

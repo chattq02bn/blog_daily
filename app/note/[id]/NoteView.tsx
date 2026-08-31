@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import NoteActions from "@/components/note/NoteActions";
 import NoteTitleActions from "@/components/note/NoteTitleActions";
 import {
   ClientCommentList,

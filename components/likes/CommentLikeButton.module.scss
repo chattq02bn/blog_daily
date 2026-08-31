@@ -1,0 +1,29 @@
+.likeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(209, 62, 92, 0.08);
+    color: #d13e5c;
+    transform: scale(1.05);
+  }
+
+  &.liked {
+    color: #d13e5c;
+  }
+}
+
+.likeCount {
+  font-size: 12px;
+  font-weight: 600;
+}

@@ -35,7 +35,6 @@ import {
 } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 import { setCommenterToken, setCommenterId, setCommenterNickname } from "@/lib/commenter";
-import { toggleAnonLike } from "@/lib/commentStorage";
 
 /* ===== Query functions (dùng chung cho prefetch server + hooks client) ===== */
 
@@ -446,10 +445,11 @@ export function usePrefetchGenerateName() {
   );
 }
 
-export function useGenerateName(postId: string) {
+export function useGenerateName(postId: string | null) {
   return useQuery({
-    queryKey: qk.generateName(postId),
-    queryFn: () => commentsApi.generateName(postId),
+    queryKey: qk.generateName(postId ?? ""),
+    queryFn: () => commentsApi.generateName(postId!),
+    enabled: !!postId,
     staleTime: 60_000,
   });
 }
@@ -457,13 +457,9 @@ export function useGenerateName(postId: string) {
 export function useToggleCommentReaction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, emoji }: { id: string; emoji: string }) =>
-      commentsApi.toggleReaction(id, emoji),
-    onSuccess: ({ active }, { id, emoji }) => {
-      const isLoggedIn = typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"));
-      if (!isLoggedIn) {
-        toggleAnonLike(id, emoji);
-      }
+    mutationFn: ({ id }: { id: string }) =>
+      commentsApi.toggleLike(id),
+    onSuccess: ({ isLiked, likeCount }, { id }) => {
       qc.setQueriesData(
         { queryKey: ["comments"] },
         (old: { pages: { data: ApiComment[] }[] } | undefined) => {
@@ -474,15 +470,7 @@ export function useToggleCommentReaction() {
               ...page,
               data: page.data.map((c) => {
                 if (c.id !== id) return c;
-                const myReactions = active
-                  ? [...new Set([...c.myReactions, emoji])]
-                  : c.myReactions.filter((e) => e !== emoji);
-                const found = c.reactions.find((r) => r.emoji === emoji);
-                const newCount = (found?.count ?? 0) + (active ? 1 : -1);
-                const reactions = newCount > 0
-                  ? c.reactions.map((r) => r.emoji === emoji ? { ...r, count: newCount } : r)
-                  : c.reactions.filter((r) => r.emoji !== emoji);
-                return { ...c, reactions, myReactions };
+                return { ...c, likes: likeCount };
               }),
             })),
           };

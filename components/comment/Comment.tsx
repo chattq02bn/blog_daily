@@ -6,13 +6,11 @@ import {
   EllipsisOutlined,
   DeleteOutlined,
   EditOutlined,
-  HeartOutlined,
-  HeartFilled,
   MessageOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Popover, Modal } from "antd";
-import NoImage from "@/components/ui/NoImage";
+import CommentLikeButton from "@/components/likes/CommentLikeButton";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import type { Comment as CommentType } from "@/lib/commentStorage";
@@ -25,7 +23,6 @@ interface CommentProps {
   onReply?: (parentId: string, parentAuthor: string, commenterId: number) => void;
   onDelete: () => void;
   onSaveEdit: (content: string) => void;
-  onToggleLike: () => void;
   isLast?: boolean;
 }
 
@@ -36,7 +33,6 @@ export default function Comment({
   onReply,
   onDelete,
   onSaveEdit,
-  onToggleLike,
   isLast = false,
 }: CommentProps) {
   const [editing, setEditing] = useState(false);
@@ -44,8 +40,6 @@ export default function Comment({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const heartCount = comment.emojis?.["❤️"] || 0;
-  const liked = !!comment.userReactions?.["❤️"];
   const myId = typeof window !== "undefined" ? Number(localStorage.getItem("note_commenter_id") || "0") : 0;
   const isOwner = myId > 0 && myId === comment.commenterId;
 
@@ -138,16 +132,7 @@ export default function Comment({
           )}
 
           <div className={styles.commentFooter}>
-            <button
-              className={`${styles.likeButton} ${liked ? styles.liked : ""}`}
-              onClick={onToggleLike}
-              aria-label="Thích bình luận"
-            >
-              {liked ? <HeartFilled /> : <HeartOutlined />}
-              {heartCount > 0 && (
-                <span className={styles.likeCount}>{heartCount}</span>
-              )}
-            </button>
+            <CommentLikeButton commentId={comment.id} likes={comment.likes ?? 0} />
             {onReply && (
               <button
                 className={styles.actionButton}

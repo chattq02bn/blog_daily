@@ -15,7 +15,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const note = await postsApi.get(id);
-    return { title: `${note.title} | ${note.authorName} | note` };
+    const title = `${note.title} | ${note.authorName} | note`;
+    const description = note.excerpt ?? note.title;
+
+    if (!note.cover) {
+      return { title, description };
+    }
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title: note.title,
+        description,
+        images: [{ url: note.cover, width: 1200, height: 630 }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: note.title,
+        description,
+        images: [note.cover],
+      },
+    };
   } catch {
     return { title: "Không tìm thấy bài viết | note" };
   }

@@ -259,6 +259,12 @@ export const commentsApi = {
       })
     );
   },
+  async toggleLike(id: string): Promise<LikeState> {
+    return unwrap(await api.post<Envelope<LikeState>>(`/comments/${id}/like`));
+  },
+  async getLikeState(id: string): Promise<LikeState> {
+    return unwrap(await api.get<Envelope<LikeState>>(`/comments/${id}/like`));
+  },
   async generateName(postId: string): Promise<string> {
     const res = await api.get<Envelope<{ name: string }>>("/comments/generate-name", {
       params: { postId },

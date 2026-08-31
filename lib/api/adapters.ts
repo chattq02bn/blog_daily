@@ -1,9 +1,6 @@
 import type { ApiComment, ApiPost, ApiSection } from "@/lib/api";
-import { hasAnonLike } from "@/lib/commentStorage";
 import type { Note, TopicSection } from "@/lib/view-models";
-import type { Comment, CommentEmoji } from "@/lib/commentStorage";
-
-const EMOJIS: CommentEmoji[] = ["👍", "❤️", "😂", "😮", "😢", "😡", "👏", "🙏"];
+import type { Comment } from "@/lib/commentStorage";
 
 /** Chuyển bodyBlocks (JSON từ BE) thành các đoạn văn thuần để xem trước */
 function blocksToParagraphs(blocks: unknown[]): string[] {
@@ -60,37 +57,7 @@ export function sectionToTopicSection(
   };
 }
 
-const EMPTY_EMOJIS = Object.fromEntries(
-  EMOJIS.map((emoji) => [emoji, 0])
-) as Record<CommentEmoji, number>;
-
-const EMPTY_REACTIONS = Object.fromEntries(
-  EMOJIS.map((emoji) => [emoji, false])
-) as Record<CommentEmoji, boolean>;
-
 export function apiCommentToComment(apiComment: ApiComment): Comment {
-  const emojis: Record<CommentEmoji, number> = { ...EMPTY_EMOJIS };
-  for (const reaction of apiComment.reactions) {
-    if ((EMOJIS as string[]).includes(reaction.emoji)) {
-      emojis[reaction.emoji as CommentEmoji] = reaction.count;
-    }
-  }
-
-  const userReactions: Record<CommentEmoji, boolean> = { ...EMPTY_REACTIONS };
-  for (const emoji of apiComment.myReactions) {
-    if ((EMOJIS as string[]).includes(emoji)) {
-      userReactions[emoji as CommentEmoji] = true;
-    }
-  }
-  const isLoggedIn = typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"));
-  if (!isLoggedIn) {
-    for (const emoji of EMOJIS) {
-      if (hasAnonLike(apiComment.id, emoji)) {
-        userReactions[emoji] = true;
-      }
-    }
-  }
-
   return {
     id: apiComment.id,
     noteId: apiComment.noteId,
@@ -101,8 +68,7 @@ export function apiCommentToComment(apiComment: ApiComment): Comment {
     isAuthor: apiComment.isAuthor ?? false,
     parentAuthor: apiComment.parentAuthor,
     content: apiComment.content,
-    emojis,
-    userReactions,
+    likes: apiComment.likes ?? 0,
     createdAt: apiComment.createdAt,
     updatedAt: apiComment.updatedAt,
     isEdited: apiComment.isEdited,

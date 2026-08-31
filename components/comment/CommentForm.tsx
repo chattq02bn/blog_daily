@@ -14,7 +14,7 @@ import {
 } from "@/lib/commenter";
 import { hasAuth, getStoredUser } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-api";
-import { useCreateComment, usePrefetchGenerateName } from "@/hooks/use-api";
+import { useCreateComment, useGenerateName } from "@/hooks/use-api";
 import { apiCommentToComment } from "@/lib/api/adapters";
 import { commentsApi } from "@/lib/api";
 import styles from "./CommentForm.module.scss";
@@ -54,12 +54,13 @@ export default function CommentForm({
   const [nameDraft, setNameDraft] = useState("");
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const createComment = useCreateComment(noteId);
-  const prefetchName = usePrefetchGenerateName();
-  const { message } = App.useApp();
 
   const isLoggedIn = hasAuth();
   const storedUser = getStoredUser();
+
+  const createComment = useCreateComment(noteId);
+  const { data: generatedName } = useGenerateName(isLoggedIn || hasCommenter() ? null : noteId);
+  const { message } = App.useApp();
   const { data: profile } = useProfile();
   const userAvatar = profile?.avatar || "";
   const isPostAuthor = isLoggedIn && storedUser?.id != null && authorId != null && Number(storedUser.id) === authorId;
@@ -90,16 +91,10 @@ export default function CommentForm({
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn || hasCommenter()) return;
-    prefetchName(noteId);
-  }, [isLoggedIn, noteId, prefetchName]);
-
-  useEffect(() => {
-    if (isLoggedIn || hasCommenter()) return;
-    commentsApi.generateName(noteId).then((name) => {
-      setCommenterNickname(name);
-    }).catch(() => {});
-  }, [isLoggedIn, noteId]);
+    if (generatedName) {
+      setCommenterNickname(generatedName);
+    }
+  }, [generatedName]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();

@@ -111,10 +111,9 @@ export interface ApiComment {
   parentAuthor?: string;
   content: string;
   isEdited: boolean;
+  likes: number;
   createdAt: string;
   updatedAt: string;
-  reactions: { emoji: string; count: number }[];
-  myReactions: string[];
   /** Số reply trực tiếp — dùng để hiện nút "Xem phản hồi" và load phân trang */
   repliesCount: number;
 }

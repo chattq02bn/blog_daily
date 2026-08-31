@@ -5,7 +5,9 @@ import ThemeProvider from "@/components/theme/ThemeProvider";
 import QueryProvider from "@/components/providers/QueryProvider";
 import JotaiProvider from "@/components/providers/JotaiProvider";
 import LikesProvider from "@/components/likes/LikesProvider";
+import CommentLikesProvider from "@/components/likes/CommentLikesProvider";
 import { getInitialLikedIds } from "@/lib/post-likes.server";
+import { getInitialLikedCommentIds } from "@/lib/comment-likes.server";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
@@ -26,6 +28,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const initialLikedIds = await getInitialLikedIds();
+  const initialLikedCommentIds = await getInitialLikedCommentIds();
 
   return (
     <html lang="vi" suppressHydrationWarning>
@@ -45,7 +48,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <QueryProvider>
               <JotaiProvider>
                 <LikesProvider initialLikedIds={initialLikedIds}>
-                  <ThemeProvider>{children}</ThemeProvider>
+                  <CommentLikesProvider initialLikedCommentIds={initialLikedCommentIds}>
+                    <ThemeProvider>{children}</ThemeProvider>
+                  </CommentLikesProvider>
                 </LikesProvider>
               </JotaiProvider>
             </QueryProvider>

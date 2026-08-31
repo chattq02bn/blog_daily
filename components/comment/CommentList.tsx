@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { App } from "antd";
 import { apiCommentToComment } from "@/lib/api/adapters";
 import {
   useCommentsInfinite,
   useCreateComment,
   useDeleteComment,
-  usePrefetchGenerateName,
   useRepliesInfinite,
-  useToggleCommentReaction,
   useUpdateComment,
 } from "@/hooks/use-api";
 import { hasAuth } from "@/lib/auth";
@@ -52,7 +50,6 @@ interface ThreadHandlers {
   onReply: (commentId: string, authorName: string, commenterId: number, rootCommentId: string) => void;
   onDelete: (comment: Flat) => Promise<void>;
   onSaveEdit: (comment: Flat, content: string) => Promise<void>;
-  onToggleLike: (comment: Flat) => void;
 }
 
 /* Reply của một bình luận — lazy load theo trang, chỉ 2 cấp (cha → con) */
@@ -91,7 +88,6 @@ function RepliesSection({
               onReply={() => handlers.onReply(reply.id, reply.author, reply.commenterId, parent.id)}
               onDelete={() => handlers.onDelete(reply)}
               onSaveEdit={(content) => handlers.onSaveEdit(reply, content)}
-              onToggleLike={() => handlers.onToggleLike(reply)}
               isLast={false}
             />
           </div>
@@ -116,7 +112,6 @@ function RepliesSection({
             onReply={() => handlers.onReply(reply.id, reply.author, reply.commenterId, parent.id)}
             onDelete={() => handlers.onDelete(reply)}
             onSaveEdit={(content) => handlers.onSaveEdit(reply, content)}
-            onToggleLike={() => handlers.onToggleLike(reply)}
             isLast={
               index === replies.length - 1 &&
               (reply.repliesCount ?? 0) === 0 &&
@@ -168,13 +163,6 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
   const { message } = App.useApp();
 
   const isLoggedIn = hasAuth();
-  const prefetchName = usePrefetchGenerateName();
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      prefetchName(noteId);
-    }
-  }, [isLoggedIn, noteId, prefetchName]);
 
   const query = useCommentsInfinite(noteId);
   const parents = useMemo(
@@ -189,7 +177,6 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
   const createMutation = useCreateComment(noteId);
   const updateMutation = useUpdateComment();
   const deleteMutation = useDeleteComment();
-  const reactionMutation = useToggleCommentReaction();
 
   const handleReply = (commentId: string, authorName: string, commenterId: number, rootCommentId: string) => {
     setReplyingTo({ targetId: commentId, parentAuthor: authorName, parentCommenterId: commenterId, rootCommentId });
@@ -212,10 +199,6 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
       body: { content },
     });
     message.success("Đã cập nhật bình luận");
-  };
-
-  const handleToggleLike = (comment: Flat) => {
-    reactionMutation.mutate({ id: comment.id, emoji: "❤️" });
   };
 
   const handleReplySubmitted = (rootCommentId: string, optimisticReply: Flat) => {
@@ -267,7 +250,6 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
               onReply: handleReply,
               onDelete: handleDelete,
               onSaveEdit: handleEditSave,
-              onToggleLike: handleToggleLike,
             };
 
             return (
@@ -277,7 +259,6 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
                   onReply={() => handleReply(parent.id, parent.author, parent.commenterId, parent.id)}
                   onDelete={() => void handleDelete(parent)}
                   onSaveEdit={(content) => void handleEditSave(parent, content)}
-                  onToggleLike={() => handleToggleLike(parent)}
                 />
 
                 {replyingTo?.targetId === parent.id && (
