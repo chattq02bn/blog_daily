@@ -59,7 +59,9 @@ export default function CommentForm({
   const storedUser = getStoredUser();
 
   const createComment = useCreateComment(noteId);
-  const { data: generatedName } = useGenerateName(isLoggedIn || hasCommenter() ? null : noteId);
+  const { data: generatedName } = useGenerateName(
+    isLoggedIn || hasCommenter() || getCommenterNickname() ? null : noteId
+  );
   const { message } = App.useApp();
   const { data: profile } = useProfile();
   const userAvatar = profile?.avatar || "";
