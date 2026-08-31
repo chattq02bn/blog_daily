@@ -16,6 +16,7 @@ import { hasAuth, getStoredUser } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-api";
 import { useCreateComment } from "@/hooks/use-api";
 import { apiCommentToComment } from "@/lib/api/adapters";
+import { commentsApi } from "@/lib/api";
 import styles from "./CommentForm.module.scss";
 
 type Flat = ReturnType<typeof apiCommentToComment>;
@@ -86,6 +87,13 @@ export default function CommentForm({
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn || hasCommenter()) return;
+    commentsApi.generateName(noteId).then((name) => {
+      setCommenterNickname(name);
+    }).catch(() => {});
+  }, [isLoggedIn, noteId]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();

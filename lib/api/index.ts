@@ -259,6 +259,12 @@ export const commentsApi = {
       })
     );
   },
+  async generateName(postId: string): Promise<string> {
+    const res = await api.get<Envelope<{ name: string }>>("/comments/generate-name", {
+      params: { postId },
+    });
+    return res.data.data.name;
+  },
 };
 
 /* ===== Users & profile (admin) ===== */
