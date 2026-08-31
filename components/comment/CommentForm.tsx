@@ -171,10 +171,22 @@ export default function CommentForm({
   };
 
   const saveName = async () => {
-    setEditingName(false);
     const trimmed = nameDraft.trim();
-    if (!trimmed || trimmed === commenterName) return;
-    setCommenterNickname(trimmed);
+    if (!trimmed || trimmed === commenterName) {
+      setEditingName(false);
+      return;
+    }
+    try {
+      const used = await commentsApi.checkName(noteId, trimmed);
+      if (used) {
+        message.warning("Tên này đã được sử dụng trong bài viết");
+        return;
+      }
+      setCommenterNickname(trimmed);
+      setEditingName(false);
+    } catch {
+      message.error("Không kiểm tra được tên");
+    }
   };
 
   const handleCancel = () => {
@@ -200,36 +212,38 @@ export default function CommentForm({
           </button>
         </div>
       )}
-      <div className={styles.nameRow}>
-        <span className={styles.nameLabel}>Bình luận với tên:</span>
-        {isLoggedIn ? (
-          <span className={styles.nameButton}>
-            {commenterName}{isPostAuthor && " (tác giả)"}
-          </span>
-        ) : editingName ? (
-          <input
-            className={styles.nameInput}
-            value={nameDraft}
-            maxLength={40}
-            autoFocus
-            onChange={(e) => setNameDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void saveName();
-              if (e.key === "Escape") setEditingName(false);
-            }}
-            onBlur={() => void saveName()}
-          />
-        ) : (
-          <button
-            type="button"
-            className={styles.nameButton}
-            onClick={startEditName}
-            title="Bấm để đổi tên"
-          >
-            {commenterName} <EditOutlined />
-          </button>
-        )}
-      </div>
+      {!parentId && (
+        <div className={styles.nameRow}>
+          <span className={styles.nameLabel}>Bình luận với tên:</span>
+          {isLoggedIn ? (
+            <span className={styles.nameButton}>
+              {commenterName}{isPostAuthor && " (tác giả)"}
+            </span>
+          ) : editingName ? (
+            <input
+              className={styles.nameInput}
+              value={nameDraft}
+              maxLength={40}
+              autoFocus
+              onChange={(e) => setNameDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void saveName();
+                if (e.key === "Escape") setEditingName(false);
+              }}
+              onBlur={() => void saveName()}
+            />
+          ) : (
+            <button
+              type="button"
+              className={styles.nameButton}
+              onClick={startEditName}
+              title="Bấm để đổi tên"
+            >
+              {commenterName} <EditOutlined />
+            </button>
+          )}
+        </div>
+      )}
       <div className={styles.inputRow}>
         {(isLoggedIn && userAvatar) ? (
           <Image
