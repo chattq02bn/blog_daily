@@ -19,7 +19,7 @@ export default function TopicSectionList({
   childrenSlugs?: string[];
 }) {
   const router = useRouter();
-  const { sections, topic, topicPosts, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
+  const { sections, topic, topicPosts, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage, data } =
     useSectionsInfinite(slug, 5);
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
@@ -52,7 +52,7 @@ export default function TopicSectionList({
 
   const totalNotes = sections.length > 0
     ? sections.reduce((sum, section) => sum + section.posts.length, 0)
-    : (topicPosts?.length ?? 0);
+    : (data?.pages[0]?.meta?.total ?? topicPosts?.length ?? 0);
 
   return (
     <>
@@ -110,7 +110,7 @@ export default function TopicSectionList({
         <div className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Spin size="small" />
-            <span>Đang tải thêm chủ đề...</span>
+            <span>{sections.length > 0 ? "Đang tải thêm chủ đề..." : "Đang tải thêm bài viết..."}</span>
           </div>
         </div>
       )}
