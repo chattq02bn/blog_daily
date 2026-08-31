@@ -5,6 +5,7 @@ import { Spin } from "antd";
 import { useSectionsInfinite } from "@/hooks/use-api";
 import { useInView } from "@/hooks/use-in-view";
 import TopicSectionView from "@/components/topic/TopicSectionView";
+import TopicCard from "@/components/topic/TopicCard";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "./topic.module.scss";
 import TopicHeader from "@/components/topic/TopicHeader";
@@ -18,7 +19,7 @@ export default function TopicSectionList({
   childrenSlugs?: string[];
 }) {
   const router = useRouter();
-  const { sections, topic, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
+  const { sections, topic, topicPosts, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSectionsInfinite(slug, 5);
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
@@ -43,13 +44,15 @@ export default function TopicSectionList({
     );
   }
 
-  if (isError || sections.length === 0) {
+  if (isError) {
     return (
       <p className={styles.count}>Không tải được nội dung chủ đề này.</p>
     );
   }
 
-  const totalNotes = sections.reduce((sum, section) => sum + section.posts.length, 0);
+  const totalNotes = sections.length > 0
+    ? sections.reduce((sum, section) => sum + section.posts.length, 0)
+    : (topicPosts?.length ?? 0);
 
   return (
     <>
@@ -76,21 +79,31 @@ export default function TopicSectionList({
         </button>
       </div>
 
-      {sections.map((section, index) => {
-        const detailHref = `/topic/${slug}/${section.id}`;
+      {sections.length > 0 ? (
+        sections.map((section, index) => {
+          const detailHref = `/topic/${slug}/${section.id}`;
 
-        return (
-          <section key={section.id} className={styles.section}>
-            <TopicSectionView
-              title={section.title}
-              description={section.description ?? undefined}
-              href={detailHref}
-              notes={section.posts.slice(0, MAX_NOTES).map(postToNote)}
-              featured={index === 0}
-            />
-          </section>
-        );
-      })}
+          return (
+            <section key={section.id} className={styles.section}>
+              <TopicSectionView
+                title={section.title}
+                description={section.description ?? undefined}
+                href={detailHref}
+                notes={section.posts.slice(0, MAX_NOTES).map(postToNote)}
+                featured={index === 0}
+              />
+            </section>
+          );
+        })
+      ) : topicPosts && topicPosts.length > 0 ? (
+        <div className={styles.grid}>
+          {topicPosts.map((post) => (
+            <TopicCard key={post.id} note={postToNote(post)} />
+          ))}
+        </div>
+      ) : (
+        <p className={styles.count}>Chưa có bài viết nào.</p>
+      )}
 
       <div ref={sentinelRef} aria-hidden="true" />
       {isFetchingNextPage && (

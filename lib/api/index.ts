@@ -168,12 +168,12 @@ export const sectionsApi = {
   async byTopicPaginated(
     topicSlug: string,
     params: { page?: number; limit?: number } = {}
-  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo }> {
-    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo }>>(
+  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo; topicPosts?: ApiPost[] }> {
+    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo; topicPosts?: ApiPost[] }>>(
       `/topics/${topicSlug}/sections/paginated`,
       { params }
     );
-    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic };
+    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic, topicPosts: res.data.topicPosts };
   },
 };
 
