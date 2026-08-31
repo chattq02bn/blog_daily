@@ -200,6 +200,7 @@ export const tagsApi = {
 export interface CommentWriteBody {
   content: string;
   parentId?: string | null;
+  nickname?: string;
 }
 
 export interface ListCommentsParams {
@@ -239,8 +240,11 @@ export const commentsApi = {
     );
     return { data: res.data.data, meta: res.data.meta };
   },
-  async create(postIdOrSlug: string, body: CommentWriteBody): Promise<ApiComment> {
-    return unwrap(await api.post<Envelope<ApiComment>>(`/comments/post/${postIdOrSlug}`, body));
+  async create(postIdOrSlug: string, body: CommentWriteBody): Promise<ApiComment & { commenterToken?: string }> {
+    const res = await api.post<Envelope<ApiComment>>(`/comments/post/${postIdOrSlug}`, body);
+    const comment = res.data.data;
+    const commenterToken = (res.data as unknown as { commenterToken?: string })?.commenterToken;
+    return commenterToken ? { ...comment, commenterToken } : comment;
   },
   async update(id: string, body: CommentWriteBody): Promise<ApiComment> {
     return unwrap(await api.patch<Envelope<ApiComment>>(`/comments/${id}`, body));

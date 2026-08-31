@@ -23,6 +23,7 @@ export interface Comment {
   commenterId: number;
   author: string;
   authorAvatar: string;
+  isAuthor: boolean;
   parentAuthor?: string;
   content: string;
   emojis: Record<CommentEmoji, number>;
@@ -95,6 +96,7 @@ export function createComment(
     commenterId: 0,
     author,
     authorAvatar,
+    isAuthor: false,
     content,
     emojis: initialEmojis,
     userReactions: initialUserReactions,

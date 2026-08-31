@@ -33,6 +33,7 @@ import {
   type SocialPlatform,
 } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
+import { setCommenterToken, setCommenterId, setCommenterNickname } from "@/lib/commenter";
 
 /* ===== Query functions (dùng chung cho prefetch server + hooks client) ===== */
 
@@ -363,6 +364,13 @@ export function useCreateComment(postIdOrSlug: string) {
     mutationFn: ({ body, rootCommentId }: { body: CommentWriteBody; rootCommentId?: string }) =>
       commentsApi.create(postIdOrSlug, body),
     onSuccess: (newComment) => {
+      // Store commenter token if returned (anonymous user)
+      if ("commenterToken" in newComment && newComment.commenterToken) {
+        setCommenterToken(newComment.commenterToken);
+        setCommenterId(newComment.commenterId);
+        setCommenterNickname(newComment.author);
+      }
+
       if (newComment.parentId) {
         /* Reply — optimistic replies handled by component state (optimisticRepliesMap) */
       } else {

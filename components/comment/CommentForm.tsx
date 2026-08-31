@@ -12,8 +12,9 @@ import {
   setCommenterNickname,
   hasCommenter,
 } from "@/lib/commenter";
-import { commentersApi } from "@/lib/api";
-import { useCreateComment, useUpdateCommenterNickname } from "@/hooks/use-api";
+import { hasAuth, getStoredUser } from "@/lib/auth";
+import { useProfile } from "@/hooks/use-api";
+import { useCreateComment } from "@/hooks/use-api";
 import { apiCommentToComment } from "@/lib/api/adapters";
 import styles from "./CommentForm.module.scss";
 
@@ -50,14 +51,20 @@ export default function CommentForm({
   const [nameDraft, setNameDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createComment = useCreateComment(noteId);
-  const updateNickname = useUpdateCommenterNickname();
   const { message } = App.useApp();
 
-  const commenterName = getCommenterNickname() || "Người dùng";
+  const isLoggedIn = hasAuth();
+  const storedUser = getStoredUser();
+  const { data: profile } = useProfile();
+  const userAvatar = profile?.avatar || "";
+
+  const commenterName = isLoggedIn
+    ? (storedUser?.name || "Người dùng")
+    : (getCommenterNickname() || "Người dùng");
+
   const commenterId = typeof window !== "undefined"
     ? Number(localStorage.getItem("note_commenter_id") || "0")
     : 0;
-  const avatarUrl = "";
 
   useEffect(() => {
     if (parentId && textareaRef.current) {
@@ -81,32 +88,51 @@ export default function CommentForm({
     const trimmed = content.trim();
     if (!trimmed || submitting) return;
 
-    // Auto-create commenter if not exists
-    if (!hasCommenter()) {
+    if (isLoggedIn) {
+      // Logged-in user: send auth token (no commenter creation needed)
       try {
-        const result = await commentersApi.create(commenterName);
-        setCommenterToken(result.token);
-        setCommenterId(result.commenter.id);
-        setCommenterNickname(result.commenter.nickname);
-      } catch {
-        message.error("Không tạo được tài khoản bình luận");
-        return;
+        const newComment = await createComment.mutateAsync({
+          body: { content: trimmed, parentId },
+          rootCommentId,
+        });
+
+        setContent("");
+        setIsFocused(false);
+        setShowEmoji(false);
+        onSubmit(apiCommentToComment(newComment));
+        if (onCancel) onCancel();
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
       }
-    }
+    } else {
+      // Anonymous: create commenter if needed, then comment
+      if (!hasCommenter()) {
+        try {
+          const { commentersApi } = await import("@/lib/api");
+          const result = await commentersApi.create(commenterName);
+          setCommenterToken(result.token);
+          setCommenterId(result.commenter.id);
+          setCommenterNickname(result.commenter.nickname);
+        } catch {
+          message.error("Không tạo được tài khoản bình luận");
+          return;
+        }
+      }
 
-    try {
-      const newComment = await createComment.mutateAsync({
-        body: { content: trimmed, parentId },
-        rootCommentId,
-      });
+      try {
+        const newComment = await createComment.mutateAsync({
+          body: { content: trimmed, parentId, nickname: commenterName },
+          rootCommentId,
+        });
 
-      setContent("");
-      setIsFocused(false);
-      setShowEmoji(false);
-      onSubmit(apiCommentToComment(newComment));
-      if (onCancel) onCancel();
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
+        setContent("");
+        setIsFocused(false);
+        setShowEmoji(false);
+        onSubmit(apiCommentToComment(newComment));
+        if (onCancel) onCancel();
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
+      }
     }
   };
 
@@ -131,16 +157,7 @@ export default function CommentForm({
     setEditingName(false);
     const trimmed = nameDraft.trim();
     if (!trimmed || trimmed === commenterName) return;
-    if (hasCommenter()) {
-      try {
-        await updateNickname.mutateAsync(trimmed);
-        message.success("Đã cập nhật tên hiển thị");
-      } catch {
-        message.error("Không đổi được tên");
-      }
-    } else {
-      setCommenterNickname(trimmed);
-    }
+    setCommenterNickname(trimmed);
   };
 
   const handleCancel = () => {
@@ -169,7 +186,11 @@ export default function CommentForm({
       {!parentId && (
         <div className={styles.nameRow}>
           <span className={styles.nameLabel}>Bình luận với tên:</span>
-          {editingName ? (
+          {isLoggedIn ? (
+            <span className={styles.nameButton}>
+              {commenterName} (tác giả)
+            </span>
+          ) : editingName ? (
             <input
               className={styles.nameInput}
               value={nameDraft}
@@ -195,9 +216,9 @@ export default function CommentForm({
         </div>
       )}
       <div className={styles.inputRow}>
-        {avatarUrl ? (
+        {(isLoggedIn && userAvatar) ? (
           <Image
-            src={avatarUrl}
+            src={userAvatar}
             alt={commenterName}
             width={32}
             height={32}

@@ -36,9 +36,15 @@ api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
       if (needsCommenterToken(config)) {
-        const commenterToken = getCommenterToken();
-        if (commenterToken) {
-          config.headers.Authorization = `Bearer ${commenterToken}`;
+        // If logged in, send auth token; otherwise send commenter token
+        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+        } else {
+          const commenterToken = getCommenterToken();
+          if (commenterToken) {
+            config.headers.Authorization = `Bearer ${commenterToken}`;
+          }
         }
       } else {
         const token = localStorage.getItem(ACCESS_TOKEN_KEY);

@@ -97,7 +97,10 @@ export default function Comment({
         )}
         <div className={styles.commentBody}>
           <div className={styles.commentHeader}>
-            <span className={styles.authorName}>{comment.author}</span>
+            <span className={styles.authorName}>
+              {comment.author}
+              {comment.isAuthor && <span className={styles.authorBadge}> (tác giả)</span>}
+            </span>
             {comment.parentAuthor && comment.parentAuthor !== comment.author && (
               <span className={styles.replyTo}>
                 <span className={styles.replyArrow}>→</span> {comment.parentAuthor}

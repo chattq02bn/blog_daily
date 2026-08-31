@@ -106,6 +106,8 @@ export interface ApiComment {
   parentId: string | null;
   commenterId: number;
   author: string;
+  authorAvatar: string | null;
+  isAuthor: boolean;
   parentAuthor?: string;
   content: string;
   isEdited: boolean;
