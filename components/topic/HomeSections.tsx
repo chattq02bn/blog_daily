@@ -31,7 +31,7 @@ function SidebarTopicSection({
   return (
     /* content-visibility + animation giúp cuộn mượt và topic mới hiện ra nhẹ nhàng */
     <section className={`${styles.section} ${index > 0 ? styles.sectionEnter : ""}`}>
-      <div className="px-5">
+      <div className="px-4 lg:px-5">
         {isPending ? (
           <>
             <div className="mb-4 h-8 w-56 animate-pulse rounded-lg bg-surface-quaternary" />

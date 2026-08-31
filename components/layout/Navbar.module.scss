@@ -12,10 +12,11 @@
   align-items: center;
   gap: 16px;
   height: 48px;
-  padding: 0 16px;
+  padding: 0 10px;
 
   @media (min-width: 769px) {
     height: 64px;
+    padding: 0 16px;
   }
 }
 
