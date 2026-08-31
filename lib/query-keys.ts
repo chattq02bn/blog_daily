@@ -19,6 +19,7 @@ export const qk = {
     ["comments", "infinite", noteId, limit] as const,
   repliesInfinite: (commentId: string, limit = 5) =>
     ["comments", "replies", commentId, limit] as const,
+  generateName: (postId: string) => ["comments", "generate-name", postId] as const,
   users: (params: { page?: number; limit?: number; q?: string; role?: "USER" | "ADMIN" }) =>
     ["users", params ?? {}] as const,
   profile: () => ["profile"] as const,

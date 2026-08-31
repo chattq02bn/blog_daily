@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -426,6 +427,28 @@ export function useDeleteComment() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["comments"] });
     },
+  });
+}
+
+export function usePrefetchGenerateName() {
+  const qc = useQueryClient();
+  return useCallback(
+    (postId: string) => {
+      void qc.prefetchQuery({
+        queryKey: qk.generateName(postId),
+        queryFn: () => commentsApi.generateName(postId),
+        staleTime: 60_000,
+      });
+    },
+    [qc]
+  );
+}
+
+export function useGenerateName(postId: string) {
+  return useQuery({
+    queryKey: qk.generateName(postId),
+    queryFn: () => commentsApi.generateName(postId),
+    staleTime: 60_000,
   });
 }
 
