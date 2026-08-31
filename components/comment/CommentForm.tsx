@@ -26,6 +26,7 @@ interface CommentFormProps {
   rootCommentId?: string;
   parentAuthor?: string;
   parentCommenterId?: number;
+  authorId?: number;
   onSubmit: (optimisticReply: Flat) => void;
   onCancel?: () => void;
   compact?: boolean;
@@ -38,6 +39,7 @@ export default function CommentForm({
   rootCommentId,
   parentAuthor,
   parentCommenterId,
+  authorId,
   onSubmit,
   onCancel,
   compact = false,
@@ -49,6 +51,7 @@ export default function CommentForm({
   const [isDesktop, setIsDesktop] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createComment = useCreateComment(noteId);
   const { message } = App.useApp();
@@ -57,6 +60,7 @@ export default function CommentForm({
   const storedUser = getStoredUser();
   const { data: profile } = useProfile();
   const userAvatar = profile?.avatar || "";
+  const isPostAuthor = isLoggedIn && storedUser?.id != null && authorId != null && Number(storedUser.id) === authorId;
 
   const commenterName = isLoggedIn
     ? (storedUser?.name || "Người dùng")
@@ -86,11 +90,12 @@ export default function CommentForm({
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const trimmed = content.trim();
-    if (!trimmed || submitting) return;
+    if (!trimmed || submitting || sending) return;
 
-    if (isLoggedIn) {
-      // Logged-in user: send auth token (no commenter creation needed)
-      try {
+    setSending(true);
+    try {
+      if (isLoggedIn) {
+        // Logged-in user: send auth token (no commenter creation needed)
         const newComment = await createComment.mutateAsync({
           body: { content: trimmed, parentId },
           rootCommentId,
@@ -101,25 +106,21 @@ export default function CommentForm({
         setShowEmoji(false);
         onSubmit(apiCommentToComment(newComment));
         if (onCancel) onCancel();
-      } catch (error) {
-        message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
-      }
-    } else {
-      // Anonymous: create commenter if needed, then comment
-      if (!hasCommenter()) {
-        try {
-          const { commentersApi } = await import("@/lib/api");
-          const result = await commentersApi.create(commenterName);
-          setCommenterToken(result.token);
-          setCommenterId(result.commenter.id);
-          setCommenterNickname(result.commenter.nickname);
-        } catch {
-          message.error("Không tạo được tài khoản bình luận");
-          return;
+      } else {
+        // Anonymous: create commenter if needed, then comment
+        if (!hasCommenter()) {
+          try {
+            const { commentersApi } = await import("@/lib/api");
+            const result = await commentersApi.create(commenterName);
+            setCommenterToken(result.token);
+            setCommenterId(result.commenter.id);
+            setCommenterNickname(result.commenter.nickname);
+          } catch {
+            message.error("Không tạo được tài khoản bình luận");
+            return;
+          }
         }
-      }
 
-      try {
         const newComment = await createComment.mutateAsync({
           body: { content: trimmed, parentId, nickname: commenterName },
           rootCommentId,
@@ -130,9 +131,11 @@ export default function CommentForm({
         setShowEmoji(false);
         onSubmit(apiCommentToComment(newComment));
         if (onCancel) onCancel();
-      } catch (error) {
-        message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
       }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Đã có lỗi xảy ra");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -188,7 +191,7 @@ export default function CommentForm({
           <span className={styles.nameLabel}>Bình luận với tên:</span>
           {isLoggedIn ? (
             <span className={styles.nameButton}>
-              {commenterName} (tác giả)
+              {commenterName}{isPostAuthor && " (tác giả)"}
             </span>
           ) : editingName ? (
             <input
@@ -284,9 +287,9 @@ export default function CommentForm({
                 <button
                   type="submit"
                   className={styles.submitButton}
-                  disabled={!content.trim() || submitting}
+                  disabled={!content.trim() || submitting || sending}
                 >
-                  <SendOutlined />
+                  {sending ? <span className={styles.spinner} /> : <SendOutlined />}
                 </button>
               </div>
             </form>

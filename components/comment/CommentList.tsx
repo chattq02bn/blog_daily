@@ -17,6 +17,7 @@ import styles from "./CommentList.module.scss";
 
 interface CommentListProps {
   noteId: string;
+  authorId?: number;
 }
 
 type Flat = ReturnType<typeof apiCommentToComment>;
@@ -41,6 +42,7 @@ interface ReplyingTo {
 
 interface ThreadHandlers {
   noteId: string;
+  authorId?: number;
   replyingTo: ReplyingTo | null;
   submitting: boolean;
   onReplySubmitted: (optimisticReply: Flat) => void;
@@ -131,6 +133,7 @@ function RepliesSection({
                 onSubmit={(optimisticReply) => handlers.onReplySubmitted(optimisticReply)}
                 onCancel={handlers.onCancelReply}
                 submitting={handlers.submitting}
+                authorId={handlers.authorId}
                 compact
               />
             </div>
@@ -157,7 +160,7 @@ function RepliesSection({
   );
 }
 
-export default function CommentList({ noteId }: CommentListProps) {
+export default function CommentList({ noteId, authorId }: CommentListProps) {
   const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const [optimisticRepliesMap, setOptimisticRepliesMap] = useState<Record<string, Flat[]>>({});
   const { message } = App.useApp();
@@ -233,6 +236,7 @@ export default function CommentList({ noteId }: CommentListProps) {
         parentId={null}
         onSubmit={() => setReplyingTo(null)}
         submitting={createMutation.isPending}
+        authorId={authorId}
       />
 
       <div className={styles.comments}>
@@ -244,6 +248,7 @@ export default function CommentList({ noteId }: CommentListProps) {
           parents.map((parent) => {
             const handlers: ThreadHandlers = {
               noteId,
+              authorId,
               replyingTo,
               submitting: createMutation.isPending,
               onReplySubmitted: (optimisticReply) => handleReplySubmitted(parent.id, optimisticReply),
@@ -275,6 +280,7 @@ export default function CommentList({ noteId }: CommentListProps) {
                       onSubmit={(optimisticReply) => handleReplySubmitted(parent.id, optimisticReply)}
                       onCancel={handleCancelReply}
                       submitting={createMutation.isPending}
+                      authorId={authorId}
                       compact
                     />
                   </div>

@@ -134,7 +134,7 @@ export default function NoteView({ id }: { id: string }) {
             </div>
 
             <div className={styles.commentSection}>
-              <ClientCommentList noteId={note.id} />
+              <ClientCommentList noteId={note.id} authorId={post.author?.id} />
             </div>
 
             {relatedNotes.length > 0 && (

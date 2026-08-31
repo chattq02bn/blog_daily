@@ -25,8 +25,8 @@ export function ClientNoteBody({
   return <PreviewEditor blocks={blocks} />;
 }
 
-export function ClientCommentList({ noteId }: { noteId: string }) {
-  return <CommentList noteId={noteId} />;
+export function ClientCommentList({ noteId, authorId }: { noteId: string; authorId?: number }) {
+  return <CommentList noteId={noteId} authorId={authorId} />;
 }
 
 export function ClientTopicCard({

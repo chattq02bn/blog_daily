@@ -44,15 +44,12 @@ import { sidebarApi } from "@/lib/api";
 import type { ApiTopic } from "@/lib/api";
 import styles from "./topic.module.scss";
 
-const PAGE_SIZE = 20;
-
 function TopicCreatePage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [keyword, setKeyword] = useState("");
-  const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ApiTopic | null>(null);
 
@@ -63,8 +60,8 @@ function TopicCreatePage() {
   const itemName = searchParams.get("name") ?? "";
 
   const topicsQuery = useTopics({
-    page,
-    limit: PAGE_SIZE,
+    page: 1,
+    limit: 9999,
     q: keyword || undefined,
   });
 
@@ -74,12 +71,32 @@ function TopicCreatePage() {
   const updateMutation = useUpdateTopic();
   const deleteMutation = useDeleteTopic();
 
-  const topics: ApiTopic[] = topicsQuery.data?.data ?? [];
-  const meta = topicsQuery.data?.meta;
+  const allTopics: ApiTopic[] = topicsQuery.data?.data ?? [];
+
+  const sidebarItem = useMemo(() => {
+    const items = sidebarQuery.data ?? [];
+    function findRecursive(list: typeof items): typeof items[0] | undefined {
+      for (const item of list) {
+        if (item.id === params.id) return item;
+        if (item.children?.length) {
+          const found = findRecursive(item.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    }
+    return findRecursive(items);
+  }, [sidebarQuery.data, params.id]);
+
+  const topics: ApiTopic[] = useMemo(() => {
+    const linkedIds = new Set(sidebarItem?.topicIds ?? []);
+    return allTopics.filter((t) => linkedIds.has(t.id));
+  }, [allTopics, sidebarItem]);
+
+  const meta = { total: topics.length, page: 1, limit: topics.length, totalPages: 1 };
 
   const handleSearch = useCallback((value: string) => {
     setKeyword(value);
-    setPage(1);
   }, []);
 
   const openCreate = useCallback(() => {
@@ -274,13 +291,7 @@ function TopicCreatePage() {
           columns={columns}
           dataSource={topics}
           loading={topicsQuery.isLoading || topicsQuery.isFetching}
-          pagination={{
-            current: page,
-            pageSize: PAGE_SIZE,
-            total: meta?.total ?? 0,
-            showSizeChanger: false,
-            onChange: (p) => setPage(p),
-          }}
+          pagination={false}
         />
       </div>
 

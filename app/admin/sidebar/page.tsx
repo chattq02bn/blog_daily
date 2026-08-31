@@ -376,7 +376,7 @@ export default function AdminSidebarPage() {
       typeof setTimeout
     > | null>(null);
 
-  const hydratedSaveRef =
+  const hasUserEdited =
     useRef(false);
 
   const skipSaveRef =
@@ -387,11 +387,7 @@ export default function AdminSidebarPage() {
       return;
     }
 
-    /*
-     * Bỏ qua lần hydrate đầu tiên.
-     */
-    if (!hydratedSaveRef.current) {
-      hydratedSaveRef.current = true;
+    if (!hasUserEdited.current) {
       return;
     }
 
@@ -856,6 +852,7 @@ export default function AdminSidebarPage() {
           draggedId &&
           draggedId !== record.id
         ) {
+          hasUserEdited.current = true;
           setItems((prev) =>
             reorderTree(
               sortTree(prev),
@@ -950,6 +947,8 @@ export default function AdminSidebarPage() {
             replaceInTree(items)
           );
 
+          hasUserEdited.current = true;
+
           message.success(
             "Đã cập nhật mục sidebar"
           );
@@ -1039,6 +1038,7 @@ export default function AdminSidebarPage() {
 
   const handleDelete = useCallback(
     (item: SidebarItem) => {
+      hasUserEdited.current = true;
       setItems((prev) =>
         removeItem(prev, item.id)
       );
