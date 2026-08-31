@@ -14,7 +14,7 @@ import {
 } from "@/lib/commenter";
 import { hasAuth, getStoredUser } from "@/lib/auth";
 import { useProfile } from "@/hooks/use-api";
-import { useCreateComment } from "@/hooks/use-api";
+import { useCreateComment, usePrefetchGenerateName } from "@/hooks/use-api";
 import { apiCommentToComment } from "@/lib/api/adapters";
 import { commentsApi } from "@/lib/api";
 import styles from "./CommentForm.module.scss";
@@ -55,6 +55,7 @@ export default function CommentForm({
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createComment = useCreateComment(noteId);
+  const prefetchName = usePrefetchGenerateName();
   const { message } = App.useApp();
 
   const isLoggedIn = hasAuth();
@@ -87,6 +88,11 @@ export default function CommentForm({
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn || hasCommenter()) return;
+    prefetchName(noteId);
+  }, [isLoggedIn, noteId, prefetchName]);
 
   useEffect(() => {
     if (isLoggedIn || hasCommenter()) return;
@@ -194,38 +200,36 @@ export default function CommentForm({
           </button>
         </div>
       )}
-      {!parentId && (
-        <div className={styles.nameRow}>
-          <span className={styles.nameLabel}>Bình luận với tên:</span>
-          {isLoggedIn ? (
-            <span className={styles.nameButton}>
-              {commenterName}{isPostAuthor && " (tác giả)"}
-            </span>
-          ) : editingName ? (
-            <input
-              className={styles.nameInput}
-              value={nameDraft}
-              maxLength={40}
-              autoFocus
-              onChange={(e) => setNameDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void saveName();
-                if (e.key === "Escape") setEditingName(false);
-              }}
-              onBlur={() => void saveName()}
-            />
-          ) : (
-            <button
-              type="button"
-              className={styles.nameButton}
-              onClick={startEditName}
-              title="Bấm để đổi tên"
-            >
-              {commenterName} <EditOutlined />
-            </button>
-          )}
-        </div>
-      )}
+      <div className={styles.nameRow}>
+        <span className={styles.nameLabel}>Bình luận với tên:</span>
+        {isLoggedIn ? (
+          <span className={styles.nameButton}>
+            {commenterName}{isPostAuthor && " (tác giả)"}
+          </span>
+        ) : editingName ? (
+          <input
+            className={styles.nameInput}
+            value={nameDraft}
+            maxLength={40}
+            autoFocus
+            onChange={(e) => setNameDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void saveName();
+              if (e.key === "Escape") setEditingName(false);
+            }}
+            onBlur={() => void saveName()}
+          />
+        ) : (
+          <button
+            type="button"
+            className={styles.nameButton}
+            onClick={startEditName}
+            title="Bấm để đổi tên"
+          >
+            {commenterName} <EditOutlined />
+          </button>
+        )}
+      </div>
       <div className={styles.inputRow}>
         {(isLoggedIn && userAvatar) ? (
           <Image

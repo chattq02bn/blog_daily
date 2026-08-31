@@ -1,16 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { App } from "antd";
 import { apiCommentToComment } from "@/lib/api/adapters";
 import {
   useCommentsInfinite,
   useCreateComment,
   useDeleteComment,
+  usePrefetchGenerateName,
   useRepliesInfinite,
   useToggleCommentReaction,
   useUpdateComment,
 } from "@/hooks/use-api";
+import { hasAuth } from "@/lib/auth";
 import Comment from "./Comment";
 import CommentForm from "./CommentForm";
 import styles from "./CommentList.module.scss";
@@ -164,6 +166,15 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
   const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const [optimisticRepliesMap, setOptimisticRepliesMap] = useState<Record<string, Flat[]>>({});
   const { message } = App.useApp();
+
+  const isLoggedIn = hasAuth();
+  const prefetchName = usePrefetchGenerateName();
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      prefetchName(noteId);
+    }
+  }, [isLoggedIn, noteId, prefetchName]);
 
   const query = useCommentsInfinite(noteId);
   const parents = useMemo(
