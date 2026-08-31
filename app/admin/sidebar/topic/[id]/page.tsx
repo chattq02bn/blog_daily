@@ -61,7 +61,7 @@ function TopicCreatePage() {
 
   const topicsQuery = useTopics({
     page: 1,
-    limit: 9999,
+    limit: 20,
     q: keyword || undefined,
   });
 
