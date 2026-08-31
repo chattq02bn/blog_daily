@@ -32,7 +32,7 @@ export default function AppLayoutShell({
         {!hideSidebar && <Sidebar />}
         <main
           id="main-content"
-          className="min-h-0 flex-1 overflow-x-clip overflow-y-auto"
+          className="min-h-0 flex-1 overflow-x-clip overflow-y-auto max-lg:pt-[56px]"
         >
           {children}
         </main>

@@ -133,6 +133,7 @@ export default function Navbar() {
               src={profile?.avatar || undefined}
               icon={<UserOutlined />}
               className={styles.avatar}
+              style={{ border: "2px solid #e5484d" }}
             />
           </Popover>
         </div>

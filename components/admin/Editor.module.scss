@@ -227,13 +227,15 @@
 
 /* Mobile: toolbar scrollable thay cho FAB + Drawer */
 .mobileToolbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 30;
   background: var(--color-surface-normal);
   border-bottom: 1px solid var(--color-border-default);
   padding: 10px 8px;
-  margin-top: 2px;
+  padding-top: max(10px, env(safe-area-inset-top));
 }
 
 .mobileToolbarScroll {
