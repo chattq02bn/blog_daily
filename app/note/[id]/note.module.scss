@@ -127,11 +127,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
 }
 
 .avatar {
+  border: 1px solid var(--color-border-default);
   border-radius: 50%;
   object-fit: cover;
+  width: 36px;
+  height: 36px;
 }
 
 .creatorInfoText {
@@ -143,6 +147,7 @@
 .creatorName {
   font-size: 14px;
   font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 .creatorDate {

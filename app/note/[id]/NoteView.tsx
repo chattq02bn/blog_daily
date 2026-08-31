@@ -128,11 +128,6 @@ export default function NoteView({ id }: { id: string }) {
                 </span>
               ))}
             </div>
-
-            <div className={styles.actionBar}>
-              <NoteActions postId={note.id} likes={note.likes} comments={note.comments} />
-            </div>
-
             <div className={styles.commentSection}>
               <ClientCommentList noteId={note.id} authorId={post.author?.id} />
             </div>
