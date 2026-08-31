@@ -243,3 +243,43 @@ export function getCurrentUser(): { id: number | null; name: string; avatar: str
 }
 
 export { EMOJIS };
+
+const ANON_LIKES_KEY = "note_anon_likes";
+
+export function getAnonLikes(): Record<string, string[]> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(ANON_LIKES_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function toggleAnonLike(commentId: string, emoji: string): boolean {
+  if (typeof window === "undefined") return false;
+  const likes = getAnonLikes();
+  const key = `${commentId}:${emoji}`;
+  const arr = likes[key] || [];
+  const idx = arr.indexOf(emoji);
+  let active: boolean;
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    active = false;
+  } else {
+    arr.push(emoji);
+    active = true;
+  }
+  if (arr.length > 0) {
+    likes[key] = arr;
+  } else {
+    delete likes[key];
+  }
+  localStorage.setItem(ANON_LIKES_KEY, JSON.stringify(likes));
+  return active;
+}
+
+export function hasAnonLike(commentId: string, emoji: string): boolean {
+  const likes = getAnonLikes();
+  const key = `${commentId}:${emoji}`;
+  return (likes[key]?.length ?? 0) > 0;
+}

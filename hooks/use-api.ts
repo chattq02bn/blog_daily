@@ -35,6 +35,7 @@ import {
 } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 import { setCommenterToken, setCommenterId, setCommenterNickname } from "@/lib/commenter";
+import { toggleAnonLike } from "@/lib/commentStorage";
 
 /* ===== Query functions (dùng chung cho prefetch server + hooks client) ===== */
 
@@ -457,8 +458,35 @@ export function useToggleCommentReaction() {
   return useMutation({
     mutationFn: ({ id, emoji }: { id: string; emoji: string }) =>
       commentsApi.toggleReaction(id, emoji),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["comments"] });
+    onSuccess: ({ active }, { id, emoji }) => {
+      const isLoggedIn = typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"));
+      if (!isLoggedIn) {
+        toggleAnonLike(id, emoji);
+      }
+      qc.setQueriesData(
+        { queryKey: ["comments"] },
+        (old: { pages: { data: ApiComment[] }[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((c) => {
+                if (c.id !== id) return c;
+                const myReactions = active
+                  ? [...new Set([...c.myReactions, emoji])]
+                  : c.myReactions.filter((e) => e !== emoji);
+                const found = c.reactions.find((r) => r.emoji === emoji);
+                const newCount = (found?.count ?? 0) + (active ? 1 : -1);
+                const reactions = newCount > 0
+                  ? c.reactions.map((r) => r.emoji === emoji ? { ...r, count: newCount } : r)
+                  : c.reactions.filter((r) => r.emoji !== emoji);
+                return { ...c, reactions, myReactions };
+              }),
+            })),
+          };
+        }
+      );
     },
   });
 }

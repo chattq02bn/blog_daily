@@ -1,4 +1,5 @@
 import type { ApiComment, ApiPost, ApiSection } from "@/lib/api";
+import { hasAnonLike } from "@/lib/commentStorage";
 import type { Note, TopicSection } from "@/lib/view-models";
 import type { Comment, CommentEmoji } from "@/lib/commentStorage";
 
@@ -79,6 +80,14 @@ export function apiCommentToComment(apiComment: ApiComment): Comment {
   for (const emoji of apiComment.myReactions) {
     if ((EMOJIS as string[]).includes(emoji)) {
       userReactions[emoji as CommentEmoji] = true;
+    }
+  }
+  const isLoggedIn = typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"));
+  if (!isLoggedIn) {
+    for (const emoji of EMOJIS) {
+      if (hasAnonLike(apiComment.id, emoji)) {
+        userReactions[emoji] = true;
+      }
     }
   }
 

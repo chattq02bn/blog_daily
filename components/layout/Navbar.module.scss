@@ -18,6 +18,10 @@
     height: 64px;
     padding: 0 16px;
   }
+
+  @media (max-width: 768px) {
+    grid-template-columns: auto 1fr;
+  }
 }
 
 .left {
