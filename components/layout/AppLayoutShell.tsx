@@ -8,31 +8,37 @@ import Sidebar from "./Sidebar";
 export default function AppLayoutShell({
   children,
   hideSidebar = false,
-  mobileToolbar,
+  actionBar,
 }: {
   children: ReactNode;
   hideSidebar?: boolean;
-  mobileToolbar?: ReactNode;
+  actionBar?: ReactNode;
 }) {
   const pathname = usePathname();
   const hideNavbar = pathname === "/admin/create";
 
   return (
     <div className="isolate flex h-dvh flex-col">
-      {/* Desktop: Navbar bình thường. Mobile: ẩn Navbar, dùng mobileToolbar từ Editor */}
       <div className={hideNavbar ? "hidden lg:block" : ""}>
         <Navbar />
       </div>
-      {mobileToolbar && (
-        <div className="lg:hidden">
-          {mobileToolbar}
+      {/* Mobile: actionBar at top on create page */}
+      {hideNavbar && actionBar && (
+        <div
+          className="lg:hidden shrink-0 border-t border-[var(--color-border-default)] bg-[var(--color-surface-normal)] px-3 flex justify-end items-center border-b"
+          style={{ paddingTop: 10, paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+        >
+          {actionBar}
         </div>
       )}
       <div className="flex min-h-0 flex-1 lg:ml-4">
         {!hideSidebar && <Sidebar />}
         <main
           id="main-content"
-          className="min-h-0 flex-1 overflow-x-clip overflow-y-auto max-lg:pt-[56px]"
+          className={`min-h-0 flex-1 overflow-x-clip overflow-y-auto ${hideNavbar
+            ? "max-lg:pb-[56px]"
+            : ""
+            }`}
         >
           {children}
         </main>

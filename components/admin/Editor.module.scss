@@ -238,6 +238,15 @@
   padding-top: max(10px, env(safe-area-inset-top));
 }
 
+.mobileToolbarBottom {
+  top: auto;
+  bottom: 0;
+  border-bottom: none;
+  border-top: 1px solid var(--color-border-default);
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-top: 10px;
+}
+
 .mobileToolbarScroll {
   display: flex;
   align-items: center;

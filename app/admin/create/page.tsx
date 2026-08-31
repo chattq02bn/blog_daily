@@ -40,6 +40,7 @@ import {
 import type { PostWriteBody } from "@/lib/api";
 import { uploadApi } from "@/lib/api";
 import styles from "./create.module.scss";
+import editorStyles from "@/components/admin/Editor.module.scss";
 
 /* Nội dung được tính là có dữ liệu nếu tồn tại block chữ không rỗng
    hoặc block đặc biệt (ảnh, product card, bảng...) */
@@ -298,6 +299,7 @@ function CreateNoteContent() {
     return (
       <MobileEditorToolbar
         editor={editorInstance}
+        className={editorStyles.mobileToolbarBottom}
         slashMenuItems={slashMenuItems.map((item) => (
           <button
             key={item.title}
@@ -315,8 +317,28 @@ function CreateNoteContent() {
     );
   }, [editorInstance, slashMenuItems]);
 
+  const actionBarContent = (
+    <Space wrap className={styles.actionBarButtons}>
+      <Button size="large" icon={<EyeOutlined />} onClick={openPreview}>
+        Xem trước
+      </Button>
+      <Button size="large" loading={savingAction === "draft"} onClick={saveDraft}>
+        Lưu nháp
+      </Button>
+      <Button
+        type="primary"
+        size="large"
+        loading={savingAction === "publish"}
+        className="note-btn-primary"
+        onClick={publish}
+      >
+        {isEdit ? "Lưu thay đổi" : "Đăng bài"}
+      </Button>
+    </Space>
+  );
+
   return (
-    <AppLayoutShell hideSidebar mobileToolbar={mobileToolbar}>
+    <AppLayoutShell hideSidebar actionBar={actionBarContent}>
       <div className={styles.wrap}>
         <Form
           form={form}
@@ -466,25 +488,12 @@ function CreateNoteContent() {
         </Form>
 
         <div className={styles.actionBar}>
-          <Space wrap>
-            <Button size="large" icon={<EyeOutlined />} onClick={openPreview}>
-              Xem trước
-            </Button>
-            <Button size="large" loading={savingAction === "draft"} onClick={saveDraft}>
-              Lưu nháp
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              loading={savingAction === "publish"}
-              className="note-btn-primary"
-              onClick={publish}
-            >
-              {isEdit ? "Lưu thay đổi" : "Đăng bài"}
-            </Button>
-          </Space>
+          {actionBarContent}
         </div>
       </div>
+
+      {/* Mobile: mobileToolbar at bottom */}
+      {mobileToolbar && <div className="lg:hidden">{mobileToolbar}</div>}
 
       <Modal
         open={previewOpen}

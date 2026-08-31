@@ -229,10 +229,6 @@
   :global(.ant-form-item) {
     margin-bottom: 0;
   }
-
-  @media (max-width: 940px) {
-    margin-bottom: 44px !important;
-  }
 }
 
 .metaSelect {
@@ -253,36 +249,39 @@
   background: var(--color-surface-normal);
   border-top: 1px solid var(--color-border-default);
 
-  @media (max-width: 768px) {
-    margin: 0 -12px 0;
-    padding: 10px 12px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
-    justify-content: stretch;
+  @media (max-width: 940px) {
+    display: none;
+  }
+}
 
-    /* 3 nút co đều, luôn thẳng hàng một dòng */
-    :global(.ant-space) {
-      width: 100%;
-    }
 
-    :global(.ant-space-item) {
-      flex: 1;
-      min-width: 0;
-      display: flex;
+.actionBarButtons {
+  @media (max-width: 940px) {
+    gap: 6px !important;
 
-      >* {
-        flex: 1;
-        width: 100%;
-        min-width: 0;
-        padding-inline: 8px;
-        white-space: nowrap;
+    button {
+      height: 36px;
+      padding: 0 10px;
+      font-size: 13px;
+
+      .anticon {
+        font-size: 13px;
       }
     }
   }
 
-  /* iPad Pro portrait */
-  @media (min-width: 769px) and (max-width: 1180px) {
-    margin: 0 -16px 0;
-    padding: 10px 16px;
+  @media (max-width: 600px) {
+    gap: 4px !important;
+
+    button {
+      height: 34px;
+      padding: 0 8px;
+      font-size: 12px;
+
+      .anticon {
+        font-size: 12px;
+      }
+    }
   }
 }
 

@@ -54,12 +54,14 @@ type StickyFmt = Partial<
 export default function MobileEditorToolbar({
   editor,
   slashMenuItems,
+  className,
 }: {
   editor: EditorType;
   slashMenuItems?: ReactNode[];
+  className?: string;
 }) {
   return (
-    <div className={styles.mobileToolbar}>
+    <div className={`${styles.mobileToolbar} ${className ?? ""}`}>
       <div className={styles.mobileToolbarScroll}>
         <FormatControls editor={editor} />
         {slashMenuItems && slashMenuItems.length > 0 && (
