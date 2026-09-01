@@ -41,7 +41,7 @@ export default function LoginModal() {
       await qc.invalidateQueries({ queryKey: qk.profile() });
       messageApi.success("Đăng nhập thành công!");
       handleClose();
-      router.push("/admin/create");
+      router.push("/admin");
     } catch (error) {
       setLoading(false);
       const data = (error as { response?: { data?: { message?: string } } }).response?.data;

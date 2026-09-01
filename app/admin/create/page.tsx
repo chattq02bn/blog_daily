@@ -458,8 +458,9 @@ function CreateNoteContent() {
                   className={styles.coverInput}
                 />
               </div>
-              <div className={styles.coverPreview}>
-                {cover ? (
+              {cover && (
+                <div className={styles.coverPreview}>
+
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={cover} alt="Ảnh bìa" />
@@ -477,12 +478,8 @@ function CreateNoteContent() {
                       <DeleteOutlined />
                     </button>
                   </>
-                ) : (
-                  <span className={styles.coverPlaceholder}>
-                    Ảnh bìa bài viết
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </Form>
