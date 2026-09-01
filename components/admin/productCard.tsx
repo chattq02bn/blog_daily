@@ -4,6 +4,7 @@ import { createReactBlockSpec } from "@blocknote/react";
 import { BlockNoteSchema } from "@blocknote/core";
 import { uploadApi } from "@/lib/api";
 import styles from "./productCard.module.scss";
+import { ContentBlock } from "./contentBlock";
 
 export const ProductBlock = createReactBlockSpec(
   {
@@ -203,5 +204,6 @@ export const ProductBlock = createReactBlockSpec(
 export const productCardSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
     productCard: ProductBlock(),
+    contentBlock: ContentBlock(),
   },
 });

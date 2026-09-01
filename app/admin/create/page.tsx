@@ -287,9 +287,42 @@ function CreateNoteContent() {
         });
       },
     };
+    const contentBlock = {
+      title: "Khối nội dung",
+      subtext: "Thêm khối màu xanh để viết nội dung",
+      icon: (
+        <div
+          style={{
+            width: "20px",
+            height: "20px",
+            borderRadius: "4px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#e6f4ff",
+            border: "1px solid #91caff",
+            fontSize: "12px",
+            fontWeight: 700,
+            color: "#1677ff",
+          }}
+        >
+          B
+        </div>
+      ),
+      onItemClick: () => {
+        insertOrUpdateBlockForSlashMenu(editorInstance, {
+          type: "contentBlock",
+        });
+      },
+    };
     const tableIndex = items.findIndex((i) => i.title === "Table");
-    if (tableIndex !== -1) items.splice(tableIndex + 1, 0, productCard);
-    else items.push(productCard);
+    if (tableIndex !== -1) {
+      items.splice(tableIndex + 1, 0, productCard);
+      items.splice(tableIndex + 2, 0, contentBlock);
+    } else {
+      items.push(productCard);
+      items.push(contentBlock);
+    }
     return items;
   }, [editorInstance]);
 

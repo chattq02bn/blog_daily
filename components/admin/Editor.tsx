@@ -82,6 +82,48 @@ export const productCardMenuItem = (
   },
 });
 
+/* =========================================================
+   CONTENT BLOCK MENU ITEM (Khối nội dung)
+========================================================= */
+
+export const contentBlockMenuItem = (
+  editor: EditorType
+): DefaultReactSuggestionItem => ({
+  title: "Khối nội dung",
+
+  subtext: "Thêm khối màu xanh để viết nội dung",
+
+  aliases: ["block", "khối", "content", "khoinoidung", "nội dung", "blue"],
+
+  group: "Advanced",
+
+  icon: (
+    <div
+      style={{
+        width: "32px",
+        height: "32px",
+        borderRadius: "6px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#e6f4ff",
+        border: "1px solid #91caff",
+        fontSize: "16px",
+        fontWeight: 700,
+        color: "#1677ff",
+      }}
+    >
+      B
+    </div>
+  ),
+
+  onItemClick: () => {
+    insertOrUpdateBlockForSlashMenu(editor, {
+      type: "contentBlock",
+    });
+  },
+});
+
 export default function Editor({
   value,
   onChange,
@@ -225,9 +267,15 @@ export default function Editor({
               getItems={async (query) => {
                 const items = getDefaultReactSlashMenuItems(editor);
                 const productCard = productCardMenuItem(editor);
+                const contentBlock = contentBlockMenuItem(editor);
                 const tableIndex = items.findIndex((i) => i.title === "Table");
-                if (tableIndex !== -1) items.splice(tableIndex + 1, 0, productCard);
-                else items.push(productCard);
+                if (tableIndex !== -1) {
+                  items.splice(tableIndex + 1, 0, productCard);
+                  items.splice(tableIndex + 2, 0, contentBlock);
+                } else {
+                  items.push(productCard);
+                  items.push(contentBlock);
+                }
                 return filterSuggestionItems(items, query);
               }}
             />

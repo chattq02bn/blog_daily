@@ -1,0 +1,49 @@
+/* Khối nội dung màu xanh — dùng trong BlockNoteView */
+
+.block {
+  width: 100%;
+  margin: 8px 0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+  box-sizing: border-box;
+  min-height: 48px;
+  line-height: 1.6;
+  color: #1d1d1f;
+  transition: box-shadow 0.2s ease;
+
+  &:focus-within {
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    border-color: #4096ff;
+  }
+
+  /* Placeholder khi trống */
+  &:empty::before {
+    content: "Nhập nội dung...";
+    color: #999;
+    pointer-events: none;
+  }
+}
+
+/* Chế độ xem trước */
+.preview {
+  cursor: default;
+
+  &:focus-within {
+    box-shadow: none;
+    border-color: #91caff;
+  }
+}
+
+/* Tắt overlay xanh "selected" của BlockNote riêng cho content block */
+:global(.ProseMirror-selectednode:has([data-content-block]))::after,
+:global([data-content-type="contentBlock"].ProseMirror-selectednode)::after,
+:global([data-content-type="contentBlock"].ProseMirror-selectednode)>*::after,
+:global(.ProseMirror-selectednode > [data-content-type="contentBlock"])>*::after,
+:global(.bn-block-content.ProseMirror-selectednode:has([data-content-block]))::after,
+:global(.bn-block-content.ProseMirror-selectednode:has([data-content-block]))>*::after {
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
