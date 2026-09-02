@@ -71,6 +71,13 @@ export interface ApiSectionPostsResponse {
   section: ApiSectionInfo;
 }
 
+/** Response từ API /topics/:slug/posts (virtual section) */
+export interface ApiTopicPostsResponse {
+  data: ApiPost[];
+  meta?: ApiMeta;
+  section: ApiSectionInfo;
+}
+
 export interface ApiTopic {
   id: string;
   name: string;

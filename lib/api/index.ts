@@ -10,6 +10,7 @@ import type {
   ApiTag,
   ApiTopic,
   ApiTopicInfo,
+  ApiTopicPostsResponse,
   ApiUser,
   ApiVisits,
 } from "./types";
@@ -137,7 +138,7 @@ export const postsApi = {
 /* ===== Topics & sections ===== */
 
 export const topicsApi = {
-  async list(params?: { page?: number; limit?: number; q?: string }): Promise<{ data: ApiTopic[]; meta?: ApiMeta }> {
+  async list(params?: { page?: number; limit?: number; q?: string; sidebarId?: string }): Promise<{ data: ApiTopic[]; meta?: ApiMeta }> {
     const res = await api.get<Envelope<ApiTopic[]>>("/topics", { params });
     return { data: res.data.data, meta: res.data.meta };
   },
@@ -167,13 +168,25 @@ export const sectionsApi = {
   /** Phân trang sections theo topicSlug */
   async byTopicPaginated(
     topicSlug: string,
-    params: { page?: number; limit?: number } = {}
-  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo; topicPosts?: ApiPost[] }> {
-    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo; topicPosts?: ApiPost[] }>>(
+    params: { page?: number; limit?: number; sidebarId?: string } = {}
+  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo; topicPosts?: ApiPost[]; topicPostCount?: number }> {
+    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo; topicPosts?: ApiPost[]; topicPostCount?: number }>>(
       `/topics/${topicSlug}/sections/paginated`,
       { params }
     );
-    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic, topicPosts: res.data.topicPosts };
+    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic, topicPosts: res.data.topicPosts, topicPostCount: res.data.topicPostCount };
+  },
+  /** Lấy tất cả bài viết của topic (virtual section "Danh sách ...") — phân trang */
+  async topicPosts(
+    topicSlug: string,
+    params: { page?: number; limit?: number; sidebarId?: string } = {}
+  ): Promise<ApiTopicPostsResponse> {
+    const res = await api.get<Envelope<ApiPost[]>>(`/topics/${topicSlug}/posts`, { params });
+    return {
+      data: res.data.data,
+      meta: res.data.meta,
+      section: (res.data as unknown as { section: ApiTopicPostsResponse["section"] }).section,
+    };
   },
 };
 
@@ -407,6 +420,9 @@ export const sidebarApi = {
   },
   async replace(items: unknown[]): Promise<ApiSidebarItem[]> {
     return unwrap(await api.put<Envelope<ApiSidebarItem[]>>("/sidebar", { items }));
+  },
+  async patchTopics(id: string, body: { topicIds?: string[]; addTopicId?: string }): Promise<ApiSidebarItem> {
+    return unwrap(await api.patch<Envelope<ApiSidebarItem>>(`/sidebar/${id}/topics`, body));
   },
   async create(body: {
     name: string;

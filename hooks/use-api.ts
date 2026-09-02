@@ -113,6 +113,33 @@ export function useSectionPostsInfinite(sectionId: string, limit = 12) {
   };
 }
 
+/* Infinite query cho topic posts (virtual section "Danh sách ...") */
+export function useTopicPostsInfinite(topicSlug: string, limit = 12, sidebarId?: string) {
+  const query = useInfiniteQuery({
+    queryKey: qk.topicPosts(topicSlug, limit),
+    queryFn: ({ pageParam }) =>
+      sectionsApi.topicPosts(topicSlug, { page: pageParam, limit, sidebarId }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+    enabled: Boolean(topicSlug),
+  });
+
+  const section = query.data?.pages[0]?.section;
+  const posts = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const totalPosts = query.data?.pages[0]?.meta?.total ?? 0;
+
+  return {
+    ...query,
+    section,
+    posts,
+    totalPosts,
+  };
+}
+
 export function usePost(idOrSlug: string) {
   return useQuery({
     queryKey: qk.post(idOrSlug),
@@ -212,7 +239,7 @@ export function useTogglePostAction() {
 
 /* ===== Topics & sections ===== */
 
-export function useTopics(params?: { page?: number; limit?: number; q?: string }) {
+export function useTopics(params?: { page?: number; limit?: number; q?: string; sidebarId?: string }) {
   return useQuery({ queryKey: qk.topics(params), queryFn: () => topicsApi.list(params) });
 }
 
@@ -225,11 +252,11 @@ export function useSections(topicSlug: string) {
 }
 
 /* Infinite query cho sections theo topicSlug — phân trang */
-export function useSectionsInfinite(topicSlug: string, limit = 5) {
+export function useSectionsInfinite(topicSlug: string, limit = 5, sidebarId?: string) {
   const query = useInfiniteQuery({
-    queryKey: [...qk.sectionsInfinite(topicSlug), limit] as const,
+    queryKey: [...qk.sectionsInfinite(topicSlug), limit, sidebarId] as const,
     queryFn: ({ pageParam }) =>
-      sectionsApi.byTopicPaginated(topicSlug, { page: pageParam, limit }),
+      sectionsApi.byTopicPaginated(topicSlug, { page: pageParam, limit, sidebarId }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const meta = lastPage.meta;
@@ -243,6 +270,7 @@ export function useSectionsInfinite(topicSlug: string, limit = 5) {
     sections: query.data?.pages.flatMap((page) => page.data) ?? [],
     topic: query.data?.pages[0]?.topic,
     topicPosts: query.data?.pages.flatMap((page) => page.topicPosts ?? []) ?? [],
+    topicPostCount: query.data?.pages[0]?.topicPostCount,
     ...query,
   };
 }

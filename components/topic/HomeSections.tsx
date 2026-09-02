@@ -55,7 +55,7 @@ function SidebarTopicSection({
           <TopicSectionView
             title={item.name}
             description={item.description ?? undefined}
-            href={`/topic/${item.slug}`}
+            href={`/topic/${item.slug}?sidebarId=${item.id}`}
             notes={notes}
             featured={index === 0}
           />

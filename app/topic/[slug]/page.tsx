@@ -9,6 +9,7 @@ import { sectionsApi, sidebarApi, type ApiSidebarItem } from "@/lib/api";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sidebarId?: string }>;
 };
 
 async function getSidebarItem(slug: string): Promise<ApiSidebarItem | null> {
@@ -32,18 +33,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title };
 }
 
-export default async function TopicDetailPage({ params }: PageProps) {
+export default async function TopicDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-
-
-
+  const { sidebarId } = await searchParams;
 
   const queryClient = getQueryClient();
 
   await queryClient.prefetchInfiniteQuery({
-    queryKey: qk.sectionsInfinite(slug),
+    queryKey: [...qk.sectionsInfinite(slug), 5, sidebarId] as const,
     queryFn: ({ pageParam }) =>
-      sectionsApi.byTopicPaginated(slug, { page: pageParam, limit: 5 }),
+      sectionsApi.byTopicPaginated(slug, { page: pageParam, limit: 5, sidebarId }),
     initialPageParam: 1,
     getNextPageParam: (lastPage: { meta?: { page: number; totalPages: number } }) => {
       const meta = lastPage.meta;
@@ -56,7 +55,7 @@ export default async function TopicDetailPage({ params }: PageProps) {
     <AppLayout>
       <div className={styles.page}>
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <TopicSectionList slug={slug} />
+          <TopicSectionList slug={slug} sidebarId={sidebarId} />
         </HydrationBoundary>
       </div>
     </AppLayout>

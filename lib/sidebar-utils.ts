@@ -12,7 +12,7 @@ export const SIDEBAR_CHILDREN_LIMIT = 5;
 export const HOME_POSTS_PER_SECTION = 14;
 
 /**
- * Mục cha có gắn topic và mục con có gắn topic được đưa lên cùng cấp,
+ * Mục cha có gắn topic hoặc có con gắn topic được đưa lên cùng cấp,
  * giữ đúng thứ tự xuất hiện trong sidebar.
  * @param limit Số lượng topic tối đa trả về (0 = không giới hạn)
  */
@@ -20,7 +20,9 @@ export function flattenTopics(items: ApiSidebarItem[], limit = 0): ApiSidebarIte
   const result: ApiSidebarItem[] = [];
   for (const item of items) {
     if (limit > 0 && result.length >= limit) break;
-    if (item.topicIds.length > 0) result.push(item);
+    const hasDirectTopics = item.topicIds.length > 0;
+    const hasChildTopics = item.children.some((c) => c.topicIds.length > 0);
+    if (hasDirectTopics || hasChildTopics) result.push(item);
     for (const child of item.children) {
       if (limit > 0 && result.length >= limit) break;
       if (child.topicIds.length > 0) result.push(child);
@@ -31,8 +33,11 @@ export function flattenTopics(items: ApiSidebarItem[], limit = 0): ApiSidebarIte
 
 /** Params truy vấn bài viết của một mục sidebar (dùng cho usePosts + prefetch) */
 export function sectionPostsParams(item: ApiSidebarItem) {
+  const topicIds = item.topicIds.length > 0
+    ? item.topicIds
+    : item.children.flatMap((c) => c.topicIds);
   return {
-    topicIds: item.topicIds,
+    topicIds,
     status: "published" as const,
     limit: HOME_POSTS_PER_SECTION,
   };

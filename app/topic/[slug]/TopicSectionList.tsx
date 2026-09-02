@@ -14,13 +14,15 @@ const MAX_NOTES = 14;
 
 export default function TopicSectionList({
   slug,
+  sidebarId,
 }: {
   slug: string;
+  sidebarId?: string;
   childrenSlugs?: string[];
 }) {
   const router = useRouter();
-  const { sections, topic, topicPosts, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage, data } =
-    useSectionsInfinite(slug, 5);
+  const { sections, topic, topicPosts, topicPostCount, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage, data } =
+    useSectionsInfinite(slug, 5, sidebarId);
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
     rootMargin: "400px",
@@ -50,9 +52,9 @@ export default function TopicSectionList({
     );
   }
 
-  const totalNotes = sections.length > 0
+  const totalNotes = topicPostCount ?? (sections.length > 0
     ? sections.reduce((sum, section) => sum + section.posts.length, 0)
-    : (data?.pages[0]?.meta?.total ?? topicPosts?.length ?? 0);
+    : (data?.pages[0]?.meta?.total ?? topicPosts?.length ?? 0));
 
   return (
     <>
@@ -81,7 +83,9 @@ export default function TopicSectionList({
 
       {sections.length > 0 ? (
         sections.map((section, index) => {
-          const detailHref = `/topic/${slug}/${section.id}`;
+          const detailHref = sidebarId
+            ? `/topic/${slug}/${section.id}?sidebarId=${sidebarId}`
+            : `/topic/${slug}/${section.id}`;
 
           return (
             <section key={section.id} className={styles.section}>

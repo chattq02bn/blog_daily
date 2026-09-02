@@ -1,33 +1,41 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { RightOutlined } from "@ant-design/icons";
 import { useInView } from "@/hooks/use-in-view";
-import { useSectionPostsInfinite } from "@/hooks/use-api";
+import { useSectionPostsInfinite, useTopicPostsInfinite } from "@/hooks/use-api";
 import TopicCard from "@/components/topic/TopicCard";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "../topic.module.scss";
 
+function isVirtualTopicSection(sectionId: string) {
+  return sectionId.startsWith("topic-");
+}
+
 export default function SectionDetail({
   slug,
   sectionId,
+  sidebarId,
 }: {
   slug: string;
   sectionId: string;
+  sidebarId?: string;
 }) {
   const router = useRouter();
+  const isVirtual = isVirtualTopicSection(sectionId);
+
+  const sectionResult = useSectionPostsInfinite(isVirtual ? "" : sectionId, 15);
+  const topicResult = useTopicPostsInfinite(isVirtual ? slug : "", 15, isVirtual ? sidebarId : undefined);
 
   const {
     section,
     posts,
-    totalPosts,
     isPending,
     isError,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useSectionPostsInfinite(sectionId, 15);
+  } = isVirtual ? topicResult : sectionResult;
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
     rootMargin: "600px",

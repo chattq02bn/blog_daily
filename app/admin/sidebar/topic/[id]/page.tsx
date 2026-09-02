@@ -36,7 +36,6 @@ import SearchInput from "@/components/admin/SearchInput";
 import {
   useCreateTopic,
   useDeleteTopic,
-  useSidebar,
   useTopics,
   useUpdateTopic,
 } from "@/hooks/use-api";
@@ -63,37 +62,14 @@ function TopicCreatePage() {
     page: 1,
     limit: 20,
     q: keyword || undefined,
+    sidebarId: params.id,
   });
-
-  const sidebarQuery = useSidebar();
 
   const createMutation = useCreateTopic();
   const updateMutation = useUpdateTopic();
   const deleteMutation = useDeleteTopic();
 
-  const allTopics: ApiTopic[] = topicsQuery.data?.data ?? [];
-
-  const sidebarItem = useMemo(() => {
-    const items = sidebarQuery.data ?? [];
-    function findRecursive(list: typeof items): typeof items[0] | undefined {
-      for (const item of list) {
-        if (item.id === params.id) return item;
-        if (item.children?.length) {
-          const found = findRecursive(item.children);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    }
-    return findRecursive(items);
-  }, [sidebarQuery.data, params.id]);
-
-  const topics: ApiTopic[] = useMemo(() => {
-    const linkedIds = new Set(sidebarItem?.topicIds ?? []);
-    return allTopics.filter((t) => linkedIds.has(t.id));
-  }, [allTopics, sidebarItem]);
-
-  const meta = { total: topics.length, page: 1, limit: topics.length, totalPages: 1 };
+  const topics: ApiTopic[] = topicsQuery.data?.data ?? [];
 
   const handleSearch = useCallback((value: string) => {
     setKeyword(value);
@@ -111,22 +87,9 @@ function TopicCreatePage() {
 
   const refreshSidebarItem = useCallback(
     async (topicId: string) => {
-      const items = sidebarQuery.data ?? [];
-      const target = items.find((item) => item.id === params.id);
-      if (!target) return;
-
-      const topicIds = target.topicIds.includes(topicId)
-        ? target.topicIds
-        : [...target.topicIds, topicId];
-
-      const payload = items.map((item) =>
-        item.id === target.id ? { ...item, topicIds } : item
-      );
-
-      await sidebarApi.replace(payload);
-      await sidebarQuery.refetch();
+      await sidebarApi.patchTopics(params.id, { addTopicId: topicId });
     },
-    [sidebarQuery.data, sidebarQuery.refetch, params.id]
+    [params.id]
   );
 
   const handleSubmit = useCallback(async () => {
