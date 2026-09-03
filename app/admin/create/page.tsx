@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { debounce } from "lodash";
+import axios from "axios";
 import {
   App,
   Breadcrumb,
@@ -36,6 +37,7 @@ import {
   useTags,
   useTopics,
   useUpdatePost,
+  useSidebarSelect,
 } from "@/hooks/use-api";
 import type { PostWriteBody } from "@/lib/api";
 import { uploadApi } from "@/lib/api";
@@ -64,14 +66,16 @@ function CreateNoteContent() {
   const presetTopicId = searchParams.get("topicId");
   const { message } = App.useApp();
 
-  const topicsQuery = useTopics();
+  const sidebarSelect = useSidebarSelect(10);
   const tagsQuery = useTags();
   const postQuery = usePost(editId ?? "");
   const createMutation = useCreatePost();
   const updateMutation = useUpdatePost();
   const [savingAction, setSavingAction] = useState<"draft" | "publish" | null>(null);
 
-  const topics = topicsQuery.data?.data ?? [];
+  const [selectedSidebarId, setSelectedSidebarId] = useState<string | null>(null);
+  const filteredTopicsQuery = useTopics(selectedSidebarId ? { sidebarId: selectedSidebarId } : undefined);
+  const topics = filteredTopicsQuery.data?.data ?? [];
   const tags = tagsQuery.data?.data ?? [];
 
   const [form] = Form.useForm();
@@ -97,10 +101,14 @@ function CreateNoteContent() {
     const post = postQuery.data;
     form.setFieldsValue({
       title: post.title,
+      sidebarId: post.sidebarId ?? null,
       topicIds: post.topicIds,
       tagIds: post.tagIds,
       body: (post.bodyBlocks as Block[]) ?? [],
     });
+    if (post.sidebarId) {
+      setSelectedSidebarId(post.sidebarId);
+    }
     if (post.cover) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- chỉ đồng bộ một lần khi tải bài viết
       setCover(post.cover);
@@ -112,6 +120,7 @@ function CreateNoteContent() {
   useEffect(() => {
     if (!editId) {
       form.resetFields();
+      setSelectedSidebarId(null);
       if (cover.startsWith("blob:")) URL.revokeObjectURL(cover);
       setCover("");
       setCoverFile(null);
@@ -189,6 +198,7 @@ function CreateNoteContent() {
 
       const body: PostWriteBody & { title: string } = {
         title: values.title?.trim() ?? "",
+        sidebarId: all.sidebarId ?? null,
         topicIds: values.topicIds ?? [],
         tagIds: values.tagIds ?? [],
         bodyBlocks: (all.body ?? []) as Record<string, unknown>[],
@@ -202,6 +212,34 @@ function CreateNoteContent() {
 
       const onSettled = () => setSavingAction(null);
 
+      /* Parse error response: show Zod field errors on form, others as toast */
+      const handleError = (err: unknown) => {
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+          const data = err.response?.data as
+            | { message?: string; details?: { fieldErrors?: Record<string, string[]>; formErrors?: string[] } }
+            | undefined;
+
+          if (status === 422 && data?.details?.fieldErrors) {
+            const fieldErrors = data.details.fieldErrors;
+            form.setFields(
+              Object.entries(fieldErrors).map(([name, errors]) => ({
+                name,
+                errors: errors as string[],
+                validating: false,
+              })),
+            );
+            message.error("Vui lòng kiểm tra lại các trường bị lỗi");
+          } else if (status === 400 && data?.message?.includes("P2003")) {
+            message.error("Dữ liệu tham chiếu không hợp lệ. Vui lòng kiểm tra Sidebar, Topics, Tags");
+          } else {
+            message.error(data?.message || "Thao tác thất bại");
+          }
+        } else {
+          message.error("Thao tác thất bại");
+        }
+      };
+
       if (editId && updateMutation) {
         updateMutation.mutate(
           { id: editId, body },
@@ -212,7 +250,7 @@ function CreateNoteContent() {
               );
               if (navigateBack) router.push("/admin/posts");
             },
-            onError: () => message.error("Lưu bài viết thất bại"),
+            onError: handleError,
             onSettled,
           },
         );
@@ -222,7 +260,7 @@ function CreateNoteContent() {
             message.success(status === "draft" ? "Đã lưu bản nháp" : "Đã đăng bài");
             if (navigateBack) router.push("/admin/posts");
           },
-          onError: () => message.error("Tạo bài viết thất bại"),
+          onError: handleError,
           onSettled,
         });
       }
@@ -424,22 +462,62 @@ function CreateNoteContent() {
 
             <div className={styles.metaCol}>
               <Form.Item
-                name="topicIds"
-                label="Topics"
+                name="sidebarId"
+                label="Sidebar"
                 rules={[
                   {
                     required: true,
-                    type: "array",
-                    min: 1,
-                    message: "Vui lòng chọn ít nhất 1 topic",
+                    message: "Vui lòng chọn sidebar",
                   },
                 ]}
               >
                 <Select
+                  showSearch
+                  placeholder="Chọn sidebar"
+                  optionFilterProp="label"
+                  options={sidebarSelect.items.map((item) => ({
+                    value: item.id,
+                    label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
+                  }))}
+                  notFoundContent={sidebarSelect.isPending ? "Đang tải..." : "Không có dữ liệu"}
+                  onPopupScroll={(e) => {
+                    const target = e.target as HTMLDivElement;
+                    if (
+                      target.scrollTop + target.offsetHeight >= target.scrollHeight - 20 &&
+                      sidebarSelect.hasNextPage &&
+                      !sidebarSelect.isFetchingNextPage
+                    ) {
+                      void sidebarSelect.fetchNextPage();
+                    }
+                  }}
+                  popupRender={(menu) => (
+                    <>
+                      {menu}
+                      {sidebarSelect.isFetchingNextPage && (
+                        <div style={{ textAlign: "center", padding: "8px 0", color: "#999", fontSize: 12 }}>
+                          Đang tải thêm...
+                        </div>
+                      )}
+                    </>
+                  )}
+                  onChange={(value: string) => {
+                    setSelectedSidebarId(value);
+                    form.setFieldValue("topicIds", []);
+                  }}
+                  className={styles.metaSelect}
+                />
+              </Form.Item>
+              <Form.Item
+                name="topicIds"
+                label="Topics"
+              >
+                <Select
                   mode="multiple"
-                  placeholder="Chọn topics"
+                  placeholder={selectedSidebarId ? "Chọn topics" : "Chọn sidebar trước"}
                   options={topics.map((t) => ({ value: t.id, label: t.name }))}
                   maxTagCount="responsive"
+                  disabled={!selectedSidebarId}
+                  notFoundContent={filteredTopicsQuery.isPending ? "Đang tải..." : "Không có topic"}
                   className={styles.metaSelect}
                 />
               </Form.Item>

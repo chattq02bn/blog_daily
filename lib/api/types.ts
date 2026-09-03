@@ -33,6 +33,8 @@ export interface ApiPost {
   tagIds: string[];
   topics: { id: string; name: string }[];
   tags: { id: string; name: string }[];
+  sidebarId: string | null;
+  sidebar: { id: string; name: string; slug: string } | null;
   author: ApiAuthor | null;
   authorAvatar: string | null;
   authorName: string;

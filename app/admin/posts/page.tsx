@@ -135,6 +135,17 @@ export default function AdminPostsPage() {
         ),
       },
       {
+        title: "Sidebar",
+        key: "sidebar",
+        width: 150,
+        render: (_: unknown, record: ApiPost) =>
+          record.sidebar ? (
+            <Tag color="blue">{record.sidebar.name}</Tag>
+          ) : (
+            <span style={{ color: "#999" }}>—</span>
+          ),
+      },
+      {
         title: "Tags",
         key: "tags",
         width: 200,

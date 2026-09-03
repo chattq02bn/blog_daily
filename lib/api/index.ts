@@ -61,6 +61,7 @@ export interface ListPostsParams {
   /** Nhiều topic id — bài viết chỉ cần thuộc một trong các topic */
   topicIds?: string[];
   tagId?: string;
+  sidebarId?: string;
   authorId?: number;
 }
 
@@ -70,6 +71,7 @@ export interface PostWriteBody {
   cover?: string | null;
   bodyBlocks?: Record<string, unknown>[];
   status?: "draft" | "published";
+  sidebarId?: string | null;
   topicIds?: string[];
   tagIds?: string[];
 }

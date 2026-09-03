@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -639,6 +639,37 @@ export function useSidebar(params?: { q?: string }) {
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+}
+
+/* Sidebar select — phân trang root items, mỗi item kèm children */
+export function useSidebarSelect(limit = 10) {
+  const query = useInfiniteQuery({
+    queryKey: ["sidebar", "select", limit],
+    queryFn: ({ pageParam }) =>
+      sidebarApi.list({ page: pageParam as number, limit, childrenLimit: 20 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+  });
+
+  // Flatten tree: parent items + their children, with indent info
+  const items = useMemo(() => {
+    const result: { id: string; name: string; slug: string; isChild: boolean; parentId?: string; postCount: number }[] = [];
+    for (const page of query.data?.pages ?? []) {
+      for (const item of page.data) {
+        result.push({ id: item.id, name: item.name, slug: item.slug, isChild: false, postCount: item.postCount });
+        for (const child of item.children ?? []) {
+          result.push({ id: child.id, name: child.name, slug: child.slug, isChild: true, parentId: item.id, postCount: child.postCount });
+        }
+      }
+    }
+    return result;
+  }, [query.data]);
+
+  return { ...query, items };
 }
 
 /* Topic ở trang chủ — phân trang theo mục gốc qua BE, "kéo xuống" nạp mục tiếp theo */

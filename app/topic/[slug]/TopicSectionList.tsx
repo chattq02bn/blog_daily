@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Spin } from "antd";
-import { useTopicPostsInfinite } from "@/hooks/use-api";
+import { useTopicPostsInfinite, usePosts } from "@/hooks/use-api";
 import { useInView } from "@/hooks/use-in-view";
 import TopicSectionView from "@/components/topic/TopicSectionView";
 import { postToNote } from "@/lib/api/adapters";
@@ -29,6 +29,12 @@ export default function TopicSectionList({
     fetchNextPage,
     hasNextPage,
   } = useTopicPostsInfinite(slug, 10, sidebarId);
+
+  // Query all posts in this sidebar for "Danh sách về X" section
+  const sidebarPostsQuery = usePosts(
+    sidebarId ? { sidebarId, limit: 14 } : {},
+  );
+  const sidebarPosts = sidebarPostsQuery.data?.data ?? [];
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
     rootMargin: "600px",
@@ -58,6 +64,7 @@ export default function TopicSectionList({
     );
   }
 
+  const hasSidebarPosts = sidebarPosts.length > 0;
   const hasTopics = topics.length > 0;
 
   return (
@@ -85,6 +92,19 @@ export default function TopicSectionList({
         </button>
       </div>
 
+      {/* "Danh sách về X" — tất cả bài viết trong sidebar */}
+      {hasSidebarPosts && sidebar && (
+        <section className={styles.section}>
+          <TopicSectionView
+            title={`Danh sách về ${sidebar.name}`}
+            description={sidebar.description ?? undefined}
+            href={`/topic/${slug}?sidebarId=${sidebarId}`}
+            notes={sidebarPosts.slice(0, MAX_NOTES).map(postToNote)}
+            featured
+          />
+        </section>
+      )}
+
       {/* Từng topic của sidebar — mỗi topic 1 hàng ngang, click header vào /topic/[slug]/[topicId] */}
       {hasTopics && topics.map((topic) => (
         <section key={topic.id} className={styles.section}>
@@ -97,7 +117,7 @@ export default function TopicSectionList({
         </section>
       ))}
 
-      {!hasTopics && (
+      {!hasSidebarPosts && !hasTopics && (
         <p className={styles.count}>Chưa có bài viết nào.</p>
       )}
 
