@@ -4,13 +4,12 @@ import type {
   ApiComment,
   ApiMeta,
   ApiPost,
-  ApiSection,
-  ApiSectionPostsResponse,
   ApiSidebarItem,
   ApiTag,
   ApiTopic,
   ApiTopicInfo,
   ApiTopicPostsResponse,
+  ApiTopicPostsByTopicIdResponse,
   ApiUser,
   ApiVisits,
 } from "./types";
@@ -62,7 +61,6 @@ export interface ListPostsParams {
   /** Nhiều topic id — bài viết chỉ cần thuộc một trong các topic */
   topicIds?: string[];
   tagId?: string;
-  sectionId?: string;
   authorId?: number;
 }
 
@@ -74,7 +72,6 @@ export interface PostWriteBody {
   status?: "draft" | "published";
   topicIds?: string[];
   tagIds?: string[];
-  sectionId?: string | null;
 }
 
 export interface PostsPage {
@@ -104,14 +101,6 @@ export const postsApi = {
     const res = await api.get<Envelope<ApiPost[]>>("/posts", { params: query });
     return { data: res.data.data, meta: res.data.meta };
   },
-  async listBySection(sectionId: string, params: { page?: number; limit?: number } = {}): Promise<ApiSectionPostsResponse> {
-    const res = await api.get<Envelope<ApiPost[]>>(`/posts/section/${sectionId}`, { params });
-    return {
-      data: res.data.data,
-      meta: res.data.meta,
-      section: (res.data as unknown as { section: ApiSectionPostsResponse["section"] }).section,
-    };
-  },
   async get(idOrSlug: string): Promise<ApiPost> {
     return unwrap(await api.get<Envelope<ApiPost>>(`/posts/${idOrSlug}`));
   },
@@ -135,7 +124,7 @@ export const postsApi = {
   },
 };
 
-/* ===== Topics & sections ===== */
+/* ===== Topics ===== */
 
 export const topicsApi = {
   async list(params?: { page?: number; limit?: number; q?: string; sidebarId?: string }): Promise<{ data: ApiTopic[]; meta?: ApiMeta }> {
@@ -151,41 +140,34 @@ export const topicsApi = {
   async remove(id: string): Promise<void> {
     await api.delete(`/topics/${id}`);
   },
-};
-
-export const sectionsApi = {
-  async byTopic(topicSlug: string): Promise<ApiSection[]> {
-    return unwrap(await api.get<Envelope<ApiSection[]>>(`/topics/${topicSlug}/sections`));
-  },
-  /** Sections của nhiều topicSlug một lúc — dùng cho trang mục cha gom section của các mục con */
-  async byTopicSlugs(slugs: string[]): Promise<ApiSection[]> {
-    return unwrap(
-      await api.get<Envelope<ApiSection[]>>("/topics/sections", {
-        params: { slugs: slugs.join(",") },
-      })
-    );
-  },
-  /** Phân trang sections theo topicSlug */
-  async byTopicPaginated(
-    topicSlug: string,
-    params: { page?: number; limit?: number; sidebarId?: string } = {}
-  ): Promise<{ data: ApiSection[]; meta?: ApiMeta; topic?: ApiTopicInfo; topicPosts?: ApiPost[]; topicPostCount?: number }> {
-    const res = await api.get<Envelope<ApiSection[], { topic?: ApiTopicInfo; topicPosts?: ApiPost[]; topicPostCount?: number }>>(
-      `/topics/${topicSlug}/sections/paginated`,
-      { params }
-    );
-    return { data: res.data.data, meta: res.data.meta, topic: res.data.topic, topicPosts: res.data.topicPosts, topicPostCount: res.data.topicPostCount };
-  },
-  /** Lấy tất cả bài viết của topic (virtual section "Danh sách ...") — phân trang */
+  /** Lấy bài viết theo sidebar: "Danh sách về X" + từng topic — phân trang topics */
   async topicPosts(
     topicSlug: string,
-    params: { page?: number; limit?: number; sidebarId?: string } = {}
+    params: { page?: number; limit?: number; sidebarId?: string; topicsPage?: number; topicsLimit?: number } = {}
   ): Promise<ApiTopicPostsResponse> {
     const res = await api.get<Envelope<ApiPost[]>>(`/topics/${topicSlug}/posts`, { params });
+    const raw = res.data as unknown as ApiTopicPostsResponse;
     return {
-      data: res.data.data,
-      meta: res.data.meta,
-      section: (res.data as unknown as { section: ApiTopicPostsResponse["section"] }).section,
+      data: raw.data,
+      meta: raw.meta,
+      sidebar: raw.sidebar,
+      topics: raw.topics,
+      topicPostCount: raw.topicPostCount,
+      totalTopics: raw.totalTopics,
+      totalTopicsPages: raw.totalTopicsPages,
+    };
+  },
+  /** Lấy bài viết của 1 topic cụ thể theo topicId — phân trang */
+  async topicPostsByTopicId(
+    topicSlug: string,
+    topicId: string,
+    params: { page?: number; limit?: number } = {}
+  ): Promise<ApiTopicPostsByTopicIdResponse> {
+    const res = await api.get<Envelope<ApiPost[]>>(`/topics/${topicSlug}/posts/${topicId}`, { params });
+    return {
+      data: (res.data as unknown as ApiTopicPostsByTopicIdResponse).data,
+      meta: (res.data as unknown as ApiTopicPostsByTopicIdResponse).meta,
+      topic: (res.data as unknown as ApiTopicPostsByTopicIdResponse).topic,
     };
   },
 };

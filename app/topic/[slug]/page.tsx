@@ -5,7 +5,7 @@ import TopicSectionList from "./TopicSectionList";
 import styles from "./topic.module.scss";
 import { getQueryClient } from "@/lib/query-client";
 import { qk } from "@/lib/query-keys";
-import { sectionsApi, sidebarApi, type ApiSidebarItem } from "@/lib/api";
+import { topicsApi, sidebarApi, type ApiSidebarItem } from "@/lib/api";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -40,14 +40,22 @@ export default async function TopicDetailPage({ params, searchParams }: PageProp
   const queryClient = getQueryClient();
 
   await queryClient.prefetchInfiniteQuery({
-    queryKey: [...qk.sectionsInfinite(slug), 5, sidebarId] as const,
+    queryKey: qk.topicPosts(slug, 10),
     queryFn: ({ pageParam }) =>
-      sectionsApi.byTopicPaginated(slug, { page: pageParam, limit: 5, sidebarId }),
+      topicsApi.topicPosts(slug, {
+        page: 1,
+        limit: 12,
+        sidebarId,
+        topicsPage: pageParam as number,
+        topicsLimit: 10,
+      }),
     initialPageParam: 1,
-    getNextPageParam: (lastPage: { meta?: { page: number; totalPages: number } }) => {
-      const meta = lastPage.meta;
-      if (!meta) return undefined;
-      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    getNextPageParam: (_lastPage: { totalTopicsPages?: number }, allPages) => {
+      const totalTopicsPages = allPages[0]?.totalTopicsPages ?? 0;
+      if (allPages.length < totalTopicsPages) {
+        return allPages.length + 1;
+      }
+      return undefined;
     },
   });
 

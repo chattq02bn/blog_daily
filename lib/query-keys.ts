@@ -9,10 +9,9 @@ export const qk = {
   postLike: (postId: string) => ["postLike", postId] as const,
   topics: (params?: { page?: number; limit?: number; q?: string; sidebarId?: string }) =>
     ["topics", params ?? {}] as const,
-  sections: (topicSlug: string) => ["sections", topicSlug] as const,
-  sectionsInfinite: (topicSlug: string) => ["sections", "infinite", topicSlug] as const,
-  sectionsMulti: (slugs: string[]) => ["sections", "multi", [...slugs].sort().join(",")] as const,
   topicPosts: (topicSlug: string, limit?: number) => ["topicPosts", topicSlug, limit] as const,
+  topicPostsByTopicId: (topicSlug: string, topicId: string, limit?: number) =>
+    ["topicPostsByTopicId", topicSlug, topicId, limit] as const,
   tags: (params?: { page?: number; limit?: number; q?: string }) =>
     ["tags", params ?? {}] as const,
   comments: (postIdOrSlug: string) => ["comments", postIdOrSlug] as const,

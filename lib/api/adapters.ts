@@ -1,5 +1,5 @@
-import type { ApiComment, ApiPost, ApiSection } from "@/lib/api";
-import type { Note, TopicSection } from "@/lib/view-models";
+import type { ApiComment, ApiPost } from "@/lib/api";
+import type { Note } from "@/lib/view-models";
 import type { Comment } from "@/lib/commentStorage";
 
 /** Chuyển bodyBlocks (JSON từ BE) thành các đoạn văn thuần để xem trước */
@@ -41,19 +41,6 @@ export function postToNote(post: ApiPost): Note {
     tags: post.tags.map((tag) => tag.name),
     body: blocksToParagraphs(post.bodyBlocks),
     blocks: post.bodyBlocks as Note["blocks"],
-  };
-}
-
-export function sectionToTopicSection(
-  section: ApiSection,
-  topicHref: string
-): TopicSection {
-  return {
-    id: section.id,
-    title: section.title,
-    description: section.description ?? "",
-    href: topicHref,
-    notes: section.posts.map(postToNote),
   };
 }
 

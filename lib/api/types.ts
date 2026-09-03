@@ -29,7 +29,6 @@ export interface ApiPost {
   likes: number;
   bookmarks: number;
   commentsCount: number;
-  sectionId: string | null;
   topicIds: string[];
   tagIds: string[];
   topics: { id: string; name: string }[];
@@ -41,41 +40,6 @@ export interface ApiPost {
   date: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ApiSection {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  idx: number;
-  /** topicSlug mà section thuộc về */
-  topicSlug: string;
-  posts: ApiPost[];
-}
-
-/** Section info không có posts (dùng cho response phân trang) */
-export interface ApiSectionInfo {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  idx: number;
-  topicSlug: string;
-}
-
-/** Response từ API /posts/section/:sectionId */
-export interface ApiSectionPostsResponse {
-  data: ApiPost[];
-  meta?: ApiMeta;
-  section: ApiSectionInfo;
-}
-
-/** Response từ API /topics/:slug/posts (virtual section) */
-export interface ApiTopicPostsResponse {
-  data: ApiPost[];
-  meta?: ApiMeta;
-  section: ApiSectionInfo;
 }
 
 export interface ApiTopic {
@@ -157,6 +121,35 @@ export interface ApiAuthSession {
   user: ApiAuthUser;
   accessToken: string;
   refreshToken: string;
+}
+
+export interface ApiTopicPostsSidebar {
+  name: string;
+  description: string;
+  slug: string;
+}
+
+export interface ApiTopicPostsGroup {
+  id: string;
+  name: string;
+  description: string;
+  posts: ApiPost[];
+}
+
+export interface ApiTopicPostsResponse {
+  data: ApiPost[];
+  meta?: ApiMeta;
+  sidebar: ApiTopicPostsSidebar;
+  topics: ApiTopicPostsGroup[];
+  topicPostCount: number;
+  totalTopics: number;
+  totalTopicsPages: number;
+}
+
+export interface ApiTopicPostsByTopicIdResponse {
+  data: ApiPost[];
+  meta: ApiMeta;
+  topic: { id: string; name: string; description: string };
 }
 
 export interface ApiVisits {

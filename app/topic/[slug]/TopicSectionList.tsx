@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { Spin } from "antd";
-import { useSectionsInfinite } from "@/hooks/use-api";
+import { useTopicPostsInfinite } from "@/hooks/use-api";
 import { useInView } from "@/hooks/use-in-view";
 import TopicSectionView from "@/components/topic/TopicSectionView";
-import TopicCard from "@/components/topic/TopicCard";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "./topic.module.scss";
 import TopicHeader from "@/components/topic/TopicHeader";
@@ -18,14 +17,21 @@ export default function TopicSectionList({
 }: {
   slug: string;
   sidebarId?: string;
-  childrenSlugs?: string[];
 }) {
   const router = useRouter();
-  const { sections, topic, topicPosts, topicPostCount, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage, data } =
-    useSectionsInfinite(slug, 5, sidebarId);
+  const {
+    sidebar,
+    topics,
+    topicPostCount,
+    isPending,
+    isError,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useTopicPostsInfinite(slug, 10, sidebarId);
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
-    rootMargin: "400px",
+    rootMargin: "600px",
     onEnter: () => {
       if (hasNextPage && !isFetchingNextPage) {
         void fetchNextPage();
@@ -52,23 +58,21 @@ export default function TopicSectionList({
     );
   }
 
-  const totalNotes = topicPostCount ?? (sections.length > 0
-    ? sections.reduce((sum, section) => sum + section.posts.length, 0)
-    : (data?.pages[0]?.meta?.total ?? topicPosts?.length ?? 0));
+  const hasTopics = topics.length > 0;
 
   return (
     <>
-      {topic && (
+      {sidebar && (
         <TopicHeader
           topic={{
-            name: topic.name,
-            description: topic.description ?? "",
+            name: sidebar.name,
+            description: sidebar.description ?? "",
           }}
           href={"/"}
         />
       )}
       <p className={styles.count}>
-        {totalNotes.toLocaleString("vi-VN")} bài viết · cập nhật hàng ngày
+        {topicPostCount.toLocaleString("vi-VN")} bài viết · cập nhật hàng ngày
       </p>
 
       <div className={styles.backLinkWrap}>
@@ -81,40 +85,29 @@ export default function TopicSectionList({
         </button>
       </div>
 
-      {sections.length > 0 ? (
-        sections.map((section, index) => {
-          const detailHref = sidebarId
-            ? `/topic/${slug}/${section.id}?sidebarId=${sidebarId}`
-            : `/topic/${slug}/${section.id}`;
+      {/* Từng topic của sidebar — mỗi topic 1 hàng ngang, click header vào /topic/[slug]/[topicId] */}
+      {hasTopics && topics.map((topic) => (
+        <section key={topic.id} className={styles.section}>
+          <TopicSectionView
+            title={topic.name}
+            description={topic.description || undefined}
+            href={`/topic/${slug}/${topic.id}`}
+            notes={topic.posts.slice(0, MAX_NOTES).map(postToNote)}
+          />
+        </section>
+      ))}
 
-          return (
-            <section key={section.id} className={styles.section}>
-              <TopicSectionView
-                title={section.title}
-                description={section.description ?? undefined}
-                href={detailHref}
-                notes={section.posts.slice(0, MAX_NOTES).map(postToNote)}
-                featured={index === 0}
-              />
-            </section>
-          );
-        })
-      ) : topicPosts && topicPosts.length > 0 ? (
-        <div className={styles.grid}>
-          {topicPosts.map((post) => (
-            <TopicCard key={post.id} note={postToNote(post)} />
-          ))}
-        </div>
-      ) : (
+      {!hasTopics && (
         <p className={styles.count}>Chưa có bài viết nào.</p>
       )}
 
+      {/* Sentinel cho infinite scroll topics */}
       <div ref={sentinelRef} aria-hidden="true" />
       {isFetchingNextPage && (
         <div className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Spin size="small" />
-            <span>{sections.length > 0 ? "Đang tải thêm chủ đề..." : "Đang tải thêm bài viết..."}</span>
+            <span>Đang tải thêm chủ đề...</span>
           </div>
         </div>
       )}

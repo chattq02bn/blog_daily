@@ -32,11 +32,3 @@ export type Topic = {
   emoji?: string;
   description?: string;
 };
-
-export type TopicSection = {
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-  notes: Note[];
-};

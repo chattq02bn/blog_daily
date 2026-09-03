@@ -14,7 +14,6 @@ import {
   mailApi,
   postsApi,
   profileApi,
-  sectionsApi,
   sidebarApi,
   socialLinksApi,
   statsApi,
@@ -41,7 +40,6 @@ import { setCommenterToken, setCommenterId, setCommenterNickname } from "@/lib/c
 export const queryFns = {
   posts: (params: ListPostsParams) => () => postsApi.list(params),
   post: (idOrSlug: string) => () => postsApi.get(idOrSlug),
-  sections: (topicSlug: string) => () => sectionsApi.byTopic(topicSlug),
   topics: (params?: { page?: number; limit?: number; q?: string }) => () => topicsApi.list(params),
   tags: (params?: { page?: number; limit?: number; q?: string }) => () => tagsApi.list(params),
   comments: (postIdOrSlug: string) => () => commentsApi.listByPost(postIdOrSlug),
@@ -86,55 +84,69 @@ export function usePostsInfinite(params: Omit<ListPostsParams, "page"> = {}) {
   });
 }
 
-/* Infinite query cho section detail — trả về posts + section info */
-export function useSectionPostsInfinite(sectionId: string, limit = 12) {
+/* Infinite query cho topic posts —_topics phân trang, mỗi page load thêm 10 topics */
+export function useTopicPostsInfinite(topicSlug: string, topicsLimit = 10, sidebarId?: string) {
   const query = useInfiniteQuery({
-    queryKey: qk.postsInfinite({ sectionId, status: "published", limit }),
+    queryKey: qk.topicPosts(topicSlug, topicsLimit),
     queryFn: ({ pageParam }) =>
-      postsApi.listBySection(sectionId, { page: pageParam, limit }),
+      topicsApi.topicPosts(topicSlug, {
+        page: 1,
+        limit: 12,
+        sidebarId,
+        topicsPage: pageParam as number,
+        topicsLimit,
+      }),
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const meta = lastPage.meta;
-      if (!meta) return undefined;
-      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
-    },
-    enabled: Boolean(sectionId),
-  });
-
-  const section = query.data?.pages[0]?.section;
-  const posts = query.data?.pages.flatMap((page) => page.data) ?? [];
-  const totalPosts = query.data?.pages[0]?.meta?.total ?? 0;
-
-  return {
-    ...query,
-    section,
-    posts,
-    totalPosts,
-  };
-}
-
-/* Infinite query cho topic posts (virtual section "Danh sách ...") */
-export function useTopicPostsInfinite(topicSlug: string, limit = 12, sidebarId?: string) {
-  const query = useInfiniteQuery({
-    queryKey: qk.topicPosts(topicSlug, limit),
-    queryFn: ({ pageParam }) =>
-      sectionsApi.topicPosts(topicSlug, { page: pageParam, limit, sidebarId }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const meta = lastPage.meta;
-      if (!meta) return undefined;
-      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    getNextPageParam: (_lastPage, allPages) => {
+      const totalTopicsPages = allPages[0]?.totalTopicsPages ?? 0;
+      if (allPages.length < totalTopicsPages) {
+        return allPages.length + 1;
+      }
+      return undefined;
     },
     enabled: Boolean(topicSlug),
   });
 
-  const section = query.data?.pages[0]?.section;
+  // Get sidebar from first page
+  const firstPage = query.data?.pages[0];
+  const sidebar = firstPage?.sidebar;
+  const topicPostCount = firstPage?.topicPostCount ?? 0;
+  const totalTopicsPages = firstPage?.totalTopicsPages ?? 0;
+
+  // Accumulate topics across all pages
+  const topics = query.data?.pages.flatMap((page) => page.topics) ?? [];
+
+  return {
+    ...query,
+    sidebar,
+    topics,
+    topicPostCount,
+    totalTopicsPages,
+  };
+}
+
+/* Lấy bài viết của 1 topic theo topicId — phân trang */
+export function useTopicPostsByTopicIdInfinite(topicSlug: string, topicId: string, limit = 12) {
+  const query = useInfiniteQuery({
+    queryKey: ["topicPostsByTopicId", topicSlug, topicId, limit],
+    queryFn: ({ pageParam }) =>
+      topicsApi.topicPostsByTopicId(topicSlug, topicId, { page: pageParam, limit }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage.meta;
+      if (!meta) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+    enabled: Boolean(topicSlug) && Boolean(topicId),
+  });
+
+  const topic = query.data?.pages[0]?.topic;
   const posts = query.data?.pages.flatMap((page) => page.data) ?? [];
   const totalPosts = query.data?.pages[0]?.meta?.total ?? 0;
 
   return {
     ...query,
-    section,
+    topic,
     posts,
     totalPosts,
   };
@@ -154,7 +166,6 @@ export function useCreatePost() {
     mutationFn: (body: PostWriteBody & { title: string }) => postsApi.create(body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["posts"] });
-      void qc.invalidateQueries({ queryKey: ["sections"] });
     },
   });
 }
@@ -165,7 +176,6 @@ export function useUpdatePost() {
     mutationFn: ({ id, body }: { id: string; body: PostWriteBody }) => postsApi.update(id, body),
     onSuccess: (post) => {
       void qc.invalidateQueries({ queryKey: ["posts"] });
-      void qc.invalidateQueries({ queryKey: ["sections"] });
       qc.setQueryData(qk.post(post.id), post);
       qc.setQueryData(qk.post(post.slug), post);
     },
@@ -178,7 +188,6 @@ export function useDeletePost() {
     mutationFn: (id: string) => postsApi.remove(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["posts"] });
-      void qc.invalidateQueries({ queryKey: ["sections"] });
     },
   });
 }
@@ -237,51 +246,10 @@ export function useTogglePostAction() {
   });
 }
 
-/* ===== Topics & sections ===== */
+/* ===== Topics ===== */
 
 export function useTopics(params?: { page?: number; limit?: number; q?: string; sidebarId?: string }) {
   return useQuery({ queryKey: qk.topics(params), queryFn: () => topicsApi.list(params) });
-}
-
-export function useSections(topicSlug: string) {
-  return useQuery({
-    queryKey: qk.sections(topicSlug),
-    queryFn: () => sectionsApi.byTopic(topicSlug),
-    enabled: Boolean(topicSlug),
-  });
-}
-
-/* Infinite query cho sections theo topicSlug — phân trang */
-export function useSectionsInfinite(topicSlug: string, limit = 5, sidebarId?: string) {
-  const query = useInfiniteQuery({
-    queryKey: [...qk.sectionsInfinite(topicSlug), limit, sidebarId] as const,
-    queryFn: ({ pageParam }) =>
-      sectionsApi.byTopicPaginated(topicSlug, { page: pageParam, limit, sidebarId }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const meta = lastPage.meta;
-      if (!meta) return undefined;
-      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
-    },
-    enabled: Boolean(topicSlug),
-  });
-
-  return {
-    sections: query.data?.pages.flatMap((page) => page.data) ?? [],
-    topic: query.data?.pages[0]?.topic,
-    topicPosts: query.data?.pages.flatMap((page) => page.topicPosts ?? []) ?? [],
-    topicPostCount: query.data?.pages[0]?.topicPostCount,
-    ...query,
-  };
-}
-
-/* Sections của nhiều mục con một lúc (trang chủ đề khi click vào mục cha sidebar) */
-export function useSectionsBySlugs(slugs: string[]) {
-  return useQuery({
-    queryKey: qk.sectionsMulti(slugs),
-    queryFn: () => sectionsApi.byTopicSlugs(slugs),
-    enabled: slugs.length > 0,
-  });
 }
 
 export function useCreateTopic() {

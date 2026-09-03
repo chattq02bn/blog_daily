@@ -3,39 +3,29 @@
 import { useRouter } from "next/navigation";
 import { RightOutlined } from "@ant-design/icons";
 import { useInView } from "@/hooks/use-in-view";
-import { useSectionPostsInfinite, useTopicPostsInfinite } from "@/hooks/use-api";
+import { useTopicPostsByTopicIdInfinite } from "@/hooks/use-api";
 import TopicCard from "@/components/topic/TopicCard";
 import { postToNote } from "@/lib/api/adapters";
 import styles from "../topic.module.scss";
 
-function isVirtualTopicSection(sectionId: string) {
-  return sectionId.startsWith("topic-");
-}
-
-export default function SectionDetail({
+export default function TopicDetail({
   slug,
-  sectionId,
-  sidebarId,
+  topicId,
 }: {
   slug: string;
-  sectionId: string;
-  sidebarId?: string;
+  topicId: string;
 }) {
   const router = useRouter();
-  const isVirtual = isVirtualTopicSection(sectionId);
-
-  const sectionResult = useSectionPostsInfinite(isVirtual ? "" : sectionId, 15);
-  const topicResult = useTopicPostsInfinite(isVirtual ? slug : "", 15, isVirtual ? sidebarId : undefined);
 
   const {
-    section,
+    topic,
     posts,
     isPending,
     isError,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = isVirtual ? topicResult : sectionResult;
+  } = useTopicPostsByTopicIdInfinite(slug, topicId, 12);
 
   const { ref: sentinelRef } = useInView<HTMLDivElement>({
     rootMargin: "600px",
@@ -57,23 +47,21 @@ export default function SectionDetail({
           ← Quay lại
         </button>
       </div>
-      {
-        section &&
+      {topic && (
         <div className="mb-1">
           <div className={`${styles.titleLink} font-bold text-text-primary text-lg sm:text-xl`}>
-            <span className="mr-3">{section.title}</span>
+            <span className="mr-3">{topic.name}</span>
             <span className={styles.titleArrow}>
               <RightOutlined />
             </span>
           </div>
-          {section.description && (
+          {topic.description && (
             <p className="line-clamp-3 text-sm text-text-secondary mt-2">
-              {section.description}
+              {topic.description}
             </p>
           )}
         </div>
-      }
-
+      )}
 
       {isPending ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -83,11 +71,11 @@ export default function SectionDetail({
         </div>
       ) : isError ? (
         <p className="text-sm text-text-secondary">
-          Không tải được bài viết cho chuyên mục này.
+          Không tải được bài viết cho chủ đề này.
         </p>
       ) : posts.length === 0 ? (
         <p className="text-sm text-text-secondary">
-          Chưa có bài viết nào trong chuyên mục này.
+          Chưa có bài viết nào trong chủ đề này.
         </p>
       ) : (
         <>
