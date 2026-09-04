@@ -257,31 +257,31 @@ function AdminPostsContent() {
         <div className={styles.header}>
           <h1 className={styles.heading}>Quản lý bài viết</h1>
 
-          <div className={styles.headerActions}>
-            <Select
-              showSearch
-              placeholder="Chọn sidebar"
-              optionFilterProp="label"
-              allowClear
-              value={selectedSidebarId}
-              onChange={handleSidebarChange}
-              options={sidebarOptions.map((item) => ({
-                value: item.id,
-                label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
-              }))}
-              notFoundContent={sidebarLoading ? "Đang tải..." : "Không có dữ liệu"}
-              className={styles.filterSelect}
-            />
-            <Select
-              placeholder={selectedSidebarId ? "Chọn topic" : "Chọn sidebar trước"}
-              allowClear
-              value={selectedTopicId}
-              onChange={handleTopicChange}
-              options={topics.map((t) => ({ value: t.id, label: t.name }))}
-              disabled={!selectedSidebarId}
-              notFoundContent={filteredTopicsQuery.isPending ? "Đang tải..." : "Không có topic"}
-              className={styles.filterSelect}
-            />
+          <Select
+            showSearch
+            placeholder="Chọn sidebar"
+            optionFilterProp="label"
+            allowClear
+            value={selectedSidebarId}
+            onChange={handleSidebarChange}
+            options={sidebarOptions.map((item) => ({
+              value: item.id,
+              label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
+            }))}
+            notFoundContent={sidebarLoading ? "Đang tải..." : "Không có dữ liệu"}
+            className={styles.filterSelect}
+          />
+          <Select
+            placeholder={selectedSidebarId ? "Chọn topic" : "Chọn sidebar trước"}
+            allowClear
+            value={selectedTopicId}
+            onChange={handleTopicChange}
+            options={topics.map((t) => ({ value: t.id, label: t.name }))}
+            disabled={!selectedSidebarId}
+            notFoundContent={filteredTopicsQuery.isPending ? "Đang tải..." : "Không có topic"}
+            className={styles.filterSelect}
+          />
+          <div className={styles.actions}>
             <SearchInput
               placeholder="Lọc theo tiêu đề"
               onSearch={handleSearch}
@@ -290,7 +290,7 @@ function AdminPostsContent() {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              className="note-btn-primary"
+              className={styles.addBtn}
               onClick={() => router.push("/admin/create")}
             >
               Thêm bài viết
