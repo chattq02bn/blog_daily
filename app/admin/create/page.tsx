@@ -40,7 +40,7 @@ import {
   useSidebarSelect,
 } from "@/hooks/use-api";
 import type { PostWriteBody } from "@/lib/api";
-import { uploadApi } from "@/lib/api";
+import { uploadApi, sidebarApi } from "@/lib/api";
 import styles from "./create.module.scss";
 import editorStyles from "@/components/admin/Editor.module.scss";
 
@@ -64,6 +64,7 @@ function CreateNoteContent() {
   const router = useRouter();
   const editId = searchParams.get("id");
   const presetTopicId = searchParams.get("topicId");
+  const presetSidebarId = searchParams.get("sidebarId");
   const { message } = App.useApp();
 
   const sidebarSelect = useSidebarSelect(10);
@@ -74,9 +75,15 @@ function CreateNoteContent() {
   const [savingAction, setSavingAction] = useState<"draft" | "publish" | null>(null);
 
   const [selectedSidebarId, setSelectedSidebarId] = useState<string | null>(null);
-  const filteredTopicsQuery = useTopics(selectedSidebarId ? { sidebarId: selectedSidebarId } : undefined);
+  const filteredTopicsQuery = useTopics(
+    selectedSidebarId
+      ? { sidebarId: selectedSidebarId }
+      : { enabled: false }
+  );
   const topics = filteredTopicsQuery.data?.data ?? [];
   const tags = tagsQuery.data?.data ?? [];
+
+  const [presetSidebarName, setPresetSidebarName] = useState<string | null>(null);
 
   const [form] = Form.useForm();
   const handleChange = useMemo(
@@ -145,6 +152,49 @@ function CreateNoteContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi topics load
   }, [presetTopicId, topics]);
+
+  /* Pre-select sidebar từ URL khi tạo mới — lấy tên từ dữ liệu đã load sẵn */
+  useEffect(() => {
+    if (isEdit || !presetSidebarId) return;
+    if (sidebarSelect.isPending) return;
+
+    const findName = (items: typeof sidebarSelect.items) => {
+      for (const item of items) {
+        if (item.id === presetSidebarId) return item.name;
+      }
+      return undefined;
+    };
+
+    const name = findName(sidebarSelect.items);
+    if (name) {
+      setPresetSidebarName(name);
+      setSelectedSidebarId(presetSidebarId);
+      form.setFieldValue("sidebarId", presetSidebarId);
+      return;
+    }
+
+    let cancelled = false;
+    sidebarApi.get().then((tree) => {
+      if (cancelled) return;
+      for (const item of tree) {
+        if (item.id === presetSidebarId) {
+          setPresetSidebarName(item.name);
+          setSelectedSidebarId(presetSidebarId);
+          form.setFieldValue("sidebarId", presetSidebarId);
+          return;
+        }
+        const child = item.children?.find((c) => c.id === presetSidebarId);
+        if (child) {
+          setPresetSidebarName(child.name);
+          setSelectedSidebarId(presetSidebarId);
+          form.setFieldValue("sidebarId", presetSidebarId);
+          return;
+        }
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetSidebarId, sidebarSelect.isPending, sidebarSelect.items]);
 
   useEffect(() => () => handleChange.cancel(), [handleChange]);
 
@@ -475,10 +525,20 @@ function CreateNoteContent() {
                   showSearch
                   placeholder="Chọn sidebar"
                   optionFilterProp="label"
-                  options={sidebarSelect.items.map((item) => ({
-                    value: item.id,
-                    label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
-                  }))}
+                  options={(() => {
+                    const opts = sidebarSelect.items.map((item) => ({
+                      value: item.id,
+                      label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
+                    }));
+                    if (
+                      presetSidebarId &&
+                      presetSidebarName &&
+                      !opts.some((o) => o.value === presetSidebarId)
+                    ) {
+                      opts.unshift({ value: presetSidebarId, label: presetSidebarName });
+                    }
+                    return opts;
+                  })()}
                   notFoundContent={sidebarSelect.isPending ? "Đang tải..." : "Không có dữ liệu"}
                   onPopupScroll={(e) => {
                     const target = e.target as HTMLDivElement;

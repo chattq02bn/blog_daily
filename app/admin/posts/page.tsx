@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   App,
   Button,
   Popconfirm,
+  Select,
   Table,
   Tag,
   Tooltip,
@@ -22,8 +23,10 @@ import NoImage from "@/components/ui/NoImage";
 import {
   useDeletePost,
   usePosts,
+  useTopics,
 } from "@/hooks/use-api";
-import type { ApiPost } from "@/lib/api";
+import type { ApiPost, ApiSidebarItem } from "@/lib/api";
+import { sidebarApi } from "@/lib/api";
 import styles from "./posts.module.scss";
 
 const PAGE_SIZE = 20;
@@ -36,17 +39,59 @@ const statusMeta: Record<
   published: { label: "Đã đăng", color: "green" },
 };
 
-export default function AdminPostsPage() {
+function flattenSidebarItems(items: ApiSidebarItem[]): { id: string; name: string; isChild: boolean }[] {
+  const result: { id: string; name: string; isChild: boolean }[] = [];
+  for (const item of items) {
+    result.push({ id: item.id, name: item.name, isChild: false });
+    for (const child of item.children ?? []) {
+      result.push({ id: child.id, name: child.name, isChild: true });
+    }
+  }
+  return result;
+}
+
+function AdminPostsContent() {
   const { message } = App.useApp();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const presetSidebarId = searchParams.get("sidebarId");
+  const presetTopicId = searchParams.get("topicId");
 
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedSidebarId, setSelectedSidebarId] = useState<string | null>(presetSidebarId);
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(presetTopicId);
+
+  const [sidebarOptions, setSidebarOptions] = useState<{ id: string; name: string; isChild: boolean }[]>([]);
+  const [sidebarLoading, setSidebarLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    sidebarApi.get().then((items) => {
+      if (!cancelled) {
+        setSidebarOptions(flattenSidebarItems(items));
+        setSidebarLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) setSidebarLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filteredTopicsQuery = useTopics(
+    selectedSidebarId
+      ? { sidebarId: selectedSidebarId }
+      : { enabled: false }
+  );
+  const topics = filteredTopicsQuery.data?.data ?? [];
 
   const postsQuery = usePosts({
     page,
     limit: PAGE_SIZE,
     q: keyword || undefined,
+    sidebarId: selectedSidebarId ?? undefined,
+    topicId: selectedTopicId ?? undefined,
   });
 
   const deleteMutation = useDeletePost();
@@ -56,6 +101,17 @@ export default function AdminPostsPage() {
 
   const handleSearch = useCallback((value: string) => {
     setKeyword(value);
+    setPage(1);
+  }, []);
+
+  const handleSidebarChange = useCallback((value: string | null) => {
+    setSelectedSidebarId(value);
+    setSelectedTopicId(null);
+    setPage(1);
+  }, []);
+
+  const handleTopicChange = useCallback((value: string | null) => {
+    setSelectedTopicId(value);
     setPage(1);
   }, []);
 
@@ -202,8 +258,32 @@ export default function AdminPostsPage() {
           <h1 className={styles.heading}>Quản lý bài viết</h1>
 
           <div className={styles.headerActions}>
+            <Select
+              showSearch
+              placeholder="Chọn sidebar"
+              optionFilterProp="label"
+              allowClear
+              value={selectedSidebarId}
+              onChange={handleSidebarChange}
+              options={sidebarOptions.map((item) => ({
+                value: item.id,
+                label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
+              }))}
+              notFoundContent={sidebarLoading ? "Đang tải..." : "Không có dữ liệu"}
+              className={styles.filterSelect}
+            />
+            <Select
+              placeholder={selectedSidebarId ? "Chọn topic" : "Chọn sidebar trước"}
+              allowClear
+              value={selectedTopicId}
+              onChange={handleTopicChange}
+              options={topics.map((t) => ({ value: t.id, label: t.name }))}
+              disabled={!selectedSidebarId}
+              notFoundContent={filteredTopicsQuery.isPending ? "Đang tải..." : "Không có topic"}
+              className={styles.filterSelect}
+            />
             <SearchInput
-              placeholder="Lọc theo tiêu đề, topic hoặc tag"
+              placeholder="Lọc theo tiêu đề"
               onSearch={handleSearch}
               className={styles.search}
             />
@@ -237,5 +317,13 @@ export default function AdminPostsPage() {
         />
       </div>
     </AdminLayout>
+  );
+}
+
+export default function AdminPostsPage() {
+  return (
+    <Suspense>
+      <AdminPostsContent />
+    </Suspense>
   );
 }

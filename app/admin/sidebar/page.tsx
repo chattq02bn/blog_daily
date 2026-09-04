@@ -26,6 +26,8 @@ import type { TableProps } from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
+  FileTextOutlined,
   HolderOutlined,
   PlusOutlined,
   TagsOutlined,
@@ -44,7 +46,6 @@ interface SidebarItem {
   id: string;
   name: string;
   slug: string;
-  postCount: number;
   topicIds: string[];
   description?: string;
   idx: number;
@@ -63,7 +64,6 @@ function apiToItem(item: ApiSidebarItem): SidebarItem {
     description: item.description ?? undefined,
     idx: item.idx,
     topicIds: item.topicIds,
-    postCount: item.postCount ?? 0,
     children: item.children.length
       ? item.children.map(apiToItem)
       : undefined,
@@ -90,17 +90,6 @@ function itemToApiPayload(
         children: [],
       }),
   };
-}
-
-function totalPosts(item: SidebarItem): number {
-  if (item.children?.length) {
-    return item.children.reduce(
-      (sum, child) => sum + child.postCount,
-      0
-    );
-  }
-
-  return item.postCount;
 }
 
 function findParent(
@@ -739,6 +728,26 @@ export default function AdminSidebarPage() {
       [router]
     );
 
+  const openCreatePost =
+    useCallback(
+      (item: SidebarItem) => {
+        router.push(
+          `/admin/create?sidebarId=${item.id}`
+        );
+      },
+      [router]
+    );
+
+  const openViewPosts =
+    useCallback(
+      (item: SidebarItem) => {
+        router.push(
+          `/admin/posts?sidebarId=${item.id}`
+        );
+      },
+      [router]
+    );
+
   /* =======================================================
    * DRAG ROW PROPS
    * ======================================================= */
@@ -984,8 +993,6 @@ export default function AdminSidebarPage() {
           description:
             data.description ??
             undefined,
-          postCount:
-            data.postCount ?? 0,
           topicIds: data.topicIds,
           idx: data.idx,
         };
@@ -1199,28 +1206,9 @@ export default function AdminSidebarPage() {
         },
 
         {
-          title: "Bài viết",
-          key: "postCount",
-          width: 110,
-
-          render: (
-            _: unknown,
-            record: SidebarItem
-          ) => (
-            <span
-              className={
-                styles.postCount
-              }
-            >
-              {totalPosts(record)}
-            </span>
-          ),
-        },
-
-        {
           title: "Thao tác",
           key: "actions",
-          width: 240,
+          width: 280,
 
           render: (
             _: unknown,
@@ -1266,6 +1254,36 @@ export default function AdminSidebarPage() {
                       )
                     }
                     aria-label={`Tạo topic cho ${record.name}`}
+                  />
+                </Tooltip>
+
+                <Tooltip title="Tạo bài viết">
+                  <Button
+                    type="text"
+                    icon={
+                      <FileTextOutlined />
+                    }
+                    onClick={() =>
+                      openCreatePost(
+                        record
+                      )
+                    }
+                    aria-label={`Tạo bài viết cho ${record.name}`}
+                  />
+                </Tooltip>
+
+                <Tooltip title="Xem bài viết">
+                  <Button
+                    type="text"
+                    icon={
+                      <EyeOutlined />
+                    }
+                    onClick={() =>
+                      openViewPosts(
+                        record
+                      )
+                    }
+                    aria-label={`Xem bài viết của ${record.name}`}
                   />
                 </Tooltip>
 
@@ -1322,6 +1340,8 @@ export default function AdminSidebarPage() {
         disableRowDrag,
         openCreateChild,
         openCreateTopic,
+        openCreatePost,
+        openViewPosts,
         openEdit,
         handleDelete,
       ]

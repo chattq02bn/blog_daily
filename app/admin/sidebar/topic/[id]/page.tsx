@@ -27,6 +27,7 @@ import type { TableProps } from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
   FileTextOutlined,
   PlusOutlined,
   TagsOutlined,
@@ -169,15 +170,23 @@ function TopicCreatePage() {
       {
         title: "Thao tác",
         key: "actions",
-        width: 130,
+        width: 170,
         render: (_: unknown, record: ApiTopic) => (
           <div className={styles.actions}>
             <Tooltip title="Tạo bài viết">
               <Button
                 type="text"
                 icon={<FileTextOutlined />}
-                onClick={() => router.push(`/admin/create?topicId=${record.id}`)}
+                onClick={() => router.push(`/admin/create?topicId=${record.id}&sidebarId=${params.id}`)}
                 aria-label={`Tạo bài viết cho ${record.name}`}
+              />
+            </Tooltip>
+            <Tooltip title="Xem bài viết">
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                onClick={() => router.push(`/admin/posts?sidebarId=${params.id}&topicId=${record.id}`)}
+                aria-label={`Xem bài viết của ${record.name}`}
               />
             </Tooltip>
             <Tooltip title="Sửa">

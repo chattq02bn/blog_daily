@@ -248,8 +248,13 @@ export function useTogglePostAction() {
 
 /* ===== Topics ===== */
 
-export function useTopics(params?: { page?: number; limit?: number; q?: string; sidebarId?: string }) {
-  return useQuery({ queryKey: qk.topics(params), queryFn: () => topicsApi.list(params) });
+export function useTopics(params?: { page?: number; limit?: number; q?: string; sidebarId?: string; enabled?: boolean }) {
+  const { enabled, ...rest } = params ?? {};
+  return useQuery({
+    queryKey: qk.topics(rest),
+    queryFn: () => topicsApi.list(rest),
+    enabled: enabled !== false,
+  });
 }
 
 export function useCreateTopic() {
@@ -657,12 +662,12 @@ export function useSidebarSelect(limit = 10) {
 
   // Flatten tree: parent items + their children, with indent info
   const items = useMemo(() => {
-    const result: { id: string; name: string; slug: string; isChild: boolean; parentId?: string; postCount: number }[] = [];
+    const result: { id: string; name: string; slug: string; isChild: boolean; parentId?: string }[] = [];
     for (const page of query.data?.pages ?? []) {
       for (const item of page.data) {
-        result.push({ id: item.id, name: item.name, slug: item.slug, isChild: false, postCount: item.postCount });
+        result.push({ id: item.id, name: item.name, slug: item.slug, isChild: false });
         for (const child of item.children ?? []) {
-          result.push({ id: child.id, name: child.name, slug: child.slug, isChild: true, parentId: item.id, postCount: child.postCount });
+          result.push({ id: child.id, name: child.name, slug: child.slug, isChild: true, parentId: item.id });
         }
       }
     }

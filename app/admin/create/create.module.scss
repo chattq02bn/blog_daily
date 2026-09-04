@@ -194,6 +194,10 @@
   flex-direction: column;
   min-width: 0;
 
+  @media (max-width: 940px) {
+    min-height: 50vh;
+  }
+
   @media (min-width: 941px) {
     min-height: 0;
     overflow-y: auto;

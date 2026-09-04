@@ -46,6 +46,13 @@
   @media (max-width: 767px) {
     :global(.bn-editor) {
       padding-left: 25px;
+      min-height: 50vh;
+    }
+  }
+
+  /* Tablet: min-height vừa phải */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    :global(.bn-editor) {
       min-height: 40vh;
     }
   }

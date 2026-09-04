@@ -9,6 +9,11 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .heading {
@@ -22,11 +27,25 @@
 .headerActions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .search {
   width: 260px;
+
+  @media (max-width: 640px) {
+    width: 100%;
+  }
+}
+
+.filterSelect {
+  min-width: 180px;
+
+  @media (max-width: 640px) {
+    min-width: 0;
+    flex: 1;
+  }
 }
 
 .postId {
