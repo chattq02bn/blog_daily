@@ -63,16 +63,24 @@ function RepliesSection({
   optimisticReplies: Flat[];
 }) {
   const [open, setOpen] = useState(false);
-  const count = parent.repliesCount ?? 0;
 
-  const query = useRepliesInfinite(open ? parent.id : null);
-  const replies = useMemo(() => {
-    const queryReplies = (query.data?.pages ?? [])
-      .flatMap((page) => page.data)
-      .map(apiCommentToComment);
-    return dedupeById([...optimisticReplies, ...queryReplies]);
-  }, [query.data, optimisticReplies]);
+  /* Luôn fetch để lấy count đúng từ API (repliesCount chỉ đếm direct children) */
+  const query = useRepliesInfinite(parent.id);
+  const queryReplies = useMemo(
+    () =>
+      (query.data?.pages ?? [])
+        .flatMap((page) => page.data)
+        .map(apiCommentToComment),
+    [query.data],
+  );
+  const replies = useMemo(
+    () => dedupeById([...optimisticReplies, ...queryReplies]),
+    [queryReplies, optimisticReplies],
+  );
 
+  /* Count đúng: ưu tiên meta.total từ API, fallback parent.repliesCount */
+  const serverTotal = query.data?.pages[0]?.meta?.total ?? 0;
+  const count = serverTotal || parent.repliesCount || 0;
   const totalCount = count + optimisticReplies.length;
 
   /* Collapsed: show inline optimistic replies + button */
@@ -187,6 +195,20 @@ export default function CommentList({ noteId, authorId }: CommentListProps) {
   const handleDelete = async (comment: Flat) => {
     try {
       await deleteMutation.mutateAsync({ id: comment.id });
+      // Xóa khỏi optimisticRepliesMap nếu là reply optimistic
+      setOptimisticRepliesMap((prev) => {
+        const next = { ...prev };
+        for (const rootId of Object.keys(next)) {
+          const filtered = next[rootId].filter((r) => r.id !== comment.id);
+          if (filtered.length === next[rootId].length) continue;
+          if (filtered.length === 0) {
+            delete next[rootId];
+          } else {
+            next[rootId] = filtered;
+          }
+        }
+        return next;
+      });
       message.success("Đã xóa bình luận");
     } catch {
       message.error("Không xóa được bình luận này");

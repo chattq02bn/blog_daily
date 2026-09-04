@@ -367,15 +367,35 @@ export function useCreateComment(postIdOrSlug: string) {
     mutationFn: ({ body, rootCommentId }: { body: CommentWriteBody; rootCommentId?: string }) =>
       commentsApi.create(postIdOrSlug, body),
     onSuccess: (newComment) => {
-      // Store commenter token if returned (anonymous user)
+      // Luôn lưu commenterId + nickname sau khi comment thành công
+      // (dù là user đã login hay anonymous đều có commenter profile)
+      setCommenterId(newComment.commenterId);
+      setCommenterNickname(newComment.author);
+
+      // Chỉ lưu token khi BE trả về (user mới tạo commenter lần đầu)
       if ("commenterToken" in newComment && newComment.commenterToken) {
         setCommenterToken(newComment.commenterToken);
-        setCommenterId(newComment.commenterId);
-        setCommenterNickname(newComment.author);
       }
 
       if (newComment.parentId) {
-        /* Reply — optimistic replies handled by component state (optimisticRepliesMap) */
+        /* Reply — tăng repliesCount trên parent comment trong cache */
+        qc.setQueriesData(
+          { queryKey: ["comments"] },
+          (old: { pages: { data: ApiComment[] }[] } | undefined) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                data: page.data.map((c) =>
+                  c.id === newComment.parentId
+                    ? { ...c, repliesCount: (c.repliesCount ?? 0) + 1 }
+                    : c
+                ),
+              })),
+            };
+          }
+        );
       } else {
         /* Bình luận gốc — prepend vào cache commentsInfinite */
         const key = qk.commentsInfinite(postIdOrSlug);
@@ -426,8 +446,43 @@ export function useDeleteComment() {
   return useMutation({
     mutationFn: ({ id }: { id: string }) =>
       commentsApi.remove(id),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["comments"] });
+    onSuccess: (_data, { id }) => {
+      // Xóa comment khỏi tất cả queries commentsInfinite & repliesInfinite
+      // và giảm repliesCount trên parent (nếu là reply)
+      qc.setQueriesData(
+        { queryKey: ["comments"] },
+        (old: { pages: { data: ApiComment[]; meta?: { page: number; limit: number; total: number; totalPages: number } }[]; pageParams: number[] } | undefined) => {
+          if (!old) return old;
+
+          let deletedParentId: string | null = null;
+
+          // Tìm parentId của comment bị xóa
+          for (const page of old.pages) {
+            const found = page.data.find((c) => c.id === id);
+            if (found?.parentId) {
+              deletedParentId = found.parentId;
+              break;
+            }
+          }
+
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data
+                .filter((c) => c.id !== id)
+                .map((c) =>
+                  deletedParentId && c.id === deletedParentId
+                    ? { ...c, repliesCount: Math.max(0, (c.repliesCount ?? 0) - 1) }
+                    : c
+                ),
+              meta: page.meta
+                ? { ...page.meta, total: Math.max(0, page.meta.total - 1) }
+                : undefined,
+            })),
+          };
+        }
+      );
     },
   });
 }

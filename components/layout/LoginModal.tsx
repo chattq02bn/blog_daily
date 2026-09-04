@@ -7,7 +7,8 @@ import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { useAtomValue } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveApiSession } from "@/lib/auth";
-import { authApi } from "@/lib/api";
+import { authApi, commentersApi } from "@/lib/api";
+import { setCommenterId, setCommenterNickname } from "@/lib/commenter";
 import { qk } from "@/lib/query-keys";
 import {
   closeLoginModal,
@@ -38,6 +39,12 @@ export default function LoginModal() {
     try {
       const session = await authApi.login(values);
       saveApiSession(session);
+      // Sync commenterId cho user đã login (để hiển thị nút sửa/xóa comment)
+      try {
+        const commenter = await commentersApi.getMe();
+        setCommenterId(commenter.id);
+        setCommenterNickname(commenter.nickname);
+      } catch { /* ignore */ }
       await qc.invalidateQueries({ queryKey: qk.profile() });
       messageApi.success("Đăng nhập thành công!");
       handleClose();

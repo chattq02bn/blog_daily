@@ -42,7 +42,7 @@ export default function Navbar() {
     qc.clear();
     localStorage.clear();
     setPopoverOpen(false);
-    router.push("/");
+    window.location.href = "/";
   };
 
   return (

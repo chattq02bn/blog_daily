@@ -441,6 +441,9 @@ export interface CommenterInfo {
 }
 
 export const commentersApi = {
+  async getMe(): Promise<CommenterInfo> {
+    return unwrap(await api.get<Envelope<CommenterInfo>>("/commenters/me"));
+  },
   async create(nickname: string): Promise<CreateCommenterResponse> {
     return unwrap(await api.post<Envelope<CreateCommenterResponse>>("/commenters", { nickname }));
   },
