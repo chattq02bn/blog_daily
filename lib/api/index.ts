@@ -369,6 +369,7 @@ export interface ListSidebarParams {
   limit?: number;
   /** Chế độ phân trang: số mục con nhúng kèm mỗi mục gốc */
   childrenLimit?: number;
+  q?: string;
 }
 
 export interface SidebarPage {

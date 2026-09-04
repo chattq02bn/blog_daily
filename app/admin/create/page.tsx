@@ -15,6 +15,7 @@ import {
   Space,
   Upload,
 } from "antd";
+import SidebarSelect from "@/components/admin/SidebarSelect";
 import {
   DeleteOutlined,
   UploadOutlined,
@@ -67,12 +68,13 @@ function CreateNoteContent() {
   const presetSidebarId = searchParams.get("sidebarId");
   const { message } = App.useApp();
 
+  const [savingAction, setSavingAction] = useState<"draft" | "publish" | null>(null);
+
   const sidebarSelect = useSidebarSelect(10);
   const tagsQuery = useTags();
   const postQuery = usePost(editId ?? "");
   const createMutation = useCreatePost();
   const updateMutation = useUpdatePost();
-  const [savingAction, setSavingAction] = useState<"draft" | "publish" | null>(null);
 
   const [selectedSidebarId, setSelectedSidebarId] = useState<string | null>(null);
   const filteredTopicsQuery = useTopics(
@@ -521,46 +523,14 @@ function CreateNoteContent() {
                   },
                 ]}
               >
-                <Select
-                  showSearch
+                <SidebarSelect
                   placeholder="Chọn sidebar"
-                  optionFilterProp="label"
-                  options={(() => {
-                    const opts = sidebarSelect.items.map((item) => ({
-                      value: item.id,
-                      label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
-                    }));
-                    if (
-                      presetSidebarId &&
-                      presetSidebarName &&
-                      !opts.some((o) => o.value === presetSidebarId)
-                    ) {
-                      opts.unshift({ value: presetSidebarId, label: presetSidebarName });
-                    }
-                    return opts;
-                  })()}
-                  notFoundContent={sidebarSelect.isPending ? "Đang tải..." : "Không có dữ liệu"}
-                  onPopupScroll={(e) => {
-                    const target = e.target as HTMLDivElement;
-                    if (
-                      target.scrollTop + target.offsetHeight >= target.scrollHeight - 20 &&
-                      sidebarSelect.hasNextPage &&
-                      !sidebarSelect.isFetchingNextPage
-                    ) {
-                      void sidebarSelect.fetchNextPage();
-                    }
-                  }}
-                  popupRender={(menu) => (
-                    <>
-                      {menu}
-                      {sidebarSelect.isFetchingNextPage && (
-                        <div style={{ textAlign: "center", padding: "8px 0", color: "#999", fontSize: 12 }}>
-                          Đang tải thêm...
-                        </div>
-                      )}
-                    </>
-                  )}
-                  onChange={(value: string) => {
+                  extraOptions={
+                    presetSidebarId && presetSidebarName
+                      ? [{ value: presetSidebarId, label: presetSidebarName }]
+                      : undefined
+                  }
+                  onChange={(value) => {
                     setSelectedSidebarId(value);
                     form.setFieldValue("topicIds", []);
                   }}

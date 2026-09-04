@@ -7,11 +7,12 @@ import {
   App,
   Button,
   Popconfirm,
-  Select,
   Table,
   Tag,
   Tooltip,
 } from "antd";
+import SidebarSelect from "@/components/admin/SidebarSelect";
+import TopicSelect from "@/components/admin/TopicSelect";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -23,10 +24,8 @@ import NoImage from "@/components/ui/NoImage";
 import {
   useDeletePost,
   usePosts,
-  useTopics,
 } from "@/hooks/use-api";
-import type { ApiPost, ApiSidebarItem } from "@/lib/api";
-import { sidebarApi } from "@/lib/api";
+import type { ApiPost } from "@/lib/api";
 import styles from "./posts.module.scss";
 
 const PAGE_SIZE = 20;
@@ -39,17 +38,6 @@ const statusMeta: Record<
   published: { label: "Đã đăng", color: "green" },
 };
 
-function flattenSidebarItems(items: ApiSidebarItem[]): { id: string; name: string; isChild: boolean }[] {
-  const result: { id: string; name: string; isChild: boolean }[] = [];
-  for (const item of items) {
-    result.push({ id: item.id, name: item.name, isChild: false });
-    for (const child of item.children ?? []) {
-      result.push({ id: child.id, name: child.name, isChild: true });
-    }
-  }
-  return result;
-}
-
 function AdminPostsContent() {
   const { message } = App.useApp();
   const router = useRouter();
@@ -61,38 +49,20 @@ function AdminPostsContent() {
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [selectedSidebarId, setSelectedSidebarId] = useState<string | null>(presetSidebarId);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(presetTopicId);
-
-  const [sidebarOptions, setSidebarOptions] = useState<{ id: string; name: string; isChild: boolean }[]>([]);
-  const [sidebarLoading, setSidebarLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    sidebarApi.get().then((items) => {
-      if (!cancelled) {
-        setSidebarOptions(flattenSidebarItems(items));
-        setSidebarLoading(false);
-      }
-    }).catch(() => {
-      if (!cancelled) setSidebarLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  const filteredTopicsQuery = useTopics(
-    selectedSidebarId
-      ? { sidebarId: selectedSidebarId }
-      : { enabled: false }
-  );
-  const topics = filteredTopicsQuery.data?.data ?? [];
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>(presetTopicId ? [presetTopicId] : []);
 
   const postsQuery = usePosts({
     page,
     limit: PAGE_SIZE,
     q: keyword || undefined,
     sidebarId: selectedSidebarId ?? undefined,
-    topicId: selectedTopicId ?? undefined,
+    topicIds: selectedTopicIds.length ? selectedTopicIds : undefined,
   });
+
+  useEffect(() => {
+    void postsQuery.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTopicIds]);
 
   const deleteMutation = useDeletePost();
 
@@ -106,12 +76,13 @@ function AdminPostsContent() {
 
   const handleSidebarChange = useCallback((value: string | null) => {
     setSelectedSidebarId(value);
-    setSelectedTopicId(null);
+    setSelectedTopicIds([]);
     setPage(1);
   }, []);
 
-  const handleTopicChange = useCallback((value: string | null) => {
-    setSelectedTopicId(value);
+  const handleTopicChange = useCallback((value: string | string[]) => {
+    const next = Array.isArray(value) ? value : [value];
+    setSelectedTopicIds(next);
     setPage(1);
   }, []);
 
@@ -257,28 +228,19 @@ function AdminPostsContent() {
         <div className={styles.header}>
           <h1 className={styles.heading}>Quản lý bài viết</h1>
 
-          <Select
-            showSearch
-            placeholder="Chọn sidebar"
-            optionFilterProp="label"
-            allowClear
+          <SidebarSelect
             value={selectedSidebarId}
             onChange={handleSidebarChange}
-            options={sidebarOptions.map((item) => ({
-              value: item.id,
-              label: item.isChild ? `\u00A0\u00A0${item.name}` : item.name,
-            }))}
-            notFoundContent={sidebarLoading ? "Đang tải..." : "Không có dữ liệu"}
+            allowClear
             className={styles.filterSelect}
           />
-          <Select
-            placeholder={selectedSidebarId ? "Chọn topic" : "Chọn sidebar trước"}
+          <TopicSelect
+            mode="multiple"
+            placeholder="Chọn topics"
             allowClear
-            value={selectedTopicId}
+            value={selectedTopicIds}
             onChange={handleTopicChange}
-            options={topics.map((t) => ({ value: t.id, label: t.name }))}
-            disabled={!selectedSidebarId}
-            notFoundContent={filteredTopicsQuery.isPending ? "Đang tải..." : "Không có topic"}
+            sidebarId={selectedSidebarId}
             className={styles.filterSelect}
           />
           <div className={styles.actions}>

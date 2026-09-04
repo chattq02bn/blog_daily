@@ -646,12 +646,12 @@ export function useSidebar(params?: { q?: string }) {
   });
 }
 
-/* Sidebar select — phân trang root items, mỗi item kèm children */
-export function useSidebarSelect(limit = 10) {
+/* Sidebar select — phân trang root items, mỗi item kèm children, hỗ trợ tìm kiếm */
+export function useSidebarSelect(limit = 10, q?: string) {
   const query = useInfiniteQuery({
-    queryKey: ["sidebar", "select", limit],
+    queryKey: ["sidebar", "select", limit, q ?? ""],
     queryFn: ({ pageParam }) =>
-      sidebarApi.list({ page: pageParam as number, limit, childrenLimit: 20 }),
+      sidebarApi.list({ page: pageParam as number, limit, childrenLimit: 20, q: q || undefined }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const meta = lastPage.meta;
