@@ -50,7 +50,7 @@ export default async function TopicDetailPage({ params, searchParams }: PageProp
         topicsLimit: 10,
       }),
     initialPageParam: 1,
-    getNextPageParam: (_lastPage: { totalTopicsPages?: number }, allPages) => {
+    getNextPageParam: (_lastPage: { totalTopicsPages?: number }, allPages: { totalTopicsPages?: number }[]) => {
       const totalTopicsPages = allPages[0]?.totalTopicsPages ?? 0;
       if (allPages.length < totalTopicsPages) {
         return allPages.length + 1;
