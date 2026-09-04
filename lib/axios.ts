@@ -5,7 +5,6 @@ import axios, {
 } from "axios";
 import { ACCESS_TOKEN_KEY, clearAuth } from "@/lib/auth";
 import { getCommenterToken } from "@/lib/commenter";
-import { openLoginModal } from "@/lib/jotai/auth";
 
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
@@ -69,8 +68,6 @@ api.interceptors.response.use(
       if (!isHandling401) {
         isHandling401 = true;
         clearAuth();
-        // Hết phiên: mở modal đăng nhập (global state) thay vì redirect /admin/auth.
-        openLoginModal("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
         setTimeout(() => {
           isHandling401 = false;
         }, 1000);
